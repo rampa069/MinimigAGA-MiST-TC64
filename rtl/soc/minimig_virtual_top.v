@@ -114,7 +114,8 @@ module minimig_virtual_top	#(
   input wire            SD_ACK,
   output wire           RTC_CS,
   output wire				RECONFIG,
-  output wire				IECSERIAL
+  output wire				IECSERIAL,
+  input wire			FREEZE
 );
 
 
@@ -529,6 +530,7 @@ TG68K #(.havertg(havertg ? "true" : "false"),
   .clkena_in    (tg68_ena28       ),
   .IPL          (tg68_IPL         ),
   .dtack        (tg68_dtack       ),
+  .freeze       (FREEZE           ),
   .vpa          (1'b1             ),
   .ein          (1'b1             ),
   .addr         (tg68_adr         ),

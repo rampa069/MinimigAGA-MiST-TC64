@@ -205,7 +205,8 @@ architecture RTL of DE10liteToplevel is
 		SD_CS		:	 OUT STD_LOGIC;
 		SD_ACK	:	 IN STD_LOGIC;
 		RECONFIG	:	 OUT STD_LOGIC;
-		IECSERIAL:	 OUT STD_LOGIC			
+		IECSERIAL:	 OUT STD_LOGIC;
+		FREEZE : in std_logic
 	);
 	END COMPONENT;
 
@@ -325,7 +326,8 @@ PORT map
 		SD_CS => sd_cs,
 		SD_ACK => '1',
 		RECONFIG => reconfig,
-		IECSERIAL => iecserial
+		IECSERIAL => iecserial,
+		FREEZE => SW(0)
 	);
 
 LEDR(2)<=reconfig;

@@ -40,6 +40,7 @@ port(
 	clkena_in     : in      std_logic:='1';
 	IPL           : in      std_logic_vector(2 downto 0):="111";
 	dtack         : in      std_logic;
+	freeze        : in      std_logic;
 	vpa           : in      std_logic:='1';
 	ein           : in      std_logic:='1';
 	addr          : out     std_logic_vector(31 downto 0);
@@ -459,7 +460,7 @@ PROCESS (clk) BEGIN
 END PROCESS;
 
 clkena <= '1' WHEN (clkena_in='1' AND
-                   (state="01" OR (ena7RDreg='1' AND clkena_e='1') OR (ena7WRreg='1' AND clkena_f='1') OR
+                   ((state="01" and freeze='0') OR (ena7RDreg='1' AND clkena_e='1') OR (ena7WRreg='1' AND clkena_f='1') OR
                     ramready='1' OR sel_undecoded_d='1' OR akiko_ack='1'))
               ELSE '0';
 
