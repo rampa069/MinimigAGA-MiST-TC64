@@ -179,7 +179,9 @@ assign reg_address_cpu = (aen&(rd|hwr|lwr)) ? address_in : 8'hFF;
 
 //--------------------------------------------------------------------------------------
 
-assign dma_spr = req_spr & spren;
+wire ddf;
+
+assign dma_spr = req_spr & spren & !(ddf & bplen); // AMR - Disallow sprite fetches during bitplane data fetch.
 assign dma_cop = req_cop & copen;
 assign dma_blt = req_blt & blten;
 
@@ -363,6 +365,7 @@ agnus_bitplanedma bpd1
   .clk7_en(clk7_en),
   .reset(reset),
   .harddis(harddis),
+  .ddf(ddf),
   .aga(aga),
   .ecs(ecs),
   .a1k(a1k),
