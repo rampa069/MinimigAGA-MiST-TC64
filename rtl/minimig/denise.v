@@ -100,7 +100,7 @@ assign data_out = col_out | deniseid_out | rgb_out;
 always @(posedge clk)
   if (clk7_en) begin
     if (strhor)
-      hpos <= 9'd2;
+      hpos <= 9'd0; // AMR - This counter clearly shouldn't start at 2.  What will this break, I wonder?
     else
       hpos <= hpos + 9'd1;
   end
