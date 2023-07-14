@@ -122,12 +122,11 @@ always @(posedge clk)
 
 // assign serialized output data
 // AMR - register the output data to delay it by one clk7, compensating for removing load_del
-reg [1:0] sprdata_r;
+reg [7:0] sprdata_r;
 always @(posedge clk)
-  if (clk7_en)
-    sprdata_r[1:0] <= {shiftb[63],shifta[63]};
+    sprdata_r <= {shiftb[63],shifta[63],sprdata_r[7:2]}; // Ugly - are we masking a copper timing problem here?
 
-assign sprdata[1:0] = sprdata_r; // {shiftb[63],shifta[63]};
+assign sprdata[1:0] = sprdata_r[1:0]; // {shiftb[63],shifta[63]};
 
 //--------------------------------------------------------------------------------------
 
