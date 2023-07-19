@@ -550,7 +550,8 @@ BEGIN
 					END IF;
 
 					clkena_e <= '1';
-					IF aga = '1' AND cpu(1) = '1' AND longword = '1' AND state(0) = '0' AND cpuaddr(1 downto 0) = "00" AND (sel_chip = '1' OR sel_kick = '1') THEN
+					-- AMR - can't do 32-bit read when reading NMI vector
+					IF aga = '1' AND sel_nmi_vector='0' and cpu(1) = '1' AND longword = '1' AND state(0) = '0' AND cpuaddr(1 downto 0) = "00" AND (sel_chip = '1' OR sel_kick = '1') THEN
 						-- 32 bit read
 						clkena_f <= '1';
 					END IF;
