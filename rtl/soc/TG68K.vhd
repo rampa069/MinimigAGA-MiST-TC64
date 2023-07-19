@@ -112,26 +112,20 @@ end TG68K;
 
 
 ARCHITECTURE logic OF TG68K IS
-
 SIGNAL addrtg68         : std_logic_vector(31 downto 0);
 SIGNAL cpuaddr          : std_logic_vector(31 downto 0);
 SIGNAL r_data           : std_logic_vector(15 downto 0);
 SIGNAL cpuIPL           : std_logic_vector(2 downto 0);
-SIGNAL vpad             : std_logic;
-SIGNAL waitm            : std_logic;
+signal CACR             : std_logic_vector(3 downto 0);
+
 SIGNAL clkena_e         : std_logic;
 SIGNAL clkena_f         : std_logic;
-SIGNAL S_state          : std_logic_vector(1 downto 0);
-SIGNAL decode           : std_logic;
 SIGNAL wr               : std_logic;
 SIGNAL uds_in           : std_logic;
 SIGNAL lds_in           : std_logic;
 SIGNAL state            : std_logic_vector(1 downto 0);
 signal longword         : std_logic;
 SIGNAL clkena           : std_logic;
-SIGNAL vmaena           : std_logic;
-SIGNAL eind             : std_logic;
-SIGNAL eindd            : std_logic;
 SIGNAL sel_ram          : std_logic;
 SIGNAL sel_chip         : std_logic;
 SIGNAL sel_chipram      : std_logic;
@@ -139,10 +133,8 @@ SIGNAL turbochip_ena    : std_logic := '0';
 SIGNAL turbochip_d      : std_logic := '0';
 SIGNAL turbokick_d      : std_logic := '0';
 SIGNAL turboslow_d      : std_logic := '0';
-SIGNAL slower           : std_logic_vector(3 downto 0);
+SIGNAL slower           : std_logic_vector(2 downto 0);
 
-TYPE   sync_states      IS (sync0, sync1, sync2, sync3, sync4, sync5, sync6, sync7, sync8, sync9);
-SIGNAL sync_state       : sync_states;
 SIGNAL datatg68_c       : std_logic_vector(15 downto 0);
 SIGNAL datatg68         : std_logic_vector(15 downto 0);
 SIGNAL w_datatg68       : std_logic_vector(15 downto 0);
@@ -171,7 +163,12 @@ signal sel_akiko        : std_logic;
 signal sel_akiko_d      : std_logic;
 signal sel_audio        : std_logic;
 signal sel_ram_d        : std_logic;
-SIGNAL cpu_int          : std_logic;
+
+SIGNAL cpu_internal     : std_logic;
+SIGNAL cpu_fetch        : std_logic;
+SIGNAL cpu_read         : std_logic;
+SIGNAL cpu_write        : std_logic;
+signal cpu_disablecache : std_logic;
 
 -- Akiko registers
 signal akiko_d : std_logic_vector(15 downto 0);
@@ -185,7 +182,7 @@ SIGNAL NMI_addr         : std_logic_vector(31 downto 0);
 SIGNAL sel_nmi_vector_addr : std_logic;
 SIGNAL sel_nmi_vector   : std_logic;
 
-signal chipset_cycle : std_logic;
+signal block_turbo : std_logic;
 
 BEGIN
 
@@ -205,11 +202,18 @@ sel_eth<='0';
 		END IF;
 	END PROCESS;
 
-	sel_nmi_vector <= '1' WHEN sel_nmi_vector_addr='1' AND state="10" ELSE '0';
+	-- AMR just for convenience / clarity
+	cpu_fetch    <= '1' WHEN state = "00" else '0';
+	cpu_internal <= '1' WHEN state = "01" else '0';
+	cpu_read     <= '1' WHEN state = "10" else '0';
+	cpu_write    <= '1' WHEN state = "11" else '0';
+	cpu_disablecache <= not CACR(0);
+
+	sel_nmi_vector <= '1' WHEN sel_nmi_vector_addr='1' AND cpu_read='1' ELSE '0';
 
 	toram <= w_datatg68;
 	wrd <= wr;
-	cpu_int <= '1' WHEN state = "01" else '0';
+
 	PROCESS(clk) BEGIN
 		IF rising_edge(clk) THEN
 			z2ram_ena <= ziiram_active;
@@ -222,7 +226,7 @@ sel_eth<='0';
 		END IF;
 	END PROCESS;
 
-	datatg68 <= fromram WHEN cpu_int='0' AND sel_ram_d='1' AND sel_nmi_vector='0' ELSE datatg68_c;
+	datatg68 <= fromram WHEN cpu_internal='0' AND sel_ram_d='1' and block_turbo='0' AND sel_nmi_vector='0' ELSE datatg68_c;
 
 	-- Register incoming data
 	process(clk) begin
@@ -253,7 +257,7 @@ sel_eth<='0';
 	sel_chip        <= '1' WHEN (cpuaddr(31 downto 24) = X"00") AND (cpuaddr(23 downto 21)="000") ELSE '0'; --$000000 - $1FFFFF
 	sel_chipram     <= '1' WHEN sel_chip = '1' AND turbochip_d='1' ELSE '0';
 	sel_kick        <= '1' WHEN (cpuaddr(31 downto 24) = X"00") AND ((cpuaddr(23 downto 19)="11111") OR (cpuaddr(23 downto 19)="11100")) AND state/="11" ELSE '0'; -- $F8xxxx, $E0xxxx, read only
-	sel_kickram     <= '1' WHEN sel_kick='1' AND turbokick_d='1' ELSE '0';
+	sel_kickram     <= '1' WHEN sel_kick='1' and aga='1' else '0'; -- AMR tie turbo kick to AGA rather than menu option...   --  AND turbokick_d='1' ELSE '0';
 	sel_slow        <= '1' WHEN (cpuaddr(31 downto 24) = X"00") AND ((cpuaddr(23 downto 20)=X"C" AND ((cpuaddr(19)='0' AND slow_config/="00") OR (cpuaddr(19)='1' AND slow_config(1)='1'))) OR (cpuaddr(23 downto 19)=X"D"&'0' AND slow_config="11")) ELSE '0'; -- $C00000 - $D7FFFF
 	sel_slowram     <= '1' WHEN sel_slow='1' AND turboslow_d='1' ELSE '0';
 	sel_cart        <= '1' WHEN (cpuaddr(31 downto 24) = X"00") AND (cpuaddr(23 downto 20)="1010") ELSE '0'; -- $A00000 - $A7FFFF (actually matches up to $AFFFFF)
@@ -272,7 +276,7 @@ sel_eth<='0';
 
   cache_inhibit <= '1' WHEN sel_kickram='1' ELSE '0';
 
-  ramcs <= NOT (NOT cpu_int AND sel_ram_d AND NOT sel_nmi_vector) OR slower(0);
+  ramcs <= NOT (NOT cpu_internal AND sel_ram_d AND NOT sel_nmi_vector) OR slower(0) or block_turbo;
 
   cpustate <= longword&clkena&slower(1 downto 0)&ramcs&state(1 downto 0);
   ramlds <= lds_in;
@@ -355,23 +359,23 @@ pf68K_Kernel_inst: entity work.TG68KdotC_Kernel
     nLDS            => lds_in,        -- : out std_logic;
     nResetOut       => nResetOut,
     skipFetch       => skipFetch,     -- : out std_logic
-    CACR_out        => CACR_out,
+    CACR_out        => CACR,
     VBR_out         => VBR_out
   );
+  CACR_out <= CACR;
 
-
-PROCESS (clk, turbochipram, turbokick) BEGIN
+PROCESS (clk) BEGIN
   IF rising_edge(clk) THEN
     IF (reset='0' OR nResetOut='0') THEN
       turbochip_d <= '0';
       turbokick_d <= '0';
       turboslow_d <= '0';
       cacheline_clr <= '0';
-    ELSIF state="01" THEN -- No mem access, so safe to switch chipram access mode
-      turbochip_d <= turbochipram;
+    ELSIF cpu_internal='1' THEN -- No mem access, so safe to switch chipram access mode
+      turbochip_d <= turbochipram or turbokick; -- AMR - temporary hack
       turbokick_d <= turbokick;
       turboslow_d <= turbochipram OR aga;
-      cacheline_clr <= (turbochipram XOR turbochip_d);
+      cacheline_clr <= ((turbochipram or turbokick) XOR turbochip_d);
     END IF;
     sel_ram_d<=sel_ram;
   END IF;
@@ -433,136 +437,182 @@ process(clk,cpuaddr) begin
 end process;
 
 
-PROCESS (clk) BEGIN
-  IF rising_edge(clk) THEN
-    IF ena7WRreg='1' THEN
-      eind <= ein;
-      eindd <= eind;
-      CASE sync_state IS
-        WHEN sync0  => sync_state <= sync1;
-        WHEN sync1  => sync_state <= sync2;
-        WHEN sync2  => sync_state <= sync3;
-        WHEN sync3  => sync_state <= sync4;
-                 vma <= vpa;
-        WHEN sync4  => sync_state <= sync5;
-        WHEN sync5  => sync_state <= sync6;
-        WHEN sync6  => sync_state <= sync7;
-        WHEN sync7  => sync_state <= sync8;
-        WHEN sync8  => sync_state <= sync9;
-        WHEN OTHERS => sync_state <= sync0;
-                 vma <= '1';
-      END CASE;
-      IF eind='1' AND eindd='0' THEN
-        sync_state <= sync7;
-      END IF;
-    END IF;
-  END IF;
-END PROCESS;
+buslogic : block
+	signal throttle_sel     : std_logic_vector(1 downto 0);
+	signal throttle         : std_logic_vector(1 downto 0);
+	signal chipset_cycle    : std_logic;
+	SIGNAL vpad             : std_logic;
+	SIGNAL waitm            : std_logic;
+	SIGNAL S_state          : std_logic_vector(1 downto 0);
+	SIGNAL vmaena           : std_logic;
+	SIGNAL eind             : std_logic;
+	SIGNAL eindd            : std_logic;
+	TYPE   sync_states      IS (sync0, sync1, sync2, sync3, sync4, sync5, sync6, sync7, sync8, sync9);
+	SIGNAL sync_state       : sync_states;
+begin
 
-clkena <= '1' WHEN (clkena_in='1' AND
-                   ((state="01" and freeze='0') OR (ena7RDreg='1' AND clkena_e='1') OR (ena7WRreg='1' AND clkena_f='1') OR
-                    ramready='1' OR sel_undecoded_d='1' OR akiko_ack='1'))
-              ELSE '0';
+	clkena <= '1' WHEN (clkena_in='1' AND slower(0)='0' and
+					   (cpu_internal='1' OR (ena7RDreg='1' AND clkena_e='1') OR (ena7WRreg='1' AND clkena_f='1') OR
+						(ramready='1' and block_turbo='0') OR sel_undecoded_d='1' OR akiko_ack='1'))
+				  ELSE '0';
 
-PROCESS (clk) BEGIN
-  IF rising_edge(clk) THEN
-    IF clkena='1' THEN
-      slower <= "0111"; -- rokk
-    ELSE
-      slower(3 downto 0) <= '0'&slower(3 downto 1); -- enaWRreg&slower(3 downto 1);
-    END IF;
-  END IF;
-END PROCESS;
+    -- AMR - attempt to imitate A1200 speed more closely on chipram fetches:
+ 	-- Perform throttling of the CPU depending on turbo mode:  (Temporary mapping for evaluation)
+	-- Turbo set to both: no throttling
+	-- Turbo set to kick only: mild throttling
+	-- Turbo set to chip only: more severe throttling
+	-- Turbo set to none: severe throttling selected but has no effect since all chipram accesses go through the slow path.
+	
+	-- When throttling is enabled:
+	--   Data reads go through the slow path as normal
+	--   Fetches go via the cache (unless CACR says otherwise) but the CPU is slowed by the throttling
+	--   Writes go through the fast path (since real AGA hardware buffers writes.) but again the CPU is slowed by throttling.
 
+    process (clk) begin
+      IF rising_edge(clk) THEN
+		-- If throttling is enabled, block turbo for CPU data reads, and instruction fetch if cache is disabled.
+		throttle_sel(0) <= freeze or not (turbochipram and turbokick);	
+		throttle_sel(1) <= freeze or not turbokick;
+        block_turbo<=sel_chip and throttle_sel(0) and (cpu_read or (cpu_fetch and cpu_disablecache));
+      end if;
+	end process;
 
-chipset_cycle <= '1' when (sel_ram='0' OR sel_nmi_vector='1')
-	AND sel_akiko='0' and sel_undecoded='0' else '0';
+    process (clk) begin
+	  if rising_edge(clk) then
+		if clkena='1' or freeze='1' then
+		  throttle<=throttle_sel;
+		elsif clkena_in='1' then
+		  throttle<='0'&throttle(throttle'high downto 1);
+		end if;
+	  end if;
+	end process;
 
-PROCESS (clk, reset)
-BEGIN
-	IF reset='0' THEN
-		S_state <= "00";
-		as <= '1';
-		rw <= '1';
-		uds <= '1';
-		lds <= '1';
-		uds2 <= '1';
-		lds2 <= '1';
-		clkena_e <= '0';
-		clkena_f <= '0';
-	ELSIF rising_edge(clk) THEN
-		IF S_state = "01" AND clkena_e = '1' THEN
-			uds2 <= uds_in;
-			lds2 <= lds_in;
-			data_write2 <= w_datatg68;
+	PROCESS (clk) BEGIN
+	  IF rising_edge(clk) THEN
+		IF clkena='1' THEN
+		  slower <= "111"; -- rokk
+		ELSE
+		  slower<= throttle(0)&slower(slower'high downto 1); -- enaWRreg&slower(3 downto 1);
 		END IF;
+	  END IF;
+	END PROCESS;
 
+	chipset_cycle <= '1' when (sel_ram='0' OR sel_nmi_vector='1' or block_turbo='1')
+		AND sel_akiko='0' and sel_undecoded='0' else '0';
+
+	PROCESS (clk) BEGIN
+	  IF rising_edge(clk) THEN
 		IF ena7WRreg='1' THEN
-			CASE S_state IS
-				WHEN "00" =>
-					IF cpu_int='0' AND chipset_cycle='1' THEN
-						uds <= uds_in;
-						lds <= lds_in;
+		  eind <= ein;
+		  eindd <= eind;
+		  CASE sync_state IS
+			WHEN sync0  => sync_state <= sync1;
+			WHEN sync1  => sync_state <= sync2;
+			WHEN sync2  => sync_state <= sync3;
+			WHEN sync3  => sync_state <= sync4;
+					 vma <= vpa;
+			WHEN sync4  => sync_state <= sync5;
+			WHEN sync5  => sync_state <= sync6;
+			WHEN sync6  => sync_state <= sync7;
+			WHEN sync7  => sync_state <= sync8;
+			WHEN sync8  => sync_state <= sync9;
+			WHEN OTHERS => sync_state <= sync0;
+					 vma <= '1';
+		  END CASE;
+		  IF eind='1' AND eindd='0' THEN
+			sync_state <= sync7;
+		  END IF;
+		END IF;
+	  END IF;
+	END PROCESS;
+
+	PROCESS (clk, reset)
+	BEGIN
+		IF reset='0' THEN
+			S_state <= "00";
+			as <= '1';
+			rw <= '1';
+			uds <= '1';
+			lds <= '1';
+			uds2 <= '1';
+			lds2 <= '1';
+			clkena_e <= '0';
+			clkena_f <= '0';
+		ELSIF rising_edge(clk) THEN
+			IF S_state = "01" AND clkena_e = '1' THEN
+				uds2 <= uds_in;
+				lds2 <= lds_in;
+				data_write2 <= w_datatg68;
+			END IF;
+
+			IF ena7WRreg='1' THEN
+				CASE S_state IS
+					WHEN "00" =>
+						IF cpu_internal='0' AND chipset_cycle='1' THEN
+							uds <= uds_in;
+							lds <= lds_in;
+							uds2 <= '1';
+							lds2 <= '1';
+							as <= '0';
+							rw <= wr;
+							data_write <= w_datatg68;
+							addr <= cpuaddr;
+							IF aga = '1' AND cpu(1) = '1' AND longword = '1' AND cpu_write = '1' AND cpuaddr(1 downto 0) = "00" AND sel_chip = '1' THEN
+								-- 32 bit write
+								clkena_e <= '1';
+							END IF;
+							S_state <= "01";
+						END IF;
+					WHEN "01" =>
+						clkena_e <= '0';
+						S_state <= "10";
+					WHEN "10" =>
+						IF waitm='0' OR (vma='0' AND sync_state=sync9) THEN
+							S_state <= "11";
+						END IF;
+					WHEN "11" =>
+						IF clkena_f = '1' THEN
+							clkena_f <= '0';
+							r_data <= data_read2;
+						END IF;
+					WHEN OTHERS => null;
+				END CASE;
+			ELSIF ena7RDreg='1' THEN
+				clkena_f <= '0';
+				CASE S_state IS
+					WHEN "00" =>
+						cpuIPL <= IPL;
+					WHEN "01" =>
+					WHEN "10" =>
+						cpuIPL <= IPL;
+						waitm <= dtack;
+					WHEN "11" =>
+						as <= '1';
+						rw <= '1';
+						uds <= '1';
+						lds <= '1';
 						uds2 <= '1';
 						lds2 <= '1';
-						as <= '0';
-						rw <= wr;
-						data_write <= w_datatg68;
-						addr <= cpuaddr;
-						IF aga = '1' AND cpu(1) = '1' AND longword = '1' AND state = "11" AND cpuaddr(1 downto 0) = "00" AND sel_chip = '1' THEN
-							-- 32 bit write
-							clkena_e <= '1';
+						IF clkena_e = '0' THEN
+							r_data <= data_read;
 						END IF;
-						S_state <= "01";
-					END IF;
-				WHEN "01" =>
-					clkena_e <= '0';
-					S_state <= "10";
-				WHEN "10" =>
-					IF waitm='0' OR (vma='0' AND sync_state=sync9) THEN
-						S_state <= "11";
-					END IF;
-				WHEN "11" =>
-					IF clkena_f = '1' THEN
-						clkena_f <= '0';
-						r_data <= data_read2;
-					END IF;
-				WHEN OTHERS => null;
-			END CASE;
-		ELSIF ena7RDreg='1' THEN
-			clkena_f <= '0';
-			CASE S_state IS
-				WHEN "00" =>
-					cpuIPL <= IPL;
-				WHEN "01" =>
-				WHEN "10" =>
-					cpuIPL <= IPL;
-					waitm <= dtack;
-				WHEN "11" =>
-					as <= '1';
-					rw <= '1';
-					uds <= '1';
-					lds <= '1';
-					uds2 <= '1';
-					lds2 <= '1';
-					IF clkena_e = '0' THEN
-						r_data <= data_read;
-					END IF;
 
-					clkena_e <= '1';
-					-- AMR - can't do 32-bit read when reading NMI vector
-					IF aga = '1' AND sel_nmi_vector='0' and cpu(1) = '1' AND longword = '1' AND state(0) = '0' AND cpuaddr(1 downto 0) = "00" AND (sel_chip = '1' OR sel_kick = '1') THEN
-						-- 32 bit read
-						clkena_f <= '1';
-					END IF;
-					IF clkena = '1' THEN
-						S_state <= "00";
-						clkena_e <= '0';
-					END IF;
-				WHEN OTHERS => null;
-			END CASE;
+						clkena_e <= '1';
+						-- AMR - can't do 32-bit read when reading NMI vector
+						IF aga = '1' AND sel_nmi_vector='0' and cpu(1) = '1' AND longword = '1' AND state(0) = '0' AND cpuaddr(1 downto 0) = "00" AND (sel_chip = '1' OR sel_kick = '1') THEN
+							-- 32 bit read
+							clkena_f <= '1';
+						END IF;
+						IF clkena = '1' THEN
+							S_state <= "00";
+							clkena_e <= '0';
+						END IF;
+					WHEN OTHERS => null;
+				END CASE;
+			END IF;
 		END IF;
-	END IF;
-END PROCESS;
+	END PROCESS;
+
+end block;
 
 END;
