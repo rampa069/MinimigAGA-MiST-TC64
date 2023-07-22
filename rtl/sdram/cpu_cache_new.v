@@ -604,7 +604,7 @@ always @ (posedge clk) begin
           sdr_sm_bs <= #1 { snoop_bs[1:0], 2'b00 };
         end else begin
           sdr_sm_mem_dat_w <= #1 snoop_dat_w;
-				  sdr_sm_bs <= #1 snoop_bs;
+          sdr_sm_bs <= #1 snoop_bs;
         end
         sdr_sm_iram0_we <= #1 sdr_itag0_match && sdr_itag0_valid;
         sdr_sm_iram1_we <= #1 sdr_itag1_match && sdr_itag1_valid;

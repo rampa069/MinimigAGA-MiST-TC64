@@ -422,7 +422,8 @@ always @(posedge sysclk) begin
 
 	// Writebuffer will defer to RTG on slot 2, and avoid using slot 2 when a refresh is pending.
 	wb_reservertg <= rtgce && writebufferAddr[24:23]==rtgAddr[24:23] ? 1'b1 : 1'b0;
-	wb_slot1ok <= !zatn && (slot2_type == IDLE || slot2_bank != writebufferAddr[24:23]) ? 1'b1 : 1'b0;
+//	wb_slot1ok <= !zatn && (slot2_type == IDLE || slot2_bank != writebufferAddr[24:23]) ? 1'b1 : 1'b0;
+	wb_slot1ok <= (slot2_type == IDLE || slot2_bank != writebufferAddr[24:23]) ? 1'b1 : 1'b0;
 	wb_slot2ok <= !refresh_pending && (|writebufferAddr[24:23] // Reserve bank 0 for slot 1
 	           && (slot1_type == IDLE || slot1_bank != writebufferAddr[24:23])) ? 1'b1 : 1'b0;
 

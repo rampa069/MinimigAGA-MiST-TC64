@@ -135,6 +135,7 @@ SIGNAL turbokick_d      : std_logic := '0';
 SIGNAL turboslow_d      : std_logic := '0';
 SIGNAL slower           : std_logic_vector(2 downto 0);
 
+signal datatg68_selram  : std_logic;
 SIGNAL datatg68_c       : std_logic_vector(15 downto 0);
 SIGNAL datatg68         : std_logic_vector(15 downto 0);
 SIGNAL w_datatg68       : std_logic_vector(15 downto 0);
@@ -222,16 +223,18 @@ sel_eth<='0';
 			z3ram3_ena <= ziiiram3_active;
 
 			sel_akiko_d<=sel_akiko;
-			sel_undecoded_d<=sel_undecoded;
+			sel_undecoded_d<=sel_32 and not sel_ram;
 		END IF;
 	END PROCESS;
 
-	datatg68 <= fromram WHEN cpu_internal='0' AND sel_ram_d='1' and block_turbo='0' AND sel_nmi_vector='0' ELSE datatg68_c;
+--	datatg68 <= fromram WHEN cpu_internal='0' AND sel_ram_d='1' and block_turbo='0' AND sel_nmi_vector='0' ELSE datatg68_c;
+	datatg68 <= fromram WHEN datatg68_selram='1' else datatg68_c;
 
 	-- Register incoming data
 	process(clk) begin
 		if rising_edge(clk) then
-			if sel_undecoded = '1' then
+			datatg68_selram <= sel_ram and (not cpu_internal) and (not block_turbo) and (not sel_nmi_vector); -- AMR - remove sel_nmi_vector's decoding from the mux path
+			if sel_undecoded_d = '1' then
 				datatg68_c <= X"FFFF";
 			elsif sel_akiko_d = '1' then
 				datatg68_c <= akiko_q;
@@ -247,12 +250,16 @@ sel_eth<='0';
 	sel_32 <= '1' when cpu(1)='1' and cpuaddr(31 downto 24)/=X"00" and cpuaddr(31 downto 24)/=X"ff" else '0'; -- Decode 32-bit space, but exclude interrupt vectors
 --	sel_z3ram       <= '1' WHEN (cpuaddr(31 downto 24)=z3ram_base) else '0'; -- AND z3ram_ena='1' ELSE '0';
 -- First block of ZIII RAM - 0x40000000 - 0x40ffffff
-	sel_z3ram       <= '1' WHEN (cpuaddr(31 downto 30)="01") and cpuaddr(26 downto 24)="000" AND z3ram_ena='1' ELSE '0';
+	sel_z3ram       <= '1' WHEN (cpuaddr(31 downto 30)="01") and cpuaddr(26 downto 24)="000" else '0'; -- AND z3ram_ena='1' ELSE '0';
 -- Second block of ZIII RAM - 32 meg from 0x42000000 - 0x43ffffff
-	sel_z3ram2      <= '1' WHEN (cpuaddr(31 downto 30)="01") and cpuaddr(25)='1' AND z3ram2_ena='1' ELSE '0';
+	sel_z3ram2      <= '1' WHEN (cpuaddr(31 downto 30)="01") and cpuaddr(25)='1' else '0'; -- AND z3ram2_ena='1' ELSE '0';
 -- Third block of ZIII RAM - either 2 or 4 meg, starting at either 0x41000000 or 0x44000000
-	sel_z3ram3      <= '1' WHEN (cpuaddr(31 downto 30)="01") and cpuaddr(26)=z3ram2_ena and cpuaddr(24)=not z3ram2_ena and z3ram3_ena='1' ELSE '0';
-	sel_z2ram       <= '1' WHEN (cpuaddr(31 downto 24) = X"00") AND ((cpuaddr(23 downto 21) = "001") OR (cpuaddr(23 downto 21) = "010") OR (cpuaddr(23 downto 21) = "011") OR (cpuaddr(23 downto 21) = "100")) AND z2ram_ena='1' ELSE '0';
+	sel_z3ram3      <= '1' WHEN (cpuaddr(31 downto 30)="01") and (cpuaddr(26)='1' or cpuaddr(24)='1') else '0'; -- and z3ram3_ena='1' ELSE '0';
+	sel_z2ram       <= '1' WHEN (cpuaddr(31 downto 24) = X"00")
+	                         AND ((cpuaddr(23 downto 21) = "001")
+	                           OR (cpuaddr(23 downto 21) = "010")
+	                           OR (cpuaddr(23 downto 21) = "011")
+	                           OR (cpuaddr(23 downto 21) = "100")) else '0'; --  AND z2ram_ena='1' ELSE '0';
 	--sel_eth         <= '1' WHEN (cpuaddr(31 downto 24) = eth_base) AND eth_cfgd='1' ELSE '0';
 	sel_chip        <= '1' WHEN (cpuaddr(31 downto 24) = X"00") AND (cpuaddr(23 downto 21)="000") ELSE '0'; --$000000 - $1FFFFF
 	sel_chipram     <= '1' WHEN sel_chip = '1' AND turbochip_d='1' ELSE '0';
@@ -262,21 +269,19 @@ sel_eth<='0';
 	sel_slowram     <= '1' WHEN sel_slow='1' AND turboslow_d='1' ELSE '0';
 	sel_cart        <= '1' WHEN (cpuaddr(31 downto 24) = X"00") AND (cpuaddr(23 downto 20)="1010") ELSE '0'; -- $A00000 - $A7FFFF (actually matches up to $AFFFFF)
 	sel_audio       <= '1' WHEN (cpuaddr(31 downto 24) = X"00") AND (cpuaddr(23 downto 18)="111011") ELSE '0'; -- $EC0000 - $EFFFFF
-	sel_undecoded   <= '1' WHEN sel_32='1' and sel_z3ram='0' and sel_z3ram2='0' and sel_z3ram3='0' else '0';
+--	sel_undecoded   <= '1' WHEN sel_32='1' and (sel_z3ram and z3ram_ena)='0' and (sel_z3ram2 and z3ram2_ena)='0' and (sel_z3ram3 and z3ram3_ena)='0' else '0';
 	sel_ram         <= '1' WHEN (
-         sel_z2ram='1'
-      OR sel_z3ram='1'
-      OR sel_z3ram2='1'
-      OR sel_z3ram3='1'
+         (sel_z2ram='1' and z2ram_ena='1')
+      OR (sel_z3ram='1' and z3ram_ena='1')
+      OR (sel_z3ram2='1' and z3ram2_ena='1')
+      OR (sel_z3ram3='1' and z3ram3_ena='1')
       OR sel_chipram='1'
       OR sel_slowram='1'
       OR sel_kickram='1'
       OR sel_audio='1'
     ) ELSE '0';
 
-  cache_inhibit <= '1' WHEN sel_kickram='1' ELSE '0';
-
-  ramcs <= NOT (NOT cpu_internal AND sel_ram_d AND NOT sel_nmi_vector) OR slower(0) or block_turbo;
+  ramcs <= NOT datatg68_selram or slower(0); -- (NOT cpu_internal AND sel_ram_d AND NOT sel_nmi_vector) OR slower(0) or block_turbo;
 
   cpustate <= longword&clkena&slower(1 downto 0)&ramcs&state(1 downto 0);
   ramlds <= lds_in;
@@ -376,6 +381,7 @@ PROCESS (clk) BEGIN
       turbokick_d <= turbokick;
       turboslow_d <= turbochipram OR aga;
       cacheline_clr <= ((turbochipram or turbokick) XOR turbochip_d);
+      cache_inhibit <= sel_kickram;
     END IF;
     sel_ram_d<=sel_ram;
   END IF;
@@ -439,7 +445,7 @@ end process;
 
 buslogic : block
 	signal throttle_sel     : std_logic_vector(1 downto 0);
-	signal throttle         : std_logic_vector(1 downto 0);
+	signal throttle         : std_logic_vector(2 downto 0);
 	signal chipset_cycle    : std_logic;
 	SIGNAL vpad             : std_logic;
 	SIGNAL waitm            : std_logic;
@@ -453,7 +459,7 @@ begin
 
 	clkena <= '1' WHEN (clkena_in='1' AND slower(0)='0' and
 					   (cpu_internal='1' OR (ena7RDreg='1' AND clkena_e='1') OR (ena7WRreg='1' AND clkena_f='1') OR
-						(ramready='1' and block_turbo='0') OR sel_undecoded_d='1' OR akiko_ack='1'))
+					   (ramready='1' and block_turbo='0') OR sel_undecoded_d='1' OR akiko_ack='1'))
 				  ELSE '0';
 
     -- AMR - attempt to imitate A1200 speed more closely on chipram fetches:
@@ -479,8 +485,8 @@ begin
 
     process (clk) begin
 	  if rising_edge(clk) then
-		if clkena='1' or freeze='1' then
-		  throttle<=throttle_sel;
+		if (clkena='1' or freeze='1') and cpu_write='0' and block_turbo='0' then
+		  throttle<=throttle_sel(1) & throttle_sel;
 		elsif clkena_in='1' then
 		  throttle<='0'&throttle(throttle'high downto 1);
 		end if;
@@ -498,7 +504,7 @@ begin
 	END PROCESS;
 
 	chipset_cycle <= '1' when (sel_ram='0' OR sel_nmi_vector='1' or block_turbo='1')
-		AND sel_akiko='0' and sel_undecoded='0' else '0';
+		AND sel_akiko='0' and sel_undecoded_d='0' else '0';
 
 	PROCESS (clk) BEGIN
 	  IF rising_edge(clk) THEN

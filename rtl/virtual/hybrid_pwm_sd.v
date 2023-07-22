@@ -111,10 +111,10 @@ reg [15:0] sigma_l = 16'hf000;
 reg [15:0] sigma_r = 16'hf000;
 
 reg muxtoggle;
-wire [15:0] mux_in;
-assign mux_in = (init | terminated) ? {initctr_l[13:0],2'b00} : ( muxtoggle ? d_r : d_l );
+reg [15:0] mux_in;
 
 always @(posedge clk) begin
+	mux_in <= (init | terminated) ? {initctr_l[13:0],2'b00} : ( muxtoggle ? d_l : d_r );
 	if(pwmcounter==5'b11111) // Update thresholds as PWM cycle ends
 	begin	
 		scaledin<=33'h8000000 // (1<<(16-5))<<16     offset to keep centre aligned.
