@@ -497,10 +497,15 @@ agnus_beamcounter  bc1
 
 assign vblank_out = vbl;
 
-//horizontal strobe for Denise
-//in real Amiga Denise's hpos counter seems to be advanced by 4 CCKs in regards to Agnus' one
-//Minimig isn't cycle exact and compensation for different data delay in implemented Denise's video pipeline is required
-assign strhor_denise = hpos==(6*2-3) && (vpos > 8 || ecs) ? 1'b1 : 1'b0; // AMR - adjust denise's hpos here instead of starting its hpos counter at 2
+// horizontal strobe for Denise
+// in real Amiga Denise's hpos counter seems to be advanced by 4 CCKs in regards to Agnus' one
+// Minimig isn't cycle exact and compensation for different data delay in implemented Denise's video pipeline is required
+
+// (AMR - On real hardware these are signalled via dummy accesses over the RGA bus to STRHOR, STRVBL, STREQU and STRLONG
+// during the DMA cycles reserved for refresh.  Minimig re-uses those DMA slots for turbo floppy, so we need an
+// out-of-band channel for the strobes. )
+
+assign strhor_denise = hpos==(6*2-1) && (vpos > 8 || ecs) ? 1'b1 : 1'b0; // hpos is freerunning during EQU rows on OCS, fixed in ECS+
 assign strhor_paula = hpos==(6*2+1) ? 1'b1 : 1'b0; //hack
 
 //--------------------------------------------------------------------------------------

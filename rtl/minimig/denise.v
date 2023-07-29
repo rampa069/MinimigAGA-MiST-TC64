@@ -97,10 +97,13 @@ assign data_out = col_out | deniseid_out | rgb_out;
 //--------------------------------------------------------------------------------------
 
 // Denise horizontal counter counting range: $01-$E3 CCKs (2-455 lores pixels)
+// AMR - this counter should run from 2 to 0x1c7, except on OCS Denise where it's freerunning during serration/equalisation pulses.
+// (Ray of Hope 2's DIW is enabled accidentally during this freerunning period, but also on KS 3 due to its odd initial copperlist.)
+
 always @(posedge clk)
   if (clk7_en) begin
     if (strhor)
-      hpos <= 9'd0; // AMR - This counter clearly shouldn't start at 2.  What will this break, I wonder?
+      hpos <= 9'd2;
     else
       hpos <= hpos + 9'd1;
   end
@@ -291,14 +294,13 @@ assign deniseid_out = reg_address_in[8:1]==DENISEID[8:1] ? aga ? 16'h00f8 : ecs 
 
 // generate window enable signal
 // true when beamcounter satisfies horizontal diwstrt/diwstop limits
-// AMR - reverse comparison so that areas where HDIWSTART==HDIWSTOP
-// will be correctly blanked in brdrblnk mode.  (display_ena overrides this anyway)
+// AMR - DIWSTART should win here - FIXME - revisit the border blanking problem.
 always @(posedge clk)
   if (clk7_en) begin
-    if (hpos[8:0]==hdiwstop[8:0])
-      window <= 0;
-    else if (hpos[8:0]==hdiwstrt[8:0])
+    if (hpos[8:0]==hdiwstrt[8:0])
       window <= 1;
+    else if (hpos[8:0]==hdiwstop[8:0])
+      window <= 0;
   end
 
 reg window_ena;
@@ -327,14 +329,19 @@ denise_bitplanes bplm0
   .bpldata(bpldata_out)
 );
 
-assign bpldata[1] = l_bpu > 0 ? bpldata_out[1] : 1'b0;
-assign bpldata[2] = l_bpu > 1 ? bpldata_out[2] : 1'b0;
-assign bpldata[3] = l_bpu > 2 ? bpldata_out[3] : 1'b0;
-assign bpldata[4] = l_bpu > 3 ? bpldata_out[4] : 1'b0;
-assign bpldata[5] = l_bpu > 4 ? bpldata_out[5] : 1'b0;
-assign bpldata[6] = l_bpu > 5 ? bpldata_out[6] : 1'b0;
-assign bpldata[7] = l_bpu > 6 ? bpldata_out[7] : 1'b0;
-assign bpldata[8] = l_bpu > 7 ? bpldata_out[8] : 1'b0;
+// AMR - mask bpldata against window_ena, so that the HAM generator always receives
+// the background colour outside the display window, to prevent the HAM generator
+// reacting to pixels scrolled off the left hand side of the screen.
+// (HAM would arguably be more useful if it could react to those pixels!)
+// Fixes Desire: Hamazing's "Hambarger" scene.
+assign bpldata[1] = window_ena && (l_bpu > 0) ? bpldata_out[1] : 1'b0;
+assign bpldata[2] = window_ena && (l_bpu > 1) ? bpldata_out[2] : 1'b0;
+assign bpldata[3] = window_ena && (l_bpu > 2) ? bpldata_out[3] : 1'b0;
+assign bpldata[4] = window_ena && (l_bpu > 3) ? bpldata_out[4] : 1'b0;
+assign bpldata[5] = window_ena && (l_bpu > 4) ? bpldata_out[5] : 1'b0;
+assign bpldata[6] = window_ena && (l_bpu > 5) ? bpldata_out[6] : 1'b0;
+assign bpldata[7] = window_ena && (l_bpu > 6) ? bpldata_out[7] : 1'b0;
+assign bpldata[8] = window_ena && (l_bpu > 7) ? bpldata_out[8] : 1'b0;
 
 // instantiate playfield module
 denise_playfields plfm0

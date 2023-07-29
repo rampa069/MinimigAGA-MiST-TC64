@@ -379,7 +379,7 @@ PROCESS (clk) BEGIN
     ELSIF cpu_internal='1' THEN -- No mem access, so safe to switch chipram access mode
       turbochip_d <= turbochipram or turbokick; -- AMR - temporary hack
       turbokick_d <= turbokick;
-      turboslow_d <= turbochipram OR aga;
+      turboslow_d <= turbochipram OR turbokick; -- AMR aga;
       cacheline_clr <= ((turbochipram or turbokick) XOR turbochip_d);
       cache_inhibit <= sel_kickram;
     END IF;
@@ -455,6 +455,7 @@ buslogic : block
 	SIGNAL eindd            : std_logic;
 	TYPE   sync_states      IS (sync0, sync1, sync2, sync3, sync4, sync5, sync6, sync7, sync8, sync9);
 	SIGNAL sync_state       : sync_states;
+	signal sel_chip_d       : std_logic; 
 begin
 
 	clkena <= '1' WHEN (clkena_in='1' AND slower(0)='0' and
@@ -468,18 +469,23 @@ begin
 	-- Turbo set to kick only: mild throttling
 	-- Turbo set to chip only: more severe throttling
 	-- Turbo set to none: severe throttling selected but has no effect since all chipram accesses go through the slow path.
-	
+
 	-- When throttling is enabled:
 	--   Data reads go through the slow path as normal
 	--   Fetches go via the cache (unless CACR says otherwise) but the CPU is slowed by the throttling
 	--   Writes go through the fast path (since real AGA hardware buffers writes.) but again the CPU is slowed by throttling.
 
+	-- Need to decide how to handle C00000 RAM and Fast RAM in throttled modes
+	--   For compatibility, C00000 RAM should probably run at chip RAM speeds
+	--   Fast RAM should perhaps be throttled in Chip (i.e. A1200) mode, but not otherwise?
+	
     process (clk) begin
       IF rising_edge(clk) THEN
 		-- If throttling is enabled, block turbo for CPU data reads, and instruction fetch if cache is disabled.
-		throttle_sel(0) <= freeze or not (turbochipram and turbokick);	
-		throttle_sel(1) <= freeze or not turbokick;
-        block_turbo<=sel_chip and throttle_sel(0) and (cpu_read or (cpu_fetch and cpu_disablecache));
+		throttle_sel(0) <= freeze or (turbochipram xor turbokick);
+		throttle_sel(1) <= freeze or (turbochipram and not turbokick);
+		sel_chip_d  <= sel_chip;
+        block_turbo <= sel_chip_d and throttle_sel(0) and (cpu_read or (cpu_fetch and cpu_disablecache));
       end if;
 	end process;
 
