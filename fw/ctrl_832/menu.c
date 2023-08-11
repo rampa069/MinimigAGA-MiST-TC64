@@ -84,7 +84,7 @@ const char *config_memory_fast_msg[] = {"none  ", "2.0 MB", "4.0 MB", "Maximum"}
 const char *config_cpu_msg[] = {"68000 ", "68010", "-","020 alpha"};
 const char *config_hdf_msg[] = {"Disabled", "Hardfile (disk img)", "MMC/SD card", "MMC/SD partition 1", "MMC/SD partition 2", "MMC/SD partition 3", "MMC/SD partition 4"};
 const char *config_chipset_msg[] = {"OCS-A500", "OCS-A1000", "ECS", "---", "---", "---", "AGA", "---"};
-const char *config_turbo_msg[] = {"none", "CHIPRAM", "KICK", "BOTH"};
+const char *config_turbo_msg[] = {"\004\005\005\005\005\006", "\007\007\005\005\005\006", "\007\007\007\007\005\006", "\007\007\007\007\007\007"};
 const char *config_cd32pad_msg[] =  {"OFF", "ON"};
 
 char *config_autofire_msg[] = {"        AUTOFIRE OFF", "        AUTOFIRE FAST", "        AUTOFIRE MEDIUM", "        AUTOFIRE SLOW"};

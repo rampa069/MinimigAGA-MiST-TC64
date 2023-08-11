@@ -21,7 +21,7 @@ key release event always matches the key press event.
 The keytable currently contains 32-bit ints so plenty of room
 for storing layer details in the map.
 If just two layers will be sufficient, could simply store a second
-entry shifted left 16 bits, accessed when the commodore key is held.
+entry shifted left 16 bits, accessed when the "Fn" key is held.
 Use Run/Stop as an "Fn" key
 */
 
@@ -253,7 +253,7 @@ void c64keys_inthandler()
 									if(status&0x8000)
 										amiqualdown=0x61;
 									else
-									amiqualup=0x61|0x80;
+										amiqualup=0x61|0x80;
 									break;
 								default:
 									amicode=specialtable[amicode&0xff].shifted;

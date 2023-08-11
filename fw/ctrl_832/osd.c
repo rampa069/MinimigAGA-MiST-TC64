@@ -76,6 +76,12 @@ const char *supporters[]=
 	"DJ Hard Rich",
 	"Dennis de Weerd",
 	"Mika Simonen",
+	"Sander Raaijmakers",
+	"Sanstarr",
+	"Gordholm",
+	"Marc Honey",
+	"Andre Wosten",
+	"Paul Andrzejczak",
 
 	"+ all other contributors.",
 	"Thanks also to Espen Skog,",

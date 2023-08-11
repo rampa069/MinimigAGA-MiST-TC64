@@ -75,7 +75,7 @@ bootcustominit.h: bootcustominit.s
 	vasmm68k_mot -Fbin bootcustominit.s -o bootcustominit.bin
 	xxd -i bootcustominit.bin > bootcustominit.h
 
-$(PROJECT).bin: Makefile $(ALL_SOURCES)
+$(PROJECT).bin: Makefile $(BUILD_DIR) $(ALL_SOURCES)
 	$(LD) $(LDFLAGS) -M $(PROJECT).map -o $@ $(LIBDIR)/crt0.a $(LIBDIR)/lib832.a $(ALL_SOURCES)
 
 # clean

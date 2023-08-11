@@ -8,16 +8,3 @@ int putchar(int c)
 	return(c);
 }
 
-
-int puts(const unsigned char *msg)
-{
-	int c;
-	int result=0;
-	while(c=*msg++)
-	{
-		putchar(c);
-		++result;
-	}
-	return(result);
-}
-
