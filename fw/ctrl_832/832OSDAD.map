@@ -1,0 +1,4334 @@
+           (0x2000 bytes)
+0x00002000 Section: ../../EightThirtyTwo/lib832/crt0.a,.text.startup
+0x00002000    _start
+0x0000200d    _InterruptVector
+0x0000201d    .start1
+0x00002023    .start2
+0x00000000    _STACKSIZE
+0x00000000    _STACKTOP
+           (0x29 bytes)
+0x00002029 Section: ../../EightThirtyTwo/lib832/crt0.a,.text.interrupt
+0x00002029    _interrupt
+           (0x1 bytes)
+0x0000202a Section: ../../EightThirtyTwo/lib832/crt0.a,.text.premain2
+0x0000202a    _premain2
+0x0000202a    .endloop2
+           (0x3 bytes)
+0x0000202d Section: ../../EightThirtyTwo/lib832/crt0.a,.text.premain
+0x0000202d    _premain
+0x0000203c    .stackloop
+0x0000204c    .clrwordloop
+0x00002059    .clrbyteloop
+0x00002068    .ctorloop
+0x00002071    .ctordone
+0x0000207d    .dtorloop
+0x00002088    .endloop
+           (0x5f bytes)
+0x0000208c Section: (null),.text.setstack
+0x0000208c    _setstack
+0x00000000    _STACKTOP
+0x0000208d    __setstack
+0x00002095    __restorestack
+           (0xe bytes)
+0x0000209a Section: ../../EightThirtyTwo/lib832/lib832.a,.text.0
+0x0000209a    l2
+0x000020c1    l6
+0x000020c7    l20
+0x000020e9    l23
+0x000020ef    l21
+0x000020fa    l15
+0x000020fd    l16
+0x00002107    l24
+0x00002113    l17
+0x00002130    l25
+           (0xa3 bytes)
+0x0000213d Section: ../../EightThirtyTwo/lib832/lib832.a,.rodata.1
+0x0000213d    l4
+           (0x11 bytes)
+0x0000214e Section: ../../EightThirtyTwo/lib832/lib832.a,.text.2
+0x0000214e    l26
+0x0000215e    l33
+0x00002175    l34
+           (0x31 bytes)
+0x0000217f Section: ../../EightThirtyTwo/lib832/lib832.a,.text.3
+0x0000217f    __printfcore
+0x000021a8    l73
+0x00002223    l42
+0x0000222b    l46
+0x00002233    l47
+0x0000223b    l50
+0x00002257    l51
+0x0000225f    l52
+0x00002276    l53
+0x00002288    l54
+0x00002290    l59
+0x0000229c    l60
+0x000022bd    l62
+0x000022e7    l67
+0x00002308    l40
+0x0000231d    l71
+0x00002329    l72
+0x0000233c    l74
+           (0x1c9 bytes)
+0x00002348 Section: ../../EightThirtyTwo/lib832/lib832.a,.text.5
+0x00002348    _printf
+           (0x15 bytes)
+0x0000235d Section: ../../EightThirtyTwo/lib832/lib832.a,.text.6
+0x0000235d    l77
+0x0000237f    l80
+0x00002381    l81
+           (0x28 bytes)
+0x00002385 Section: ../../EightThirtyTwo/lib832/lib832.a,.text.7
+0x00002385    _sprintf
+           (0x34 bytes)
+0x000023b9 Section: ../../EightThirtyTwo/lib832/lib832.a,.text.8
+0x000023b9    _snprintf
+           (0x3e bytes)
+0x000023f7 Section: ../../EightThirtyTwo/lib832/lib832.a,.text.1
+0x000023f7    _puts
+0x00002406    l11
+0x00002414    l12
+           (0x25 bytes)
+0x0000241c Section: ../../EightThirtyTwo/lib832/lib832.a,.text.strncat
+0x0000241c    ___strncat
+0x0000241d    .finddst
+0x00002423    .cpy
+           (0x15 bytes)
+0x00002431 Section: ../../EightThirtyTwo/lib832/lib832.a,.text.strcat
+0x00002431    ___strcat
+0x00002432    .finddst2
+0x00002438    .cpy2
+           (0xe bytes)
+0x0000243f Section: ../../EightThirtyTwo/lib832/lib832.a,.text.strncmp
+0x0000243f    ___strncmp
+0x00002444    .loopstrncmp
+0x00002453    .endstrncmp
+           (0x1a bytes)
+0x00002459 Section: ../../EightThirtyTwo/lib832/lib832.a,.text.memcmp
+0x00002459    ___memcmp
+0x0000245e    .loopmemcmp
+0x0000246a    .endmemcmp
+           (0x17 bytes)
+0x00002470 Section: ../../EightThirtyTwo/lib832/lib832.a,.text.strncpy
+0x00002470    ___strncpy
+0x00002474    .strnloop
+0x0000247e    .done
+           (0x10 bytes)
+0x00002480 Section: ../../EightThirtyTwo/lib832/lib832.a,.text.strcpy
+0x00002480    _strcpy
+0x00002486    .strcpyloop
+           (0xd bytes)
+0x0000248d Section: ../../EightThirtyTwo/lib832/lib832.a,.text.strlen
+0x0000248d    ___strlen
+0x00002491    .loopstrlen
+           (0xc bytes)
+0x00002499 Section: ../../EightThirtyTwo/lib832/lib832.a,.text.tolower
+0x00002499    ___tolower
+           (0x12 bytes)
+0x000024ab Section: ../../EightThirtyTwo/lib832/lib832.a,.text.memset
+0x000024ab    ___memset
+0x000024af    .loopmemset
+           (0xd bytes)
+0x000024b8 Section: ../../EightThirtyTwo/lib832/lib832.a,.text.a
+0x000024b8    _tolower
+           (0x9 bytes)
+0x000024c1 Section: ../../EightThirtyTwo/lib832/lib832.a,.text._div_32by32
+0x000024c1    _div_u32byu32
+0x000024d3    .start
+0x000024e1    .realign
+0x000024e4    .next
+0x000024f1    .end
+0x000024f5    _div_s32bys32
+           (0x65 bytes)
+0x00002526 Section: 832obj/hardware.o,.text.0
+0x00002526    _CheckButton
+0x00002541    l3
+0x00002543    l4
+           (0x23 bytes)
+0x00002549 Section: 832obj/hardware.o,.text.1
+0x00002549    _GetTimer
+           (0x1a bytes)
+0x00002563 Section: 832obj/hardware.o,.text.2
+0x00002563    _CheckTimer
+0x00002582    l11
+0x00002584    l8
+           (0x23 bytes)
+0x00002586 Section: 832obj/hardware.o,.text.3
+0x00002586    _WaitTimer
+0x0000259a    l17
+0x000025a4    l18
+           (0x22 bytes)
+0x000025a8 Section: 832obj/hardware.o,.text.4
+0x000025a8    _ConfigMisc
+           (0xc bytes)
+0x000025b4 Section: 832obj/hardware.o,.text.5
+0x000025b4    _Reconfigure
+           (0xc bytes)
+0x000025c0 Section: 832obj/hardware.o,.text.6
+0x000025c0    _EnableIECSerial
+           (0x1e bytes)
+0x000025de Section: 832obj/hardware.o,.text.7
+0x000025de    _DisableIECSerial
+           (0x1e bytes)
+0x000025fc Section: 832obj/config.o,.text.0
+0x000025fc    _ClearKickstartMirrorE0
+0x0000260b    l8
+           (0x1d bytes)
+0x00002619 Section: 832obj/config.o,.text.1
+0x00002619    _ClearVectorTable
+0x00002621    l16
+           (0x15 bytes)
+0x0000262e Section: 832obj/config.o,.text.2
+0x0000262e    _UploadKickstart
+0x00002692    l23
+0x000026e0    l30
+0x000026f8    l31
+0x0000273b    l36
+0x0000278d    l41
+0x000027e3    l45
+0x00002841    l48
+0x0000289a    l51
+0x000028fb    l54
+0x00002916    l34
+0x0000292b    l57
+0x00002939    l18
+           (0x315 bytes)
+0x00002943 Section: 832obj/config.o,.rodata.3
+0x00002943    l24
+           (0x12 bytes)
+0x00002955 Section: 832obj/config.o,.rodata.4
+0x00002955    l32
+           (0x18 bytes)
+0x0000296d Section: 832obj/config.o,.rodata.5
+0x0000296d    l38
+           (0x16 bytes)
+0x00002983 Section: 832obj/config.o,.rodata.6
+0x00002983    l42
+           (0x1c bytes)
+0x0000299f Section: 832obj/config.o,.rodata.7
+0x0000299f    l56
+           (0x13 bytes)
+0x000029b2 Section: 832obj/config.o,.rodata.8
+0x000029b2    l58
+           (0xc bytes)
+0x000029be Section: 832obj/config.o,.rodata.9
+0x000029be    l20
+           (0x4 bytes)
+0x000029c2 Section: 832obj/config.o,.rodata.a
+0x000029c2    l21
+           (0xd bytes)
+0x000029cf Section: 832obj/config.o,.rodata.b
+0x000029cf    l25
+           (0x25 bytes)
+0x000029f4 Section: 832obj/config.o,.rodata.c
+0x000029f4    l28
+           (0xc bytes)
+0x00002a00 Section: 832obj/config.o,.text.d
+0x00002a00    _UploadExtROM
+0x00002a77    l67
+0x00002a9a    l63
+0x00002abc    l70
+0x00002abe    l59
+           (0xc8 bytes)
+0x00002ac8 Section: 832obj/config.o,.rodata.e
+0x00002ac8    l69
+           (0x16 bytes)
+0x00002ade Section: 832obj/config.o,.rodata.f
+0x00002ade    l71
+           (0x15 bytes)
+0x00002af3 Section: 832obj/config.o,.rodata.10
+0x00002af3    l61
+           (0x4 bytes)
+0x00002af7 Section: 832obj/config.o,.text.11
+0x00002af7    _UploadActionReplay
+0x00002b63    l79
+0x00002b65    l80
+0x00002b7a    l82
+0x00002b7c    l83
+0x00002b97    l85
+0x00002b99    l86
+0x00002be2    l75
+0x00002bf1    l72
+           (0x102 bytes)
+0x00002bf9 Section: 832obj/config.o,.rodata.12
+0x00002bf9    l77
+           (0x19 bytes)
+0x00002c12 Section: 832obj/config.o,.rodata.13
+0x00002c12    l88
+           (0x18 bytes)
+0x00002c2a Section: 832obj/config.o,.rodata.14
+0x00002c2a    l76
+           (0xc bytes)
+0x00002c36 Section: 832obj/config.o,.text.15
+0x00002c36    _SetConfigurationFilename
+0x00002c4d    l92
+0x00002c5f    l94
+           (0x2b bytes)
+0x00002c61 Section: 832obj/config.o,.rodata.16
+0x00002c61    l93
+           (0xd bytes)
+0x00002c6e Section: 832obj/config.o,.rodata.17
+0x00002c6e    l95
+           (0xc bytes)
+0x00002c7a Section: 832obj/config.o,.text.18
+0x00002c7a    _ConfigurationExists
+0x00002c87    l99
+0x00002ca2    l101
+0x00002caa    l96
+           (0x34 bytes)
+0x00002cae Section: 832obj/config.o,.text.19
+0x00002cae    _CheckConfiguration
+0x00002ce9    l112
+0x00002d00    l114
+0x00002d0e    l116
+0x00002d12    l110
+0x00002d14    l103
+           (0x6c bytes)
+0x00002d1a Section: 832obj/config.o,.text.1a
+0x00002d1a    _LoadConfiguration
+0x00002d48    l122
+0x00002d98    l130
+0x00002da0    l133
+0x00002db6    l136
+0x00002dd6    l138
+0x00002e1c    l142
+0x00002e35    l145
+0x00002e4a    l148
+0x00002e66    .cpyconfigwordloop3
+0x00002e72    l151
+0x00002f16    l153
+           (0x209 bytes)
+0x00002f23 Section: 832obj/config.o,.rodata.1b
+0x00002f23    l139
+           (0x24 bytes)
+0x00002f47 Section: 832obj/config.o,.rodata.1c
+0x00002f47    l140
+           (0x9 bytes)
+0x00002f50 Section: 832obj/config.o,.rodata.1d
+0x00002f50    l143
+           (0x26 bytes)
+0x00002f76 Section: 832obj/config.o,.rodata.1e
+0x00002f76    l146
+           (0x29 bytes)
+0x00002f9f Section: 832obj/config.o,.rodata.1f
+0x00002f9f    l149
+           (0x22 bytes)
+0x00002fc1 Section: 832obj/config.o,.rodata.20
+0x00002fc1    l134
+           (0x22 bytes)
+0x00002fe3 Section: 832obj/config.o,.rodata.21
+0x00002fe3    l125
+           (0x1b bytes)
+0x00002ffe Section: 832obj/config.o,.rodata.22
+0x00002ffe    l126
+           (0x1e bytes)
+0x0000301c Section: 832obj/config.o,.rodata.23
+0x0000301c    l154
+           (0x28 bytes)
+0x00003044 Section: 832obj/config.o,.rodata.24
+0x00003044    l155
+           (0x9 bytes)
+0x0000304d Section: 832obj/config.o,.rodata.25
+0x0000304d    l156
+           (0x9 bytes)
+0x00003056 Section: 832obj/config.o,.rodata.26
+0x00003056    l157
+           (0x9 bytes)
+0x0000305f Section: 832obj/config.o,.rodata.27
+0x0000305f    l158
+           (0x9 bytes)
+0x00003068 Section: 832obj/config.o,.rodata.28
+0x00003068    l159
+           (0xe bytes)
+0x00003076 Section: 832obj/config.o,.text.29
+0x00003076    _ApplyConfiguration
+0x00003092    l210
+0x000030dd    l173
+0x000030f9    l175
+0x0000310b    l177
+0x00003121    l170
+0x0000319d    l169
+0x000031c3    l184
+0x000031c5    l185
+0x000031e1    l188
+0x000031e6    l189
+0x0000320f    l192
+0x00003211    l193
+0x0000322d    l196
+0x00003232    l197
+0x00003248    l163
+0x000032fe    l201
+0x0000331e    l202
+0x00003367    l208
+0x0000336d    l205
+           (0x304 bytes)
+0x0000337a Section: 832obj/config.o,.rodata.2a
+0x0000337a    l172
+           (0x27 bytes)
+0x000033a1 Section: 832obj/config.o,.rodata.2b
+0x000033a1    l174
+           (0x17 bytes)
+0x000033b8 Section: 832obj/config.o,.rodata.2c
+0x000033b8    l176
+           (0x22 bytes)
+0x000033da Section: 832obj/config.o,.rodata.2d
+0x000033da    l178
+           (0x28 bytes)
+0x00003402 Section: 832obj/config.o,.rodata.2e
+0x00003402    l179
+           (0xe bytes)
+0x00003410 Section: 832obj/config.o,.rodata.2f
+0x00003410    l180
+           (0xd bytes)
+0x0000341d Section: 832obj/config.o,.rodata.30
+0x0000341d    l181
+           (0xc bytes)
+0x00003429 Section: 832obj/config.o,.rodata.31
+0x00003429    l203
+           (0x9 bytes)
+0x00003432 Section: 832obj/config.o,.rodata.32
+0x00003432    l209
+           (0x9 bytes)
+0x0000343b Section: 832obj/config.o,.text.33
+0x0000343b    _SaveConfiguration
+0x00003465    l217
+0x0000348e    l223
+0x000034a7    .cpysector_bufferwordloop6
+0x000034c1    l219
+0x0000353f    .cpysector_bufferwordloop7
+0x0000356a    l233
+0x00003577    l229
+0x00003581    l237
+0x00003583    l212
+           (0x14e bytes)
+0x00003589 Section: 832obj/config.o,.rodata.34
+0x00003589    l234
+           (0x1c bytes)
+0x000035a5 Section: 832obj/config.o,.rodata.35
+0x000035a5    l230
+           (0xf bytes)
+0x000035b4 Section: 832obj/config.o,.rodata.36
+0x000035b4    l231
+           (0x1d bytes)
+0x000035d1 Section: 832obj/config.o,.rodata.37
+0x000035d1    l236
+           (0x14 bytes)
+0x000035e5 Section: 832obj/config.o,.rodata.38
+0x000035e5    l225
+           (0x1f bytes)
+0x00003604 Section: 832obj/config.o,.rodata.39
+0x00003604    l226
+           (0x1f bytes)
+0x00003623 Section: 832obj/config.o,.rodata.3a
+0x00003623    l227
+           (0x28 bytes)
+0x0000364b Section: 832obj/config.o,.rodata.3b
+0x0000364b    l238
+           (0x17 bytes)
+0x00003662 Section: 832obj/config.o,.rodata.42
+0x00003662    l102
+           (0x9 bytes)
+0x0000366b Section: 832obj/fat.o,.text.0
+0x0000366b    _SwapPartitionBytes
+           (0x29 bytes)
+0x00003694 Section: 832obj/fat.o,.text.1
+0x00003694    _bprintfl
+           (0x18 bytes)
+0x000036ac Section: 832obj/fat.o,.text.2
+0x000036ac    _FindDrive
+0x000036d0    l10
+0x000036f5    l12
+0x0000370e    l15
+0x00003787    l23
+0x0000379b    l27
+0x000037d6    l29
+0x000037f1    l110
+0x000037f5    l31
+0x00003812    l109
+0x0000384a    l111
+0x00003864    l48
+0x0000387b    l51
+0x00003895    l54
+0x000038b0    l57
+0x000038f0    l61
+0x000038fd    l63
+0x0000390a    l65
+0x00003917    l67
+0x0000392a    l69
+0x00003934    l60
+0x00003976    l73
+0x00003991    l76
+0x000039bb    l77
+0x000039f4    l81
+0x00003a0b    l84
+0x00003a35    l85
+0x00003a65    l89
+0x00003ab4    l94
+0x00003b7d    l92
+0x00003c17    l97
+0x00003c19    l7
+           (0x577 bytes)
+0x00003c23 Section: 832obj/fat.o,.rodata.3
+0x00003c23    l40
+           (0xf bytes)
+0x00003c32 Section: 832obj/fat.o,.rodata.4
+0x00003c32    l41
+           (0xd bytes)
+0x00003c3f Section: 832obj/fat.o,.rodata.5
+0x00003c3f    l42
+           (0xd bytes)
+0x00003c4c Section: 832obj/fat.o,.rodata.6
+0x00003c4c    l49
+           (0x1d bytes)
+0x00003c69 Section: 832obj/fat.o,.rodata.8
+0x00003c69    l28
+           (0xc bytes)
+0x00003c75 Section: 832obj/fat.o,.rodata.9
+0x00003c75    l35
+           (0x15 bytes)
+0x00003c8a Section: 832obj/fat.o,.rodata.d
+0x00003c8a    l62
+           (0x5 bytes)
+0x00003c8f Section: 832obj/fat.o,.rodata.e
+0x00003c8f    l64
+           (0x6 bytes)
+0x00003c95 Section: 832obj/fat.o,.rodata.f
+0x00003c95    l66
+           (0x6 bytes)
+0x00003c9b Section: 832obj/fat.o,.rodata.10
+0x00003c9b    l68
+           (0x6 bytes)
+0x00003ca1 Section: 832obj/fat.o,.rodata.11
+0x00003ca1    l70
+           (0x8 bytes)
+0x00003ca9 Section: 832obj/fat.o,.rodata.12
+0x00003ca9    l75
+           (0x1b bytes)
+0x00003cc4 Section: 832obj/fat.o,.rodata.13
+0x00003cc4    l79
+           (0xe bytes)
+0x00003cd2 Section: 832obj/fat.o,.rodata.14
+0x00003cd2    l83
+           (0x16 bytes)
+0x00003ce8 Section: 832obj/fat.o,.rodata.15
+0x00003ce8    l87
+           (0xe bytes)
+0x00003cf6 Section: 832obj/fat.o,.rodata.16
+0x00003cf6    l90
+           (0x15 bytes)
+0x00003d0b Section: 832obj/fat.o,.rodata.17
+0x00003d0b    l96
+           (0x14 bytes)
+0x00003d1f Section: 832obj/fat.o,.rodata.18
+0x00003d1f    l95
+           (0x9 bytes)
+0x00003d28 Section: 832obj/fat.o,.rodata.21
+0x00003d28    l13
+           (0x9 bytes)
+0x00003d31 Section: 832obj/fat.o,.rodata.22
+0x00003d31    l16
+           (0x9 bytes)
+0x00003d3a Section: 832obj/fat.o,.rodata.23
+0x00003d3a    l55
+           (0x9 bytes)
+0x00003d43 Section: 832obj/fat.o,.rodata.24
+0x00003d43    l58
+           (0x9 bytes)
+0x00003d4c Section: 832obj/fat.o,.rodata.25
+0x00003d4c    l59
+           (0x19 bytes)
+0x00003d65 Section: 832obj/fat.o,.rodata.26
+0x00003d65    l71
+           (0x3 bytes)
+0x00003d68 Section: 832obj/fat.o,.text.27
+0x00003d68    l113
+0x00003dca    l117
+0x00003dcc    l114
+           (0x68 bytes)
+0x00003dd0 Section: 832obj/fat.o,.text.28
+0x00003dd0    _FileOpen
+0x00003e10    l121
+0x00003e33    l124
+0x00003e3c    l125
+0x00003e41    l171
+0x00003e4f    l172
+0x00003e7a    l136
+0x00003e80    l134
+0x00003e83    l137
+0x00003ee0    l146
+0x00003f2f    l150
+0x00003f31    l151
+0x00003f69    l145
+0x00003f6f    l153
+0x00003f81    l174
+0x00003f92    l154
+0x00003fb8    l162
+0x00003fbd    l160
+0x00003fd1    l165
+0x00003fd6    l166
+0x00003fd9    l161
+0x00003ff7    l173
+0x00004028    l118
+           (0x262 bytes)
+0x00004032 Section: 832obj/fat.o,.rodata.29
+0x00004032    l152
+           (0x11 bytes)
+0x00004043 Section: 832obj/fat.o,.rodata.2a
+0x00004043    l169
+           (0xf bytes)
+0x00004052 Section: 832obj/fat.o,.rodata.2b
+0x00004052    l170
+           (0x15 bytes)
+0x00004067 Section: 832obj/fat.o,.text.2c
+0x00004067    _ValidateDirectory
+0x0000407f    l177
+0x00004084    l178
+0x000040a9    l182
+0x000040b2    l203
+0x00004112    l196
+0x00004117    l197
+0x00004146    l201
+0x00004148    l202
+0x0000414c    l193
+0x00004162    l175
+           (0x105 bytes)
+0x0000416c Section: 832obj/fat.o,.rodata.2d
+0x0000416c    l198
+           (0x1a bytes)
+0x00004186 Section: 832obj/fat.o,.rodata.2e
+0x00004186    l194
+           (0xc bytes)
+0x00004192 Section: 832obj/fat.o,.text.2f
+0x00004192    _FindDirectoryByCluster
+0x000041d1    l208
+0x000041f3    l211
+0x000041fd    l212
+0x00004206    l252
+0x00004211    l253
+0x00004236    l223
+0x0000423c    l221
+0x0000423f    l224
+0x00004285    l231
+0x00004287    l232
+0x000042ab    l234
+0x000042b4    l255
+0x000042c8    l236
+0x000042ea    l244
+0x000042ee    l242
+0x00004302    l247
+0x00004307    l248
+0x0000430a    l243
+0x00004329    l254
+0x00004339    l205
+           (0x1b7 bytes)
+0x00004349 Section: 832obj/fat.o,.rodata.30
+0x00004349    l235
+           (0x19 bytes)
+0x00004362 Section: 832obj/fat.o,.rodata.31
+0x00004362    l251
+           (0x1c bytes)
+0x0000437e Section: 832obj/fat.o,.text.35
+0x0000437e    _lfn_checksum
+0x0000438a    l312
+           (0x34 bytes)
+0x000043b2 Section: 832obj/fat.o,.text.36
+0x000043b2    __strnicmp
+0x000043bc    l321
+0x000043fa    l322
+           (0x54 bytes)
+0x00004406 Section: 832obj/fat.o,.text.37
+0x00004406    _CompareDirEntries
+0x00004431    l326
+0x00004447    l329
+0x00004456    l332
+0x0000445a    l333
+0x00004466    l335
+0x0000446b    l336
+0x00004490    l340
+0x00004499    l345
+0x0000449b    l323
+           (0x9f bytes)
+0x000044a5 Section: 832obj/fat.o,.text.38
+0x000044a5    _ScanDirectory
+0x000044e9    l708
+0x00004501    l350
+0x00004511    l357
+0x0000453b    l361
+0x0000454a    l359
+0x00004573    l366
+0x00004599    l373
+0x000045a8    l371
+0x000045c4    l380
+0x000045d5    l355
+0x00004618    l382
+0x0000464d    l387
+0x00004656    l388
+0x0000465c    l709
+0x0000465f    l384
+0x00004670    l710
+0x0000469b    l399
+0x000046a5    l400
+0x000046d8    l405
+0x000046f3    l397
+0x000046f6    l406
+0x00004763    l415
+0x0000478a    l417
+0x0000478f    l418
+0x00004883    l422
+0x000048af    l411
+0x000048e5    l429
+0x00004925    l433
+0x0000494c    .cpywordloop4
+0x00004998    l445
+0x000049a8    l441
+0x000049e9    .cpywordloop5
+0x00004a35    l452
+0x00004a52    l453
+0x00004ada    l439
+0x00004b02    l466
+0x00004b07    l467
+0x00004b21    l468
+0x00004b54    .cpyDirEntrywordloop6
+0x00004b8e    l475
+0x00004b9a    l462
+0x00004bf4    .cpywordloop7
+0x00004c41    l486
+0x00004c51    l482
+0x00004c93    .cpywordloop8
+0x00004ce0    l493
+0x00004cfd    l494
+0x00004d86    l478
+0x00004dea    .cpywordloop9
+0x00004e37    l511
+0x00004e46    l512
+0x00004e74    l505
+0x00004eed    .cpywordloop10
+0x00004f4a    l503
+0x00004fb0    l533
+0x00004fc7    .cpywordloop11
+0x00005014    l537
+0x00005023    l538
+0x0000504d    l529
+0x000050c4    .cpywordloop12
+0x0000511e    l527
+0x00005179    .cpywordloop13
+0x000051bd    l561
+0x000051d3    l557
+0x00005215    .cpywordloop14
+0x00005262    l568
+0x0000527c    l569
+0x00005303    l553
+0x0000535e    .cpywordloop15
+0x000053a2    l586
+0x000053b8    l582
+0x000053fa    .cpywordloop16
+0x00005447    l593
+0x00005461    l594
+0x000054e8    l578
+0x000054fc    l604
+0x00005516    l602
+0x00005542    l611
+0x00005544    l612
+0x0000554c    l608
+0x00005578    l618
+0x0000557a    l619
+0x00005582    l615
+0x000055b8    l621
+0x000055ba    l622
+0x000055bf    l620
+0x000055eb    .cpywordloop17
+0x0000562f    l631
+0x00005645    l627
+0x00005687    .cpywordloop18
+0x000056d4    l638
+0x000056ed    l715
+0x00005756    l728
+0x00005762    l428
+0x00005779    l723
+0x0000578a    l646
+0x000057b2    l654
+0x000057b7    l652
+0x000057cc    l657
+0x000057d1    l658
+0x000057d4    l653
+0x000057f5    l722
+0x0000581e    l716
+0x00005846    l729
+0x00005851    l717
+0x00005883    .cpywordloop19
+0x000058be    l664
+0x000058e0    l718
+0x00005905    l731
+0x00005910    l719
+0x00005943    .cpywordloop20
+0x0000597b    l732
+0x0000599e    l675
+0x000059b2    l689
+0x000059c6    l687
+0x000059fd    l695
+0x00005a34    l699
+0x00005a36    l700
+0x00005a3b    l698
+0x00005a50    l720
+0x00005a7c    .cpywordloop21
+0x00005ab4    l733
+0x00005ac7    l703
+0x00005acb    l346
+           (0x1631 bytes)
+0x00005ad6 Section: 832obj/fat.o,.rodata.39
+0x00005ad6    l383
+           (0x17 bytes)
+0x00005aed Section: 832obj/fat.o,.rodata.3a
+0x00005aed    l385
+           (0x1c bytes)
+0x00005b09 Section: 832obj/fat.o,.rodata.3b
+0x00005b09    l426
+           (0x12 bytes)
+0x00005b1b Section: 832obj/fat.o,.rodata.3c
+0x00005b1b    l427
+           (0xc bytes)
+0x00005b27 Section: 832obj/fat.o,.text.3e
+0x00005b27    _ChangeDirectory
+           (0x10 bytes)
+0x00005b37 Section: 832obj/fat.o,.text.3f
+0x00005b37    _CurrentDirectory
+           (0x8 bytes)
+0x00005b3f Section: 832obj/fat.o,.text.40
+0x00005b3f    _GetFATLink
+0x00005b60    l741
+0x00005b6f    l742
+0x00005b92    l746
+0x00005b96    l744
+0x00005bb7    l748
+0x00005bc9    l749
+0x00005bcb    l738
+           (0x94 bytes)
+0x00005bd3 Section: 832obj/fat.o,.text.41
+0x00005bd3    _FileNextSector
+0x00005c17    l753
+0x00005c3d    l758
+0x00005c49    l759
+0x00005c6c    l763
+0x00005c70    l761
+0x00005c95    l765
+0x00005ca9    l766
+0x00005cab    l756
+0x00005cad    l750
+           (0xe4 bytes)
+0x00005cb7 Section: 832obj/fat.o,.rodata.42
+0x00005cb7    l754
+           (0x20 bytes)
+0x00005cd7 Section: 832obj/fat.o,.text.43
+0x00005cd7    _FileSeek
+0x00005cff    l770
+0x00005d3a    l772
+0x00005d63    l777
+0x00005d66    l778
+0x00005d78    l796
+0x00005d93    l783
+0x00005d9f    l784
+0x00005dc2    l788
+0x00005dc6    l786
+0x00005df0    l790
+0x00005e13    l795
+0x00005e2c    l797
+0x00005e33    l767
+           (0x166 bytes)
+0x00005e3d Section: 832obj/fat.o,.rodata.44
+0x00005e3d    l773
+           (0x1a bytes)
+0x00005e57 Section: 832obj/fat.o,.text.45
+0x00005e57    _FileRead
+0x00005e98    l801
+0x00005e9a    l802
+           (0x49 bytes)
+0x00005ea0 Section: 832obj/fat.o,.text.46
+0x00005ea0    _FileReadEx
+0x00005eb0    l814
+0x00005ee3    l809
+0x00005efa    l811
+0x00005f0f    l813
+0x00005f1d    l815
+0x00005f1f    l803
+           (0x89 bytes)
+0x00005f29 Section: 832obj/fat.o,.text.47
+0x00005f29    _FileWrite
+0x00005f6a    l819
+0x00005f6c    l820
+           (0x49 bytes)
+0x00005f72 Section: 832obj/fat.o,.text.48
+0x00005f72    _FileCreate
+0x00005fad    l824
+0x00005fd1    l827
+0x00005fdb    l828
+0x00005fe1    l904
+0x00005fef    l905
+0x0000601a    l839
+0x00006020    l837
+0x00006027    l840
+0x00006057    l906
+0x00006085    l850
+0x00006089    l848
+0x0000609b    l853
+0x000060a1    l854
+0x000060b1    l907
+0x000060ca    l861
+0x000060d8    l862
+0x000060ef    l864
+0x000060f4    l865
+0x00006122    l868
+0x0000612f    l869
+0x00006156    l871
+0x00006164    l908
+0x00006196    l878
+0x000061a3    l913
+0x00006251    l881
+0x00006256    l882
+0x000062a8    l886
+0x000062da    l859
+0x000062e3    l912
+0x000062f3    l911
+0x000062f8    l842
+0x0000630a    l910
+0x00006319    l888
+0x00006341    l896
+0x00006349    l894
+0x0000635d    l899
+0x00006362    l900
+0x00006368    l895
+0x00006387    l909
+0x0000639e    l821
+           (0x436 bytes)
+0x000063a8 Section: 832obj/fat.o,.rodata.49
+0x000063a8    l851
+           (0x20 bytes)
+0x000063c8 Section: 832obj/fat.o,.rodata.4a
+0x000063c8    l872
+           (0x21 bytes)
+0x000063e9 Section: 832obj/fat.o,.rodata.4b
+0x000063e9    l879
+           (0x2b bytes)
+0x00006414 Section: 832obj/fat.o,.rodata.4c
+0x00006414    l887
+           (0x27 bytes)
+0x0000643b Section: 832obj/fat.o,.rodata.4d
+0x0000643b    l866
+           (0x14 bytes)
+0x0000644f Section: 832obj/fat.o,.rodata.4e
+0x0000644f    l883
+           (0x33 bytes)
+0x00006482 Section: 832obj/fat.o,.rodata.4f
+0x00006482    l884
+           (0x32 bytes)
+0x000064b4 Section: 832obj/fat.o,.rodata.50
+0x000064b4    l843
+           (0x2e bytes)
+0x000064e2 Section: 832obj/fat.o,.rodata.51
+0x000064e2    l903
+           (0x1a bytes)
+0x000064fc Section: 832obj/fat.o,.text.52
+0x000064fc    _UpdateEntry
+0x00006531    l917
+0x000065e7    l920
+0x00006613    l926
+0x00006615    l914
+           (0x123 bytes)
+0x0000661f Section: 832obj/fat.o,.rodata.53
+0x0000661f    l918
+           (0x27 bytes)
+0x00006646 Section: 832obj/fat.o,.rodata.54
+0x00006646    l921
+           (0x2e bytes)
+0x00006674 Section: 832obj/fat.o,.rodata.55
+0x00006674    l922
+           (0x18 bytes)
+0x0000668c Section: 832obj/fat.o,.rodata.56
+0x0000668c    l923
+           (0x12 bytes)
+0x0000669e Section: 832obj/fat.o,.rodata.57
+0x0000669e    l924
+           (0x13 bytes)
+0x000066b1 Section: 832obj/fat.o,.rodata.58
+0x000066b1    l927
+           (0x28 bytes)
+0x000066d9 Section: 832obj/fdd.o,.text.0
+0x000066d9    _SendSector
+0x00006795    l4
+0x000067e1    l17
+0x00006876    l18
+0x00006890    l19
+           (0x1d3 bytes)
+0x000068ac Section: 832obj/fdd.o,.text.1
+0x000068ac    _SendGap
+0x000068b8    l29
+           (0x1d bytes)
+0x000068c9 Section: 832obj/fdd.o,.text.2
+0x000068c9    _ReadTrack
+0x00006936    l34
+0x0000694c    l38
+0x000069ac    l41
+0x000069da    l42
+0x00006a5b    l79
+0x00006adb    l52
+0x00006af1    l53
+0x00006af5    l54
+0x00006b0d    l58
+0x00006b4f    l65
+0x00006b83    l71
+0x00006ba4    l72
+0x00006bc8    l80
+0x00006bdb    l77
+           (0x31d bytes)
+0x00006be6 Section: 832obj/fdd.o,.rodata.3
+0x00006be6    l36
+           (0x14 bytes)
+0x00006bfa Section: 832obj/fdd.o,.rodata.4
+0x00006bfa    l35
+           (0x18 bytes)
+0x00006c12 Section: 832obj/fdd.o,.rodata.5
+0x00006c12    l59
+           (0x8 bytes)
+0x00006c1a Section: 832obj/fdd.o,.rodata.6
+0x00006c1a    l75
+           (0x3 bytes)
+0x00006c1d Section: 832obj/fdd.o,.rodata.7
+0x00006c1d    l39
+           (0x5 bytes)
+0x00006c22 Section: 832obj/fdd.o,.rodata.8
+0x00006c22    l47
+           (0xc bytes)
+0x00006c2e Section: 832obj/fdd.o,.rodata.9
+0x00006c2e    l78
+           (0x5 bytes)
+0x00006c33 Section: 832obj/fdd.o,.text.a
+0x00006c33    _FindSync
+0x00006c47    l83
+0x00006c97    l91
+0x00006cad    l103
+0x00006cda    l100
+0x00006cde    l97
+0x00006ce8    l105
+0x00006cee    l104
+0x00006cf2    l81
+           (0xc9 bytes)
+0x00006cfc Section: 832obj/fdd.o,.rodata.b
+0x00006cfc    l101
+           (0x7 bytes)
+0x00006d03 Section: 832obj/fdd.o,.text.c
+0x00006d03    _GetHeader
+0x00006d1c    l154
+0x00006d5b    l113
+0x00006d74    l116
+0x00006d9e    l117
+0x00006e6b    l122
+0x00006e7a    l125
+0x00006e8a    l128
+0x00006e99    l130
+0x00006e9e    l131
+0x00006eda    l134
+0x00006ef2    l138
+0x00006eff    l155
+0x000070c6    l144
+0x000070e6    l145
+0x000070f3    l114
+0x0000711d    l152
+0x00007128    l156
+0x00007132    l106
+           (0x43a bytes)
+0x0000713d Section: 832obj/fdd.o,.rodata.d
+0x0000713d    l119
+           (0x1c bytes)
+0x00007159 Section: 832obj/fdd.o,.rodata.e
+0x00007159    l120
+           (0x1e bytes)
+0x00007177 Section: 832obj/fdd.o,.rodata.f
+0x00007177    l135
+           (0xb bytes)
+0x00007182 Section: 832obj/fdd.o,.rodata.10
+0x00007182    l136
+           (0x1c bytes)
+0x0000719e Section: 832obj/fdd.o,.rodata.11
+0x0000719e    l149
+           (0xd bytes)
+0x000071ab Section: 832obj/fdd.o,.rodata.12
+0x000071ab    l139
+           (0x8 bytes)
+0x000071b3 Section: 832obj/fdd.o,.rodata.13
+0x000071b3    l153
+           (0x19 bytes)
+0x000071cc Section: 832obj/fdd.o,.text.14
+0x000071cc    _GetData
+0x000071db    l160
+0x00007329    l167
+0x000073a8    l185
+0x000074a3    l173
+0x000074c3    l174
+0x000074d0    l166
+0x000074fa    l181
+0x00007505    l186
+0x0000750f    l158
+           (0x34e bytes)
+0x0000751a Section: 832obj/fdd.o,.rodata.15
+0x0000751a    l178
+           (0xd bytes)
+0x00007527 Section: 832obj/fdd.o,.rodata.16
+0x00007527    l182
+           (0x19 bytes)
+0x00007540 Section: 832obj/fdd.o,.text.17
+0x00007540    _WriteTrack
+0x00007586    l192
+0x00007592    l215
+0x000075b7    l216
+0x000075c9    l205
+0x000075e1    l206
+0x000075e8    l218
+0x0000760a    l210
+0x00007622    l200
+0x0000763f    l213
+0x0000764b    l217
+           (0x115 bytes)
+0x00007655 Section: 832obj/fdd.o,.rodata.18
+0x00007655    l212
+           (0x15 bytes)
+0x0000766a Section: 832obj/fdd.o,.rodata.19
+0x0000766a    l214
+           (0x13 bytes)
+0x0000767d Section: 832obj/fdd.o,.rodata.1a
+0x0000767d    l193
+           (0x6 bytes)
+0x00007683 Section: 832obj/fdd.o,.text.1b
+0x00007683    _UpdateDriveStatus
+           (0x41 bytes)
+0x000076c4 Section: 832obj/fdd.o,.text.1c
+0x000076c4    _HandleFDD
+0x00007706    l224
+0x0000772a    l227
+0x00007734    l253
+0x00007762    l254
+0x00007774    l242
+0x00007798    l244
+0x000077a3    l249
+0x000077f9    l251
+           (0x13f bytes)
+0x00007803 Section: 832obj/fdd.o,.data.1d
+0x00007803    _DEBUG
+           (0x1 bytes)
+0x00007804 Section: 832obj/fpga.o,.text.0
+0x00007804    _PatchKick1xMemoryDetection
+0x0000782b    l4
+0x00007844    l6
+0x00007871    l12
+           (0x77 bytes)
+0x0000787b Section: 832obj/fpga.o,.rodata.1
+0x0000787b    l5
+           (0x19 bytes)
+0x00007894 Section: 832obj/fpga.o,.rodata.2
+0x00007894    l9
+           (0x18 bytes)
+0x000078ac Section: 832obj/fpga.o,.text.3
+0x000078ac    _SendFileV2
+0x000078ef    l19
+0x000078fc    l44
+0x00007922    l25
+0x00007943    l45
+0x00007962    l34
+0x00007972    l47
+0x000079a1    l35
+0x000079b2    l36
+0x000079bd    l46
+0x000079d6    l41
+0x000079e5    l43
+           (0x143 bytes)
+0x000079ef Section: 832obj/fpga.o,.rodata.4
+0x000079ef    l26
+           (0x2 bytes)
+0x000079f1 Section: 832obj/fpga.o,.rodata.5
+0x000079f1    l16
+           (0x11 bytes)
+0x00007a02 Section: 832obj/fpga.o,.rodata.6
+0x00007a02    l17
+           (0x2 bytes)
+0x00007a04 Section: 832obj/fpga.o,.rodata.7
+0x00007a04    l39
+           (0x3 bytes)
+0x00007a07 Section: 832obj/fpga.o,.text.8
+0x00007a07    _BootPrint
+           (0x3 bytes)
+0x00007a0a Section: 832obj/fpga.o,.text.a
+0x00007a0a    _GetFPGAStatus
+           (0x28 bytes)
+0x00007a32 Section: 832obj/fpga.o,.text.b
+0x00007a32    _fpga_init
+0x00007ad8    l67
+0x00007adc    l68
+           (0x122 bytes)
+0x00007b54 Section: 832obj/fpga.o,.rodata.c
+0x00007b54    l69
+           (0x6 bytes)
+0x00007b5a Section: 832obj/fpga.o,.rodata.d
+0x00007b5a    l70
+           (0x1 bytes)
+0x00007b5b Section: 832obj/fpga.o,.rodata.e
+0x00007b5b    l71
+           (0x38 bytes)
+0x00007b93 Section: 832obj/fpga.o,.rodata.f
+0x00007b93    l72
+           (0xb bytes)
+0x00007b9e Section: 832obj/fpga.o,.rodata.10
+0x00007b9e    l73
+           (0x15 bytes)
+0x00007bb3 Section: 832obj/fpga.o,.rodata.11
+0x00007bb3    l74
+           (0x2 bytes)
+0x00007bb5 Section: 832obj/fpga.o,.rodata.12
+0x00007bb5    l75
+           (0x42 bytes)
+0x00007bf7 Section: 832obj/fpga.o,.rodata.13
+0x00007bf7    l76
+           (0x51 bytes)
+0x00007c48 Section: 832obj/fpga.o,.rodata.14
+0x00007c48    l77
+           (0x2 bytes)
+0x00007c4a Section: 832obj/fpga.o,.rodata.15
+0x00007c4a    l78
+           (0x35 bytes)
+0x00007c7f Section: 832obj/fpga.o,.rodata.16
+0x00007c7f    l79
+           (0x2 bytes)
+0x00007c81 Section: 832obj/fpga.o,.rodata.17
+0x00007c81    _applymemdetectionpatchstr
+           (0x2f bytes)
+0x00007cb0 Section: 832obj/fpga.o,.data.18
+0x00007cb0    _kick1xfoundstr
+           (0x16 bytes)
+0x00007cc6 Section: 832obj/boot.o,.text.0
+0x00007cc6    _BootHome
+           (0xc bytes)
+0x00007cd2 Section: 832obj/boot.o,.text.1
+0x00007cd2    _BootClearScreen
+0x00007cef    l11
+0x00007cfd    l12
+           (0x2f bytes)
+0x00007d01 Section: 832obj/boot.o,.text.2
+0x00007d01    _BootUploadLogo
+0x00007d3e    l38
+0x00007d53    l39
+0x00007d6a    l27
+0x00007d9f    l40
+0x00007db4    l41
+0x00007dcb    l37
+0x00007dfa    l44
+           (0x10a bytes)
+0x00007e0b Section: 832obj/boot.o,.rodata.3
+0x00007e0b    l17
+           (0xc bytes)
+0x00007e17 Section: 832obj/boot.o,.text.4
+0x00007e17    _BootUploadBall
+0x00007e41    l49
+           (0x37 bytes)
+0x00007e4e Section: 832obj/boot.o,.rodata.5
+0x00007e4e    l50
+           (0xc bytes)
+0x00007e5a Section: 832obj/boot.o,.text.6
+0x00007e5a    _BootUploadCopper
+0x00007e8a    l54
+0x00007ed4    l56
+           (0x89 bytes)
+0x00007ee3 Section: 832obj/boot.o,.rodata.7
+0x00007ee3    l55
+           (0xc bytes)
+0x00007eef Section: 832obj/boot.o,.text.8
+0x00007eef    _BootCustomInit
+0x00007f0a    l62
+0x00007f18    l63
+           (0x2f bytes)
+0x00007f1e Section: 832obj/boot.o,.text.9
+0x00007f1e    _BootInit
+           (0x58 bytes)
+0x00007f76 Section: 832obj/boot.o,.text.a
+0x00007f76    _BootPrintEx
+0x00007f8a    l69
+0x00007fb9    l72
+0x00007fbf    l73
+0x00007fc7    l85
+0x00007fe0    l86
+0x0000800b    l83
+0x0000801f    l84
+0x00008032    l88
+           (0xe4 bytes)
+0x0000805a Section: 832obj/boot.o,.rodata.b
+0x0000805a    l70
+           (0x2 bytes)
+0x0000805c Section: 832obj/boot.o,.data.c
+0x0000805c    _bootcustominit_bin
+           (0x11e bytes)
+0x0000817a Section: 832obj/boot.o,.data.d
+0x0000817c    _bootcustominit_bin_len
+           (0x6 bytes)
+0x00008180 Section: 832obj/boot.o,.rodata.e
+0x00008180    l4
+           (0x300 bytes)
+0x00008480 Section: 832obj/hdd.o,.text.0
+0x00008480    l3
+0x000084a1    l7
+0x000084b4    l13
+0x000084ca    l14
+           (0x5e bytes)
+0x000084de Section: 832obj/hdd.o,.rodata.1
+0x000084de    l8
+           (0x14 bytes)
+0x000084f2 Section: 832obj/hdd.o,.text.2
+0x000084f2    l15
+0x00008507    l19
+0x00008509    l38
+0x00008529    l26
+0x00008539    l28
+0x000085e8    l32
+0x000085f9    l34
+0x00008689    l37
+           (0x19b bytes)
+0x0000868d Section: 832obj/hdd.o,.rodata.3
+0x0000868d    l20
+           (0x17 bytes)
+0x000086a4 Section: 832obj/hdd.o,.rodata.4
+0x000086a4    l29
+           (0x10 bytes)
+0x000086b4 Section: 832obj/hdd.o,.rodata.5
+0x000086b4    l30
+           (0x8 bytes)
+0x000086bc Section: 832obj/hdd.o,.rodata.6
+0x000086bc    l31
+           (0xd bytes)
+0x000086c9 Section: 832obj/hdd.o,.rodata.7
+0x000086c9    l35
+           (0x10 bytes)
+0x000086d9 Section: 832obj/hdd.o,.rodata.8
+0x000086d9    l36
+           (0x5 bytes)
+0x000086de Section: 832obj/hdd.o,.text.9
+0x000086de    _IdentifyDevice
+0x00008744    l43
+0x0000875f    l47
+0x00008794    l49
+0x000087a4    l52
+0x0000880d    .cpypwordloop5
+0x00008837    l57
+0x00008847    .cpypwordloop7
+0x0000887e    l64
+0x000088ac    l63
+0x000088c5    l71
+0x000088d6    l77
+0x00008942    .cpypwordloop11
+0x00008973    l83
+0x00008998    l85
+0x000089e5    l40
+           (0x312 bytes)
+0x000089f0 Section: 832obj/hdd.o,.rodata.a
+0x000089f0    l53
+           (0x1a bytes)
+0x00008a0a Section: 832obj/hdd.o,.rodata.b
+0x00008a0a    l58
+           (0x29 bytes)
+0x00008a33 Section: 832obj/hdd.o,.rodata.c
+0x00008a33    l59
+           (0x11 bytes)
+0x00008a44 Section: 832obj/hdd.o,.rodata.d
+0x00008a44    l61
+           (0x29 bytes)
+0x00008a6d Section: 832obj/hdd.o,.rodata.e
+0x00008a6d    l78
+           (0x1a bytes)
+0x00008a87 Section: 832obj/hdd.o,.rodata.f
+0x00008a87    l86
+           (0xc bytes)
+0x00008a93 Section: 832obj/hdd.o,.rodata.10
+0x00008a93    l54
+           (0x15 bytes)
+0x00008aa8 Section: 832obj/hdd.o,.rodata.11
+0x00008aa8    l55
+           (0x9 bytes)
+0x00008ab1 Section: 832obj/hdd.o,.rodata.12
+0x00008ab1    l79
+           (0x15 bytes)
+0x00008ac6 Section: 832obj/hdd.o,.rodata.13
+0x00008ac6    l80
+           (0x9 bytes)
+0x00008acf Section: 832obj/hdd.o,.rodata.14
+0x00008acf    l81
+           (0x29 bytes)
+0x00008af8 Section: 832obj/hdd.o,.rodata.15
+0x00008af8    l84
+           (0xc bytes)
+0x00008b04 Section: 832obj/hdd.o,.text.16
+0x00008b04    _chs2lba
+           (0x2e bytes)
+0x00008b32 Section: 832obj/hdd.o,.text.17
+0x00008b32    _WriteTaskFile
+           (0x52 bytes)
+0x00008b84 Section: 832obj/hdd.o,.text.18
+0x00008b84    _WriteStatus
+           (0x27 bytes)
+0x00008bab Section: 832obj/hdd.o,.text.19
+0x00008bab    l95
+0x00008bc0    l99
+           (0x37 bytes)
+0x00008be2 Section: 832obj/hdd.o,.rodata.1a
+0x00008be2    l100
+           (0xc bytes)
+0x00008bee Section: 832obj/hdd.o,.text.1b
+0x00008bee    l101
+0x00008bff    l105
+           (0x26 bytes)
+0x00008c14 Section: 832obj/hdd.o,.rodata.1c
+0x00008c14    l106
+           (0x16 bytes)
+0x00008c2a Section: 832obj/hdd.o,.text.1d
+0x00008c2a    _ATA_IdentifyDevice
+0x00008c5d    l110
+0x00008ca8    l116
+           (0xac bytes)
+0x00008cd6 Section: 832obj/hdd.o,.rodata.1e
+0x00008cd6    l111
+           (0x17 bytes)
+0x00008ced Section: 832obj/hdd.o,.text.1f
+0x00008ced    _ATA_Initialize
+           (0x41 bytes)
+0x00008d2e Section: 832obj/hdd.o,.rodata.20
+0x00008d2e    l120
+           (0x1e bytes)
+0x00008d4c Section: 832obj/hdd.o,.text.21
+0x00008d4c    _ATA_SetMultipleMode
+           (0x32 bytes)
+0x00008d7e Section: 832obj/hdd.o,.rodata.22
+0x00008d7e    l123
+           (0x16 bytes)
+0x00008d94 Section: 832obj/hdd.o,.text.23
+0x00008d94    _ATA_ReadSectors
+0x00008dda    l129
+0x00008de1    l130
+0x00008df6    l127
+0x00008e13    l133
+0x00008e4e    l137
+0x00008e58    l140
+0x00008e62    l135
+0x00008ea3    l187
+0x00008eaf    l145
+0x00008eb1    l146
+0x00008ee1    l148
+0x00008ef1    l188
+0x00008efd    l193
+0x00008f34    l154
+0x00008f58    l161
+0x00008f76    l189
+0x00008f7c    l158
+0x00008fbc    l166
+0x00008fca    l167
+0x00008fdd    l190
+0x00009019    l172
+0x0000902e    l194
+0x0000905e    l157
+0x00009067    l179
+0x00009082    l153
+0x00009093    l192
+0x000090a6    l185
+           (0x324 bytes)
+0x000090b8 Section: 832obj/hdd.o,.rodata.24
+0x000090b8    l131
+           (0xe bytes)
+0x000090c6 Section: 832obj/hdd.o,.rodata.25
+0x000090c6    l132
+           (0xe bytes)
+0x000090d4 Section: 832obj/hdd.o,.text.26
+0x000090d4    _ATA_WriteSectors
+0x0000911a    l201
+0x00009121    l202
+0x00009136    l199
+0x00009169    l205
+0x00009194    l209
+0x00009196    l212
+0x000091a4    l207
+0x00009202    l214
+0x00009219    l219
+0x0000921e    l220
+0x0000922a    l217
+0x0000923a    l221
+0x00009249    l225
+0x0000924e    l226
+0x0000926f    l228
+0x00009282    l230
+0x0000928d    l262
+0x00009299    l267
+0x000092ac    l263
+0x000092f0    l241
+0x00009319    l244
+0x00009324    l246
+0x00009335    l252
+0x0000934a    l240
+0x00009363    l266
+0x00009378    l255
+0x0000937e    l256
+0x00009385    l265
+0x00009398    l258
+           (0x2d6 bytes)
+0x000093aa Section: 832obj/hdd.o,.rodata.27
+0x000093aa    l203
+           (0xf bytes)
+0x000093b9 Section: 832obj/hdd.o,.rodata.28
+0x000093b9    l204
+           (0xf bytes)
+0x000093c8 Section: 832obj/hdd.o,.rodata.29
+0x000093c8    l215
+           (0x1d bytes)
+0x000093e5 Section: 832obj/hdd.o,.rodata.2a
+0x000093e5    l253
+           (0xf bytes)
+0x000093f4 Section: 832obj/hdd.o,.text.2c
+0x000093f4    _trap2
+           (0xa bytes)
+0x000093fe Section: 832obj/hdd.o,.text.2d
+0x000093fe    _HandleHDD
+0x0000942e    l326
+0x00009459    l282
+0x00009483    l284
+0x000094bd    l286
+0x000094dc    l288
+0x000094ed    l291
+0x00009507    l294
+0x0000951d    l297
+0x00009532    l300
+0x00009555    l303
+0x00009578    l306
+0x0000959b    l309
+0x000095bf    l312
+0x000095d3    l327
+0x00009631    l313
+0x00009650    l323
+           (0x25c bytes)
+0x0000965a Section: 832obj/hdd.o,.rodata.2e
+0x0000965a    l314
+           (0x15 bytes)
+0x0000966f Section: 832obj/hdd.o,.rodata.2f
+0x0000966f    l315
+           (0x5 bytes)
+0x00009674 Section: 832obj/hdd.o,.rodata.30
+0x00009674    l320
+           (0x6 bytes)
+0x0000967a Section: 832obj/hdd.o,.rodata.31
+0x0000967a    l321
+           (0x6 bytes)
+0x00009680 Section: 832obj/hdd.o,.text.32
+0x00009680    _GetHardfileGeometry
+0x0000970f    l379
+0x00009712    l336
+0x00009742    l382
+0x00009765    l345
+0x0000977b    l348
+0x00009783    l349
+0x00009795    l353
+0x000097a8    l380
+0x000097c0    l358
+0x000097e5    l363
+0x000097f8    l370
+0x000097fe    l373
+0x00009806    l384
+0x00009820    l383
+0x0000982b    l377
+0x0000986b    l330
+           (0x1f6 bytes)
+0x00009876 Section: 832obj/hdd.o,.rodata.33
+0x00009876    l378
+           (0x34 bytes)
+0x000098aa Section: 832obj/hdd.o,.text.34
+0x000098aa    _BuildHardfileIndex
+0x000098de    l394
+0x000098eb    l396
+0x000098fd    l395
+0x0000991e    l397
+           (0x7e bytes)
+0x00009928 Section: 832obj/hdd.o,.text.35
+0x00009928    _HardFileSeek
+0x00009967    l406
+0x00009969    l407
+0x00009974    l402
+0x000099a3    l403
+           (0x99 bytes)
+0x000099c1 Section: 832obj/hdd.o,.text.36
+0x000099c1    _OpenHardfile
+0x000099e3    l411
+0x000099fa    l414
+0x000099ff    l415
+0x00009a2e    l417
+0x00009b65    l433
+0x00009b6b    l434
+0x00009b74    l423
+0x00009b96    l437
+0x00009bbc    l438
+0x00009bf8    l416
+0x00009bff    l408
+           (0x248 bytes)
+0x00009c09 Section: 832obj/hdd.o,.rodata.37
+0x00009c09    l426
+           (0xe bytes)
+0x00009c17 Section: 832obj/hdd.o,.rodata.38
+0x00009c17    l427
+           (0x13 bytes)
+0x00009c2a Section: 832obj/hdd.o,.rodata.39
+0x00009c2a    l428
+           (0x14 bytes)
+0x00009c3e Section: 832obj/hdd.o,.rodata.3a
+0x00009c3e    l429
+           (0xe bytes)
+0x00009c4c Section: 832obj/hdd.o,.rodata.3b
+0x00009c4c    l430
+           (0xb bytes)
+0x00009c57 Section: 832obj/hdd.o,.rodata.3c
+0x00009c57    l431
+           (0x1c bytes)
+0x00009c73 Section: 832obj/hdd.o,.rodata.3d
+0x00009c73    l436
+           (0x17 bytes)
+0x00009c8a Section: 832obj/hdd.o,.rodata.3e
+0x00009c8a    l419
+           (0x4 bytes)
+0x00009c8e Section: 832obj/hdd.o,.text.3f
+0x00009c8e    _GetHDFFileType
+0x00009cbb    l447
+0x00009cc0    l449
+0x00009d10    l454
+0x00009d32    l459
+0x00009d54    l463
+0x00009d74    l467
+0x00009d82    l445
+0x00009d84    l442
+           (0xfe bytes)
+0x00009d8c Section: 832obj/hdd.o,.rodata.40
+0x00009d8c    l448
+           (0x13 bytes)
+0x00009d9f Section: 832obj/main.o,.text.0
+0x00009d9f    _CheckSum
+0x00009db3    l6
+0x00009dbc    l7
+           (0x25 bytes)
+0x00009dc4 Section: 832obj/main.o,.text.1
+0x00009dc4    _HandleFpga
+           (0x55 bytes)
+0x00009e19 Section: 832obj/main.o,.text.2
+0x00009e19    _inthandler
+           (0x19 bytes)
+0x00009e32 Section: 832obj/main.o,.text.3
+0x00009e32    _ColdBoot
+0x00009eb5    l19
+0x00009ec4    l20
+0x00009ed7    l23
+0x00009ee6    l24
+0x00009ef4    l27
+0x00009f03    l28
+0x00009f11    l30
+0x00009f20    l31
+0x00009f2e    l33
+0x00009f3d    l34
+0x00009f54    l37
+0x00009fa1    l42
+           (0x179 bytes)
+0x00009fab Section: 832obj/main.o,.rodata.4
+0x00009fab    l38
+           (0x17 bytes)
+0x00009fc2 Section: 832obj/main.o,.rodata.5
+0x00009fc2    l18
+           (0xd bytes)
+0x00009fcf Section: 832obj/main.o,.rodata.6
+0x00009fcf    l39
+           (0xc bytes)
+0x00009fdb Section: 832obj/main.o,.rodata.7
+0x00009fdb    l40
+           (0x19 bytes)
+0x00009ff4 Section: 832obj/main.o,.text.8
+0x00009ff4    _main
+0x0000a02b    l46
+0x0000a037    l48
+0x0000a047    l67
+0x0000a05e    l57
+0x0000a067    l59
+0x0000a081    l68
+0x0000a08c    l66
+           (0xac bytes)
+0x0000a0a0 Section: 832obj/main.o,.rodata.9
+0x0000a0a0    l47
+           (0x1e bytes)
+0x0000a0be Section: 832obj/main.o,.rodata.a
+0x0000a0be    l49
+           (0x20 bytes)
+0x0000a0de Section: 832obj/main.o,.rodata.b
+0x0000a0de    l52
+           (0x13 bytes)
+0x0000a0f1 Section: 832obj/menu.o,.text.0
+0x0000a0f1    __showdebugmessages
+0x0000a0f8    l67
+0x0000a119    l64
+0x0000a11b    l65
+           (0x4b bytes)
+0x0000a13c Section: 832obj/menu.o,.text.1
+0x0000a13c    _SelectFile
+0x0000a16a    l72
+           (0x53 bytes)
+0x0000a18f Section: 832obj/menu.o,.text.8
+0x0000a18f    _HandleUI
+0x0000a289    l93
+0x0000a293    l94
+0x0000a29c    l95
+0x0000a2a6    l96
+0x0000a2af    l97
+0x0000a2f1    l102
+0x0000a306    l104
+0x0000a311    l99
+0x0000a31a    l109
+0x0000a35c    l114
+0x0000a371    l116
+0x0000a37c    l111
+0x0000a385    l121
+0x0000a3b2    l125
+0x0000a3f1    l128
+0x0000a406    l131
+0x0000a43e    l137
+0x0000a447    l133
+0x0000a450    l139
+0x0000a465    l142
+0x0000a46e    l144
+0x0000a477    l145
+0x0000a480    l146
+0x0000a487    l147
+0x0000a48d    l92
+0x0000a4b6    l148
+0x0000a4e8    l157
+0x0000a4ee    l158
+0x0000a4fe    l156
+0x0000a512    l149
+0x0000a56d    l164
+0x0000a58b    l170
+0x0000a59c    l171
+0x0000a5cf    l174
+0x0000a5f3    l175
+0x0000a630    l180
+0x0000a651    l181
+0x0000a772    l188
+0x0000a79c    l190
+0x0000a7a0    l191
+0x0000a7aa    l192
+0x0000a7b6    l194
+0x0000a7d8    l197
+0x0000a7ff    l1336
+0x0000a826    l204
+0x0000a89b    l213
+0x0000a8b0    l211
+0x0000a8bf    l209
+0x0000a8d5    l221
+0x0000a8df    l223
+0x0000a8fc    l227
+0x0000a8fe    l228
+0x0000a914    l229
+0x0000a919    l230
+0x0000a928    l206
+0x0000a952    l232
+0x0000a957    l233
+0x0000a97a    l236
+0x0000a97f    l237
+0x0000a9a2    l240
+0x0000a9a7    l241
+0x0000a9cb    l244
+0x0000a9d1    l245
+0x0000a9f2    l248
+0x0000aa03    l250
+0x0000aa41    l253
+0x0000aa7f    l257
+0x0000aaba    l265
+0x0000aace    l263
+0x0000aaec    l270
+0x0000aafc    l272
+0x0000ab99    l273
+0x0000abac    l261
+0x0000abcd    l281
+0x0000abeb    l1341
+0x0000abf5    l280
+0x0000ac0e    l288
+0x0000ac66    l292
+0x0000ac6c    l293
+0x0000ac8d    l296
+0x0000ac91    l297
+0x0000acb5    l301
+0x0000acba    l302
+0x0000acdc    l305
+0x0000ace0    l306
+0x0000acff    l310
+0x0000ad01    l311
+0x0000ad17    l313
+0x0000ad1c    l314
+0x0000ad40    l317
+0x0000ad7e    l321
+0x0000ad84    l322
+0x0000ada9    l325
+0x0000adba    l327
+0x0000adf2    l332
+0x0000ae1e    l333
+0x0000ae48    l334
+0x0000ae69    l336
+0x0000ae6f    l337
+0x0000ae79    l338
+0x0000ae8d    l339
+0x0000aed0    l342
+0x0000af05    l344
+0x0000af0a    l345
+0x0000af2d    l348
+0x0000af32    l349
+0x0000af63    l353
+0x0000af69    l354
+0x0000af8e    l357
+0x0000af94    l358
+0x0000afb9    l361
+0x0000afbf    l362
+0x0000aff1    l366
+0x0000aff7    l367
+0x0000b01d    l370
+0x0000b02e    l372
+0x0000b051    l377
+0x0000b06a    l380
+0x0000b082    l383
+0x0000b09a    l386
+0x0000b0b2    l389
+0x0000b0c5    l375
+0x0000b0db    l395
+0x0000b0f3    l399
+0x0000b128    l401
+0x0000b12d    l402
+0x0000b150    l405
+0x0000b155    l406
+0x0000b19e    l412
+0x0000b1a3    l413
+0x0000b1b5    l411
+0x0000b1cf    l416
+0x0000b206    l422
+0x0000b20b    l423
+0x0000b21d    l421
+0x0000b233    l427
+0x0000b238    l428
+0x0000b24a    l419
+0x0000b264    l431
+0x0000b279    l433
+0x0000b27e    l434
+0x0000b2a1    l437
+0x0000b2a6    l438
+0x0000b2d7    l442
+0x0000b2dd    l443
+0x0000b302    l446
+0x0000b315    l448
+0x0000b32c    l450
+0x0000b370    l455
+0x0000b3aa    l458
+0x0000b3e6    l461
+0x0000b40b    l466
+0x0000b43b    l467
+0x0000b453    l470
+0x0000b46c    l472
+0x0000b483    l475
+0x0000b507    l479
+0x0000b50d    l480
+0x0000b53a    l483
+0x0000b593    l485
+0x0000b5a7    l488
+0x0000b62b    l492
+0x0000b631    l493
+0x0000b65f    l496
+0x0000b6bf    l498
+0x0000b6d3    l501
+0x0000b718    l505
+0x0000b735    l507
+0x0000b752    l509
+0x0000b76f    l511
+0x0000b78c    l513
+0x0000b79d    l515
+0x0000b7c3    l517
+0x0000b7c5    l518
+0x0000b7da    l520
+0x0000b7df    l521
+0x0000b7fe    l524
+0x0000b800    l525
+0x0000b816    l527
+0x0000b81b    l528
+0x0000b83a    l531
+0x0000b83c    l532
+0x0000b852    l534
+0x0000b857    l535
+0x0000b876    l538
+0x0000b878    l539
+0x0000b88e    l541
+0x0000b893    l542
+0x0000b8b2    l545
+0x0000b8b4    l546
+0x0000b8c9    l548
+0x0000b8ce    l549
+0x0000b8f1    l552
+0x0000b8f6    l553
+0x0000b927    l557
+0x0000b92d    l558
+0x0000b949    l561
+0x0000b999    l565
+0x0000b9b6    l569
+0x0000b9c3    l571
+0x0000b9dc    l574
+0x0000ba20    l577
+0x0000ba2c    l580
+0x0000ba55    l582
+0x0000ba84    l584
+0x0000baea    l590
+0x0000baef    l591
+0x0000bb2a    l593
+0x0000bb30    l588
+0x0000bb55    l595
+0x0000bb7a    l597
+0x0000bb9b    l599
+0x0000bbbc    l601
+0x0000bc56    l609
+0x0000bca1    l614
+0x0000bcfc    l607
+0x0000bd55    l624
+0x0000bda0    l629
+0x0000bdf8    l636
+0x0000bdfe    l603
+0x0000be52    l642
+0x0000be57    l643
+0x0000bebb    l648
+0x0000bed2    l645
+0x0000bee6    l650
+0x0000beef    l640
+0x0000bf46    l657
+0x0000bf56    l659
+0x0000c00c    l661
+0x0000c011    l662
+0x0000c035    l653
+0x0000c03b    l663
+0x0000c051    l666
+0x0000c0b7    l670
+0x0000c0bd    l671
+0x0000c0e2    l674
+0x0000c0e8    l675
+0x0000c12a    l681
+0x0000c14b    l683
+0x0000c167    l685
+0x0000c17b    l689
+0x0000c1c0    l692
+0x0000c1c4    l693
+0x0000c1e7    l697
+0x0000c1ec    l698
+0x0000c216    l701
+0x0000c21a    l702
+0x0000c240    l706
+0x0000c245    l707
+0x0000c26f    l710
+0x0000c273    l711
+0x0000c299    l715
+0x0000c29e    l716
+0x0000c2c8    l719
+0x0000c2cc    l720
+0x0000c2f2    l724
+0x0000c2f7    l725
+0x0000c321    l728
+0x0000c325    l729
+0x0000c34b    l733
+0x0000c350    l734
+0x0000c375    l736
+0x0000c37a    l737
+0x0000c3ad    l741
+0x0000c3b3    l742
+0x0000c3cf    l745
+0x0000c3e8    l747
+0x0000c40b    l752
+0x0000c416    l750
+0x0000c439    l757
+0x0000c444    l755
+0x0000c471    l762
+0x0000c490    l765
+0x0000c49d    l767
+0x0000c4b6    l770
+0x0000c4e7    l773
+0x0000c4f3    l776
+0x0000c56a    l780
+0x0000c56f    l781
+0x0000c5c0    l784
+0x0000c5c6    l785
+0x0000c5fc    l789
+0x0000c600    l790
+0x0000c622    l793
+0x0000c627    l794
+0x0000c677    l797
+0x0000c67c    l798
+0x0000c6cc    l801
+0x0000c6d1    l802
+0x0000c704    l805
+0x0000c70a    l806
+0x0000c725    l809
+0x0000c74e    l811
+0x0000c777    l814
+0x0000c7bb    l821
+0x0000c7e1    l819
+0x0000c81d    l824
+0x0000c848    l827
+0x0000c892    l832
+0x0000c8a2    l833
+0x0000c8b2    l834
+0x0000c8c2    l835
+0x0000c8cc    l831
+0x0000c8e0    l830
+0x0000c90d    l838
+0x0000c924    l841
+0x0000c93d    l843
+0x0000c955    l846
+0x0000c96c    l850
+0x0000c9da    l853
+0x0000c9df    l854
+0x0000ca33    l857
+0x0000ca38    l858
+0x0000ca8d    l861
+0x0000ca93    l862
+0x0000cadd    l867
+0x0000caeb    l868
+0x0000cb03    l869
+0x0000cb08    l870
+0x0000cb41    l874
+0x0000cb45    l875
+0x0000cb66    l878
+0x0000cb6b    l879
+0x0000cb9d    l882
+0x0000cba2    l883
+0x0000cbbc    l886
+0x0000cbfc    l890
+0x0000cc2e    l893
+0x0000cc62    l896
+0x0000cc80    l899
+0x0000ccac    l903
+0x0000ccc3    l906
+0x0000ccdc    l908
+0x0000ccf4    l911
+0x0000cd0b    l915
+0x0000cd69    l920
+0x0000cd6f    l921
+0x0000cd7d    l918
+0x0000cd92    l923
+0x0000cd99    l924
+0x0000cdb8    l928
+0x0000cdbf    l929
+0x0000cde1    l932
+0x0000cde6    l933
+0x0000ce30    l937
+0x0000ce46    l939
+0x0000ce58    l940
+0x0000ce5d    l941
+0x0000ce7e    l946
+0x0000ce87    l944
+0x0000ce8c    l945
+0x0000cec3    .cpyswordloop22
+0x0000cef7    l953
+0x0000cf0a    l950
+0x0000cf24    l955
+0x0000cf5f    l959
+0x0000cf64    l960
+0x0000cf7a    l962
+0x0000cf8c    l963
+0x0000cf91    l964
+0x0000cfb2    l969
+0x0000cfbb    l967
+0x0000cfc0    l968
+0x0000d021    l974
+0x0000d037    l976
+0x0000d049    l977
+0x0000d04e    l978
+0x0000d06f    l983
+0x0000d078    l981
+0x0000d07d    l982
+0x0000d0b8    .cpyswordloop25
+0x0000d0e6    l990
+0x0000d0fa    l987
+0x0000d114    l992
+0x0000d14f    l996
+0x0000d154    l997
+0x0000d16a    l999
+0x0000d17c    l1000
+0x0000d181    l1001
+0x0000d1a1    l1006
+0x0000d1aa    l1004
+0x0000d1af    l1005
+0x0000d1db    l1010
+0x0000d202    l1015
+0x0000d206    l1016
+0x0000d222    l1019
+0x0000d224    l1020
+0x0000d23c    l1022
+0x0000d241    l1023
+0x0000d250    l1012
+0x0000d275    l1026
+0x0000d27a    l1027
+0x0000d293    l1030
+0x0000d2ba    l1036
+0x0000d2bf    l1037
+0x0000d2d3    l1034
+0x0000d308    l1041
+0x0000d32b    l1044
+0x0000d34d    l1045
+0x0000d357    l1039
+0x0000d375    l1048
+0x0000d3aa    l1054
+0x0000d3cd    l1057
+0x0000d3ef    l1058
+0x0000d3f9    l1052
+0x0000d41b    l1061
+0x0000d44b    l1067
+0x0000d451    l1068
+0x0000d45b    l1065
+0x0000d46f    l1071
+0x0000d482    l1074
+0x0000d516    l1078
+0x0000d52f    l1079
+0x0000d54a    l1080
+0x0000d570    l1082
+0x0000d577    l1083
+0x0000d581    l1084
+0x0000d597    l1077
+0x0000d62b    l1089
+0x0000d644    l1090
+0x0000d65f    l1091
+0x0000d685    l1093
+0x0000d68c    l1094
+0x0000d696    l1095
+0x0000d6b0    l1097
+0x0000d6ef    l1098
+0x0000d700    l1099
+0x0000d710    l1103
+0x0000d79f    l1111
+0x0000d7a5    l1112
+0x0000d7cc    l1115
+0x0000d7d2    l1116
+0x0000d7ee    l1119
+0x0000d845    l1125
+0x0000d86d    l1126
+0x0000d86f    l1127
+0x0000d897    l1129
+0x0000d89c    l1130
+0x0000d8c4    l1132
+0x0000d8c9    l1133
+0x0000d8f1    l1135
+0x0000d8f6    l1136
+0x0000d990    l1139
+0x0000d99d    l1141
+0x0000d9aa    l1143
+0x0000d9b7    l1145
+0x0000d9d1    l1148
+0x0000d9d3    l1149
+0x0000d9f2    l1152
+0x0000d9f7    l1153
+0x0000da23    l1156
+0x0000da25    l1157
+0x0000da44    l1160
+0x0000da49    l1161
+0x0000da6d    l1123
+0x0000da86    l1164
+0x0000da9e    l1167
+0x0000db34    l1176
+0x0000db3a    l1177
+0x0000db56    l1180
+0x0000dbec    l1189
+0x0000dbf2    l1190
+0x0000dc0e    l1193
+0x0000dc1e    l1194
+0x0000dc34    l1199
+0x0000dcb0    l1203
+0x0000dcb5    l1204
+0x0000dd0a    l1207
+0x0000dd10    l1208
+0x0000dd73    l1212
+0x0000dd79    l1213
+0x0000ddd2    l1216
+0x0000ddd8    l1217
+0x0000de0c    l1220
+0x0000de12    l1221
+0x0000de2d    l1224
+0x0000de7f    l1228
+0x0000deca    l1231
+0x0000deff    l1236
+0x0000df3b    l1234
+0x0000df70    l1241
+0x0000dfac    l1239
+0x0000dfc6    l1244
+0x0000dfdf    l1246
+0x0000dff7    l1249
+0x0000e00e    l1253
+0x0000e01a    l1254
+0x0000e082    l1259
+0x0000e088    l1260
+0x0000e0af    l1263
+0x0000e0b5    l1264
+0x0000e0f7    l1270
+0x0000e164    l1274
+0x0000e17d    l1278
+0x0000e195    l1281
+0x0000e1c4    l1284
+0x0000e1cb    l1285
+0x0000e1f6    l1288
+0x0000e1f8    l1289
+0x0000e249    l1293
+0x0000e24b    l1294
+0x0000e29c    l1297
+0x0000e29e    l1298
+0x0000e2f1    l1301
+0x0000e2f3    l1302
+0x0000e346    l1305
+0x0000e348    l1306
+0x0000e37c    l1310
+0x0000e384    l1311
+0x0000e39c    l1314
+0x0000e3cf    l1318
+0x0000e3fc    l1322
+0x0000e415    l1326
+0x0000e41f    l1327
+0x0000e431    l1329
+0x0000e447    l1332
+           (0x42c3 bytes)
+0x0000e452 Section: 832obj/menu.o,.rodata.9
+0x0000e452    l107
+           (0x13 bytes)
+0x0000e465 Section: 832obj/menu.o,.rodata.a
+0x0000e465    l119
+           (0x14 bytes)
+0x0000e479 Section: 832obj/menu.o,.rodata.b
+0x0000e479    l135
+           (0x6 bytes)
+0x0000e47f Section: 832obj/menu.o,.rodata.c
+0x0000e47f    l160
+           (0x11 bytes)
+0x0000e490 Section: 832obj/menu.o,.rodata.d
+0x0000e490    l167
+           (0x11 bytes)
+0x0000e4a1 Section: 832obj/menu.o,.rodata.e
+0x0000e4a1    l214
+           (0x3 bytes)
+0x0000e4a4 Section: 832obj/menu.o,.rodata.f
+0x0000e4a4    l216
+           (0x3 bytes)
+0x0000e4a7 Section: 832obj/menu.o,.rodata.10
+0x0000e4a7    l218
+           (0xc bytes)
+0x0000e4b3 Section: 832obj/menu.o,.rodata.11
+0x0000e4b3    l222
+           (0x17 bytes)
+0x0000e4ca Section: 832obj/menu.o,.rodata.12
+0x0000e4ca    l207
+           (0x7 bytes)
+0x0000e4d1 Section: 832obj/menu.o,.rodata.13
+0x0000e4d1    l224
+           (0x1 bytes)
+0x0000e4d2 Section: 832obj/menu.o,.rodata.14
+0x0000e4d2    l205
+           (0x1d bytes)
+0x0000e4ef Section: 832obj/menu.o,.rodata.15
+0x0000e4ef    l267
+           (0x4 bytes)
+0x0000e4f3 Section: 832obj/menu.o,.rodata.16
+0x0000e4f3    l417
+           (0x1 bytes)
+0x0000e4f4 Section: 832obj/menu.o,.rodata.17
+0x0000e4f4    l425
+           (0x17 bytes)
+0x0000e50b Section: 832obj/menu.o,.rodata.18
+0x0000e50b    l430
+           (0x18 bytes)
+0x0000e523 Section: 832obj/menu.o,.rodata.19
+0x0000e523    l432
+           (0x1 bytes)
+0x0000e524 Section: 832obj/menu.o,.rodata.1a
+0x0000e524    l456
+           (0x18 bytes)
+0x0000e53c Section: 832obj/menu.o,.rodata.1b
+0x0000e53c    l459
+           (0x19 bytes)
+0x0000e555 Section: 832obj/menu.o,.rodata.1c
+0x0000e555    l462
+           (0x1a bytes)
+0x0000e56f Section: 832obj/menu.o,.rodata.1d
+0x0000e56f    l468
+           (0x1a bytes)
+0x0000e589 Section: 832obj/menu.o,.rodata.1e
+0x0000e589    l566
+           (0x18 bytes)
+0x0000e5a1 Section: 832obj/menu.o,.rodata.1f
+0x0000e5a1    l570
+           (0x4 bytes)
+0x0000e5a5 Section: 832obj/menu.o,.rodata.20
+0x0000e5a5    l646
+           (0x3 bytes)
+0x0000e5a8 Section: 832obj/menu.o,.rodata.21
+0x0000e5a8    l766
+           (0x4 bytes)
+0x0000e5ac Section: 832obj/menu.o,.rodata.22
+0x0000e5ac    l900
+           (0x4 bytes)
+0x0000e5b0 Section: 832obj/menu.o,.rodata.23
+0x0000e5b0    l951
+           (0x21 bytes)
+0x0000e5d1 Section: 832obj/menu.o,.rodata.24
+0x0000e5d1    l988
+           (0x21 bytes)
+0x0000e5f2 Section: 832obj/menu.o,.rodata.25
+0x0000e5f2    l1013
+           (0xb bytes)
+0x0000e5fd Section: 832obj/menu.o,.rodata.26
+0x0000e5fd    l1017
+           (0x4 bytes)
+0x0000e601 Section: 832obj/menu.o,.rodata.27
+0x0000e601    l1018
+           (0x4 bytes)
+0x0000e605 Section: 832obj/menu.o,.rodata.28
+0x0000e605    l1049
+           (0x4 bytes)
+0x0000e609 Section: 832obj/menu.o,.rodata.29
+0x0000e609    l1062
+           (0x4 bytes)
+0x0000e60d Section: 832obj/menu.o,.rodata.2a
+0x0000e60d    l1275
+           (0x16 bytes)
+0x0000e623 Section: 832obj/menu.o,.rodata.2b
+0x0000e623    l198
+           (0x8 bytes)
+0x0000e62b Section: 832obj/menu.o,.rodata.2c
+0x0000e62b    l235
+           (0x18 bytes)
+0x0000e643 Section: 832obj/menu.o,.rodata.2d
+0x0000e643    l239
+           (0x15 bytes)
+0x0000e658 Section: 832obj/menu.o,.rodata.2e
+0x0000e658    l243
+           (0x17 bytes)
+0x0000e66f Section: 832obj/menu.o,.rodata.2f
+0x0000e66f    l247
+           (0x11 bytes)
+0x0000e680 Section: 832obj/menu.o,.rodata.30
+0x0000e680    l289
+           (0x7 bytes)
+0x0000e687 Section: 832obj/menu.o,.rodata.31
+0x0000e687    l290
+           (0x1 bytes)
+0x0000e688 Section: 832obj/menu.o,.rodata.32
+0x0000e688    l291
+           (0x14 bytes)
+0x0000e69c Section: 832obj/menu.o,.rodata.33
+0x0000e69c    l298
+           (0x3 bytes)
+0x0000e69f Section: 832obj/menu.o,.rodata.34
+0x0000e69f    l299
+           (0x4 bytes)
+0x0000e6a3 Section: 832obj/menu.o,.rodata.35
+0x0000e6a3    l300
+           (0x18 bytes)
+0x0000e6bb Section: 832obj/menu.o,.rodata.36
+0x0000e6bb    l307
+           (0x3 bytes)
+0x0000e6be Section: 832obj/menu.o,.rodata.37
+0x0000e6be    l308
+           (0x4 bytes)
+0x0000e6c2 Section: 832obj/menu.o,.rodata.38
+0x0000e6c2    l309
+           (0x19 bytes)
+0x0000e6db Section: 832obj/menu.o,.rodata.39
+0x0000e6db    l318
+           (0x1 bytes)
+0x0000e6dc Section: 832obj/menu.o,.rodata.3a
+0x0000e6dc    l319
+           (0x1 bytes)
+0x0000e6dd Section: 832obj/menu.o,.rodata.3b
+0x0000e6dd    l320
+           (0x1 bytes)
+0x0000e6de Section: 832obj/menu.o,.rodata.3c
+0x0000e6de    l324
+           (0x11 bytes)
+0x0000e6ef Section: 832obj/menu.o,.rodata.3d
+0x0000e6ef    l343
+           (0x9 bytes)
+0x0000e6f8 Section: 832obj/menu.o,.rodata.3e
+0x0000e6f8    l347
+           (0x17 bytes)
+0x0000e70f Section: 832obj/menu.o,.rodata.3f
+0x0000e70f    l351
+           (0x17 bytes)
+0x0000e726 Section: 832obj/menu.o,.rodata.40
+0x0000e726    l352
+           (0x1 bytes)
+0x0000e727 Section: 832obj/menu.o,.rodata.41
+0x0000e727    l356
+           (0x17 bytes)
+0x0000e73e Section: 832obj/menu.o,.rodata.42
+0x0000e73e    l360
+           (0x17 bytes)
+0x0000e755 Section: 832obj/menu.o,.rodata.43
+0x0000e755    l364
+           (0x17 bytes)
+0x0000e76c Section: 832obj/menu.o,.rodata.44
+0x0000e76c    l365
+           (0x1 bytes)
+0x0000e76d Section: 832obj/menu.o,.rodata.45
+0x0000e76d    l369
+           (0x11 bytes)
+0x0000e77e Section: 832obj/menu.o,.rodata.46
+0x0000e77e    l400
+           (0x5 bytes)
+0x0000e783 Section: 832obj/menu.o,.rodata.47
+0x0000e783    l404
+           (0x8 bytes)
+0x0000e78b Section: 832obj/menu.o,.rodata.48
+0x0000e78b    l408
+           (0x9 bytes)
+0x0000e794 Section: 832obj/menu.o,.rodata.49
+0x0000e794    l409
+           (0x1 bytes)
+0x0000e795 Section: 832obj/menu.o,.rodata.4a
+0x0000e795    l415
+           (0x16 bytes)
+0x0000e7ab Section: 832obj/menu.o,.rodata.4b
+0x0000e7ab    l436
+           (0x8 bytes)
+0x0000e7b3 Section: 832obj/menu.o,.rodata.4c
+0x0000e7b3    l440
+           (0xd bytes)
+0x0000e7c0 Section: 832obj/menu.o,.rodata.4d
+0x0000e7c0    l441
+           (0x1 bytes)
+0x0000e7c1 Section: 832obj/menu.o,.rodata.4e
+0x0000e7c1    l445
+           (0x11 bytes)
+0x0000e7d2 Section: 832obj/menu.o,.rodata.4f
+0x0000e7d2    l476
+           (0x6 bytes)
+0x0000e7d8 Section: 832obj/menu.o,.rodata.50
+0x0000e7d8    l477
+           (0x1 bytes)
+0x0000e7d9 Section: 832obj/menu.o,.rodata.51
+0x0000e7d9    l478
+           (0x1 bytes)
+0x0000e7da Section: 832obj/menu.o,.rodata.52
+0x0000e7da    l482
+           (0x11 bytes)
+0x0000e7eb Section: 832obj/menu.o,.rodata.53
+0x0000e7eb    l484
+           (0x1ea bytes)
+0x0000e9d5 Section: 832obj/menu.o,.rodata.54
+0x0000e9d5    l489
+           (0xa bytes)
+0x0000e9df Section: 832obj/menu.o,.rodata.55
+0x0000e9df    l490
+           (0x1 bytes)
+0x0000e9e0 Section: 832obj/menu.o,.rodata.56
+0x0000e9e0    l491
+           (0x1 bytes)
+0x0000e9e1 Section: 832obj/menu.o,.rodata.57
+0x0000e9e1    l495
+           (0x11 bytes)
+0x0000e9f2 Section: 832obj/menu.o,.rodata.58
+0x0000e9f2    l497
+           (0x1f8 bytes)
+0x0000ebea Section: 832obj/menu.o,.rodata.59
+0x0000ebea    l516
+           (0x5 bytes)
+0x0000ebef Section: 832obj/menu.o,.rodata.5a
+0x0000ebef    l523
+           (0xc bytes)
+0x0000ebfb Section: 832obj/menu.o,.rodata.5b
+0x0000ebfb    l530
+           (0xc bytes)
+0x0000ec07 Section: 832obj/menu.o,.rodata.5c
+0x0000ec07    l537
+           (0xc bytes)
+0x0000ec13 Section: 832obj/menu.o,.rodata.5d
+0x0000ec13    l544
+           (0xc bytes)
+0x0000ec1f Section: 832obj/menu.o,.rodata.5e
+0x0000ec1f    l551
+           (0xc bytes)
+0x0000ec2b Section: 832obj/menu.o,.rodata.5f
+0x0000ec2b    l555
+           (0xe bytes)
+0x0000ec39 Section: 832obj/menu.o,.rodata.60
+0x0000ec39    l556
+           (0x1 bytes)
+0x0000ec3a Section: 832obj/menu.o,.rodata.61
+0x0000ec3a    l560
+           (0x11 bytes)
+0x0000ec4b Section: 832obj/menu.o,.rodata.62
+0x0000ec4b    l575
+           (0x18 bytes)
+0x0000ec63 Section: 832obj/menu.o,.rodata.63
+0x0000ec63    l579
+           (0x1a bytes)
+0x0000ec7d Section: 832obj/menu.o,.rodata.64
+0x0000ec7d    l581
+           (0x7 bytes)
+0x0000ec84 Section: 832obj/menu.o,.rodata.65
+0x0000ec84    l667
+           (0x8 bytes)
+0x0000ec8c Section: 832obj/menu.o,.rodata.66
+0x0000ec8c    l668
+           (0x1 bytes)
+0x0000ec8d Section: 832obj/menu.o,.rodata.67
+0x0000ec8d    l669
+           (0x1 bytes)
+0x0000ec8e Section: 832obj/menu.o,.rodata.68
+0x0000ec8e    l673
+           (0x13 bytes)
+0x0000eca1 Section: 832obj/menu.o,.rodata.69
+0x0000eca1    l677
+           (0x12 bytes)
+0x0000ecb3 Section: 832obj/menu.o,.rodata.6a
+0x0000ecb3    l678
+           (0x1 bytes)
+0x0000ecb4 Section: 832obj/menu.o,.rodata.6b
+0x0000ecb4    l679
+           (0x1 bytes)
+0x0000ecb5 Section: 832obj/menu.o,.rodata.6c
+0x0000ecb5    l680
+           (0x1 bytes)
+0x0000ecb6 Section: 832obj/menu.o,.rodata.6d
+0x0000ecb6    l690
+           (0x5 bytes)
+0x0000ecbb Section: 832obj/menu.o,.rodata.6e
+0x0000ecbb    l694
+           (0xc bytes)
+0x0000ecc7 Section: 832obj/menu.o,.rodata.6f
+0x0000ecc7    l695
+           (0x1 bytes)
+0x0000ecc8 Section: 832obj/menu.o,.rodata.70
+0x0000ecc8    l696
+           (0xf bytes)
+0x0000ecd7 Section: 832obj/menu.o,.rodata.71
+0x0000ecd7    l703
+           (0xc bytes)
+0x0000ece3 Section: 832obj/menu.o,.rodata.72
+0x0000ece3    l704
+           (0x1 bytes)
+0x0000ece4 Section: 832obj/menu.o,.rodata.73
+0x0000ece4    l705
+           (0xf bytes)
+0x0000ecf3 Section: 832obj/menu.o,.rodata.74
+0x0000ecf3    l712
+           (0xc bytes)
+0x0000ecff Section: 832obj/menu.o,.rodata.75
+0x0000ecff    l713
+           (0x1 bytes)
+0x0000ed00 Section: 832obj/menu.o,.rodata.76
+0x0000ed00    l714
+           (0xf bytes)
+0x0000ed0f Section: 832obj/menu.o,.rodata.77
+0x0000ed0f    l721
+           (0xc bytes)
+0x0000ed1b Section: 832obj/menu.o,.rodata.78
+0x0000ed1b    l722
+           (0x1 bytes)
+0x0000ed1c Section: 832obj/menu.o,.rodata.79
+0x0000ed1c    l723
+           (0xf bytes)
+0x0000ed2b Section: 832obj/menu.o,.rodata.7a
+0x0000ed2b    l730
+           (0xc bytes)
+0x0000ed37 Section: 832obj/menu.o,.rodata.7b
+0x0000ed37    l731
+           (0x1 bytes)
+0x0000ed38 Section: 832obj/menu.o,.rodata.7c
+0x0000ed38    l732
+           (0xf bytes)
+0x0000ed47 Section: 832obj/menu.o,.rodata.7d
+0x0000ed47    l739
+           (0xd bytes)
+0x0000ed54 Section: 832obj/menu.o,.rodata.7e
+0x0000ed54    l740
+           (0x1 bytes)
+0x0000ed55 Section: 832obj/menu.o,.rodata.7f
+0x0000ed55    l744
+           (0x11 bytes)
+0x0000ed66 Section: 832obj/menu.o,.rodata.80
+0x0000ed66    l771
+           (0x17 bytes)
+0x0000ed7d Section: 832obj/menu.o,.rodata.81
+0x0000ed7d    l775
+           (0x1a bytes)
+0x0000ed97 Section: 832obj/menu.o,.rodata.82
+0x0000ed97    l777
+           (0x8 bytes)
+0x0000ed9f Section: 832obj/menu.o,.rodata.83
+0x0000ed9f    l778
+           (0x1 bytes)
+0x0000eda0 Section: 832obj/menu.o,.rodata.84
+0x0000eda0    l779
+           (0x10 bytes)
+0x0000edb0 Section: 832obj/menu.o,.rodata.85
+0x0000edb0    l783
+           (0x10 bytes)
+0x0000edc0 Section: 832obj/menu.o,.rodata.86
+0x0000edc0    l787
+           (0x10 bytes)
+0x0000edd0 Section: 832obj/menu.o,.rodata.87
+0x0000edd0    l791
+           (0x5 bytes)
+0x0000edd5 Section: 832obj/menu.o,.rodata.88
+0x0000edd5    l792
+           (0x4 bytes)
+0x0000edd9 Section: 832obj/menu.o,.rodata.89
+0x0000edd9    l796
+           (0x10 bytes)
+0x0000ede9 Section: 832obj/menu.o,.rodata.8a
+0x0000ede9    l800
+           (0x10 bytes)
+0x0000edf9 Section: 832obj/menu.o,.rodata.8b
+0x0000edf9    l804
+           (0x1 bytes)
+0x0000edfa Section: 832obj/menu.o,.rodata.8c
+0x0000edfa    l808
+           (0x11 bytes)
+0x0000ee0b Section: 832obj/menu.o,.rodata.8d
+0x0000ee0b    l851
+           (0x7 bytes)
+0x0000ee12 Section: 832obj/menu.o,.rodata.8e
+0x0000ee12    l852
+           (0xf bytes)
+0x0000ee21 Section: 832obj/menu.o,.rodata.8f
+0x0000ee21    l856
+           (0xf bytes)
+0x0000ee30 Section: 832obj/menu.o,.rodata.90
+0x0000ee30    l860
+           (0xf bytes)
+0x0000ee3f Section: 832obj/menu.o,.rodata.91
+0x0000ee3f    l864
+           (0x1 bytes)
+0x0000ee40 Section: 832obj/menu.o,.rodata.92
+0x0000ee40    l865
+           (0x10 bytes)
+0x0000ee50 Section: 832obj/menu.o,.rodata.93
+0x0000ee50    l872
+           (0xf bytes)
+0x0000ee5f Section: 832obj/menu.o,.rodata.94
+0x0000ee5f    l876
+           (0x9 bytes)
+0x0000ee68 Section: 832obj/menu.o,.rodata.95
+0x0000ee68    l877
+           (0x9 bytes)
+0x0000ee71 Section: 832obj/menu.o,.rodata.96
+0x0000ee71    l881
+           (0x1 bytes)
+0x0000ee72 Section: 832obj/menu.o,.rodata.97
+0x0000ee72    l885
+           (0x11 bytes)
+0x0000ee83 Section: 832obj/menu.o,.rodata.98
+0x0000ee83    l916
+           (0xa bytes)
+0x0000ee8d Section: 832obj/menu.o,.rodata.99
+0x0000ee8d    l925
+           (0x17 bytes)
+0x0000eea4 Section: 832obj/menu.o,.rodata.9a
+0x0000eea4    l926
+           (0x15 bytes)
+0x0000eeb9 Section: 832obj/menu.o,.rodata.9b
+0x0000eeb9    l930
+           (0x4 bytes)
+0x0000eebd Section: 832obj/menu.o,.rodata.9c
+0x0000eebd    l931
+           (0x4 bytes)
+0x0000eec1 Section: 832obj/menu.o,.rodata.9d
+0x0000eec1    l935
+           (0xb bytes)
+0x0000eecc Section: 832obj/menu.o,.rodata.9e
+0x0000eecc    l938
+           (0x13 bytes)
+0x0000eedf Section: 832obj/menu.o,.rodata.9f
+0x0000eedf    l956
+           (0x1c bytes)
+0x0000eefb Section: 832obj/menu.o,.rodata.a0
+0x0000eefb    l972
+           (0xb bytes)
+0x0000ef06 Section: 832obj/menu.o,.rodata.a1
+0x0000ef06    l975
+           (0x13 bytes)
+0x0000ef19 Section: 832obj/menu.o,.rodata.a2
+0x0000ef19    l993
+           (0x1c bytes)
+0x0000ef35 Section: 832obj/menu.o,.rodata.a3
+0x0000ef35    l1011
+           (0x1 bytes)
+0x0000ef36 Section: 832obj/menu.o,.rodata.a4
+0x0000ef36    l1025
+           (0x1 bytes)
+0x0000ef37 Section: 832obj/menu.o,.rodata.a5
+0x0000ef37    l1029
+           (0x11 bytes)
+0x0000ef48 Section: 832obj/menu.o,.rodata.a6
+0x0000ef48    l1104
+           (0x8 bytes)
+0x0000ef50 Section: 832obj/menu.o,.rodata.a7
+0x0000ef50    l1105
+           (0x1 bytes)
+0x0000ef51 Section: 832obj/menu.o,.rodata.a8
+0x0000ef51    l1106
+           (0x1b bytes)
+0x0000ef6c Section: 832obj/menu.o,.rodata.a9
+0x0000ef6c    l1107
+           (0x16 bytes)
+0x0000ef82 Section: 832obj/menu.o,.rodata.aa
+0x0000ef82    l1108
+           (0x1 bytes)
+0x0000ef83 Section: 832obj/menu.o,.rodata.ab
+0x0000ef83    l1109
+           (0x16 bytes)
+0x0000ef99 Section: 832obj/menu.o,.rodata.ac
+0x0000ef99    l1110
+           (0x1 bytes)
+0x0000ef9a Section: 832obj/menu.o,.rodata.ad
+0x0000ef9a    l1114
+           (0x11 bytes)
+0x0000efab Section: 832obj/menu.o,.rodata.ae
+0x0000efab    l1118
+           (0x10 bytes)
+0x0000efbb Section: 832obj/menu.o,.rodata.af
+0x0000efbb    l1168
+           (0x8 bytes)
+0x0000efc3 Section: 832obj/menu.o,.rodata.b0
+0x0000efc3    l1169
+           (0x1 bytes)
+0x0000efc4 Section: 832obj/menu.o,.rodata.b1
+0x0000efc4    l1170
+           (0x1c bytes)
+0x0000efe0 Section: 832obj/menu.o,.rodata.b2
+0x0000efe0    l1171
+           (0x19 bytes)
+0x0000eff9 Section: 832obj/menu.o,.rodata.b3
+0x0000eff9    l1172
+           (0x1f bytes)
+0x0000f018 Section: 832obj/menu.o,.rodata.b4
+0x0000f018    l1173
+           (0x11 bytes)
+0x0000f029 Section: 832obj/menu.o,.rodata.b5
+0x0000f029    l1174
+           (0x1 bytes)
+0x0000f02a Section: 832obj/menu.o,.rodata.b6
+0x0000f02a    l1175
+           (0x1 bytes)
+0x0000f02b Section: 832obj/menu.o,.rodata.b7
+0x0000f02b    l1179
+           (0x10 bytes)
+0x0000f03b Section: 832obj/menu.o,.rodata.b8
+0x0000f03b    l1181
+           (0x8 bytes)
+0x0000f043 Section: 832obj/menu.o,.rodata.b9
+0x0000f043    l1182
+           (0x1 bytes)
+0x0000f044 Section: 832obj/menu.o,.rodata.ba
+0x0000f044    l1183
+           (0x1b bytes)
+0x0000f05f Section: 832obj/menu.o,.rodata.bb
+0x0000f05f    l1184
+           (0x1e bytes)
+0x0000f07d Section: 832obj/menu.o,.rodata.bc
+0x0000f07d    l1185
+           (0x16 bytes)
+0x0000f093 Section: 832obj/menu.o,.rodata.bd
+0x0000f093    l1186
+           (0x1a bytes)
+0x0000f0ad Section: 832obj/menu.o,.rodata.be
+0x0000f0ad    l1187
+           (0x1 bytes)
+0x0000f0ae Section: 832obj/menu.o,.rodata.bf
+0x0000f0ae    l1188
+           (0x1 bytes)
+0x0000f0af Section: 832obj/menu.o,.rodata.c0
+0x0000f0af    l1192
+           (0x10 bytes)
+0x0000f0bf Section: 832obj/menu.o,.rodata.c1
+0x0000f0bf    l1200
+           (0x6 bytes)
+0x0000f0c5 Section: 832obj/menu.o,.rodata.c2
+0x0000f0c5    l1201
+           (0x1 bytes)
+0x0000f0c6 Section: 832obj/menu.o,.rodata.c3
+0x0000f0c6    l1202
+           (0x13 bytes)
+0x0000f0d9 Section: 832obj/menu.o,.rodata.c4
+0x0000f0d9    l1206
+           (0x13 bytes)
+0x0000f0ec Section: 832obj/menu.o,.rodata.c5
+0x0000f0ec    l1210
+           (0xd bytes)
+0x0000f0f9 Section: 832obj/menu.o,.rodata.c6
+0x0000f0f9    l1211
+           (0x13 bytes)
+0x0000f10c Section: 832obj/menu.o,.rodata.c7
+0x0000f10c    l1215
+           (0x13 bytes)
+0x0000f11f Section: 832obj/menu.o,.rodata.c8
+0x0000f11f    l1219
+           (0x1 bytes)
+0x0000f120 Section: 832obj/menu.o,.rodata.c9
+0x0000f120    l1223
+           (0x11 bytes)
+0x0000f131 Section: 832obj/menu.o,.rodata.ca
+0x0000f131    l1255
+           (0x8 bytes)
+0x0000f139 Section: 832obj/menu.o,.rodata.cb
+0x0000f139    l1256
+           (0x1 bytes)
+0x0000f13a Section: 832obj/menu.o,.rodata.cc
+0x0000f13a    l1257
+           (0x19 bytes)
+0x0000f153 Section: 832obj/menu.o,.rodata.cd
+0x0000f153    l1258
+           (0x1 bytes)
+0x0000f154 Section: 832obj/menu.o,.rodata.ce
+0x0000f154    l1262
+           (0x12 bytes)
+0x0000f166 Section: 832obj/menu.o,.rodata.cf
+0x0000f166    l1266
+           (0x11 bytes)
+0x0000f177 Section: 832obj/menu.o,.rodata.d0
+0x0000f177    l1267
+           (0x1 bytes)
+0x0000f178 Section: 832obj/menu.o,.rodata.d1
+0x0000f178    l1268
+           (0x1 bytes)
+0x0000f179 Section: 832obj/menu.o,.rodata.d2
+0x0000f179    l1269
+           (0x1 bytes)
+0x0000f17a Section: 832obj/menu.o,.rodata.d3
+0x0000f17a    l1282
+           (0x6 bytes)
+0x0000f180 Section: 832obj/menu.o,.rodata.d4
+0x0000f180    l1286
+           (0x1a bytes)
+0x0000f19a Section: 832obj/menu.o,.rodata.d5
+0x0000f19a    l1287
+           (0x17 bytes)
+0x0000f1b1 Section: 832obj/menu.o,.rodata.d6
+0x0000f1b1    l1291
+           (0x1 bytes)
+0x0000f1b2 Section: 832obj/menu.o,.rodata.d7
+0x0000f1b2    l1292
+           (0x4 bytes)
+0x0000f1b6 Section: 832obj/menu.o,.rodata.d8
+0x0000f1b6    l1296
+           (0x4 bytes)
+0x0000f1ba Section: 832obj/menu.o,.rodata.d9
+0x0000f1ba    l1300
+           (0x4 bytes)
+0x0000f1be Section: 832obj/menu.o,.rodata.da
+0x0000f1be    l1304
+           (0x4 bytes)
+0x0000f1c2 Section: 832obj/menu.o,.rodata.db
+0x0000f1c2    l1308
+           (0x1 bytes)
+0x0000f1c3 Section: 832obj/menu.o,.rodata.dc
+0x0000f1c3    l1312
+           (0x12 bytes)
+0x0000f1d5 Section: 832obj/menu.o,.rodata.dd
+0x0000f1d5    l1313
+           (0x10 bytes)
+0x0000f1e5 Section: 832obj/menu.o,.data.de
+0x0000f1e5    l87
+           (0x1 bytes)
+0x0000f1e6 Section: 832obj/menu.o,.data.df
+0x0000f1e6    l88
+           (0x1 bytes)
+0x0000f1e7 Section: 832obj/menu.o,.data.e0
+0x0000f1e7    l91
+           (0x1 bytes)
+0x0000f1e8 Section: 832obj/menu.o,.text.e7
+0x0000f1e8    _ScrollLongName
+0x0000f23a    l1350
+0x0000f251    l1352
+0x0000f268    l1346
+           (0x88 bytes)
+0x0000f270 Section: 832obj/menu.o,.text.e9
+0x0000f270    _GetDiskInfo
+0x0000f2a8    l1387
+0x0000f2b9    l1388
+0x0000f2ee    l1390
+0x0000f35e    l1377
+0x0000f3d0    l1385
+0x0000f3d7    l1380
+0x0000f3f5    l1389
+0x0000f3f7    l1353
+           (0x191 bytes)
+0x0000f401 Section: 832obj/menu.o,.data.ea
+0x0000f401    l1355
+           (0x6 bytes)
+0x0000f407 Section: 832obj/menu.o,.data.eb
+0x0000f407    l1356
+           (0x4 bytes)
+0x0000f40b Section: 832obj/menu.o,.text.ec
+0x0000f40b    _PrintDirectory
+0x0000f422    l1435
+0x0000f4b3    l1406
+0x0000f4d4    l1408
+0x0000f4da    l1410
+0x0000f509    l1412
+0x0000f51a    l1400
+0x0000f561    l1419
+0x0000f57d    l1438
+0x0000f5a5    l1417
+0x0000f5c5    l1398
+0x0000f5e6    l1429
+0x0000f5fd    l1432
+0x0000f602    l1433
+           (0x225 bytes)
+0x0000f630 Section: 832obj/menu.o,.rodata.ed
+0x0000f630    l1426
+           (0x7 bytes)
+0x0000f637 Section: 832obj/menu.o,.rodata.ee
+0x0000f637    l1431
+           (0x14 bytes)
+0x0000f64b Section: 832obj/menu.o,.text.ef
+0x0000f64b    __strncpy
+0x0000f660    l1449
+0x0000f670    l1451
+0x0000f679    l1450
+0x0000f685    l1452
+           (0x3e bytes)
+0x0000f689 Section: 832obj/menu.o,.text.f0
+0x0000f689    _InsertFloppy
+0x0000f6df    l1456
+0x0000f6fb    l1483
+0x0000f70e    l1484
+0x0000f732    l1485
+0x0000f74e    l1468
+0x0000f769    l1469
+0x0000f786    l1471
+0x0000f79d    l1473
+0x0000f7d3    l1475
+0x0000f7e1    l1477
+           (0x1a8 bytes)
+0x0000f831 Section: 832obj/menu.o,.rodata.f1
+0x0000f831    l1457
+           (0x19 bytes)
+0x0000f84a Section: 832obj/menu.o,.rodata.f2
+0x0000f84a    l1458
+           (0x2e bytes)
+0x0000f878 Section: 832obj/menu.o,.rodata.f3
+0x0000f878    l1476
+           (0x18 bytes)
+0x0000f890 Section: 832obj/menu.o,.rodata.f4
+0x0000f890    l1478
+           (0x1b bytes)
+0x0000f8ab Section: 832obj/menu.o,.rodata.f5
+0x0000f8ab    l1479
+           (0x19 bytes)
+0x0000f8c4 Section: 832obj/menu.o,.rodata.f6
+0x0000f8c4    l1480
+           (0x19 bytes)
+0x0000f8dd Section: 832obj/menu.o,.rodata.f7
+0x0000f8dd    l1481
+           (0x12 bytes)
+0x0000f8ef Section: 832obj/menu.o,.rodata.f8
+0x0000f8ef    l1482
+           (0x16 bytes)
+0x0000f905 Section: 832obj/menu.o,.text.fa
+0x0000f905    _ShowError
+0x0000f921    l1491
+0x0000f92f    l1493
+           (0x41 bytes)
+0x0000f946 Section: 832obj/menu.o,.text.fb
+0x0000f946    _InfoMessage
+0x0000f96f    l1499
+           (0xa8 bytes)
+0x0000f9ee Section: 832obj/menu.o,.rodata.fc
+0x0000f9ee    l1500
+           (0x8 bytes)
+0x0000f9f6 Section: 832obj/menu.o,.rodata.fd
+0x0000f9f6    l1501
+           (0x1 bytes)
+0x0000f9f7 Section: 832obj/menu.o,.rodata.fe
+0x0000f9f7    l1502
+           (0x1 bytes)
+0x0000f9f8 Section: 832obj/menu.o,.rodata.ff
+0x0000f9f8    l1503
+           (0x1 bytes)
+0x0000f9f9 Section: 832obj/menu.o,.rodata.100
+0x0000f9f9    l1504
+           (0x1 bytes)
+0x0000f9fa Section: 832obj/menu.o,.rodata.101
+0x0000f9fa    l1505
+           (0x1 bytes)
+0x0000f9fb Section: 832obj/menu.o,.rodata.102
+0x0000f9fb    l1506
+           (0x1 bytes)
+0x0000f9fc Section: 832obj/menu.o,.rodata.103
+0x0000f9fc    l1507
+           (0x1 bytes)
+0x0000f9fd Section: 832obj/menu.o,.text.104
+0x0000f9fd    l1508
+           (0xb bytes)
+0x0000fa08 Section: 832obj/menu.o,.text.105
+0x0000fa08    l1511
+           (0xf bytes)
+0x0000fa17 Section: 832obj/menu.o,.text.106
+0x0000fa17    l1514
+           (0xf bytes)
+0x0000fa26 Section: 832obj/menu.o,.text.107
+0x0000fa26    _SanityCheck
+           (0xe9 bytes)
+0x0000fb0f Section: 832obj/menu.o,.rodata.108
+0x0000fb0f    l1519
+           (0x3 bytes)
+0x0000fb12 Section: 832obj/menu.o,.rodata.109
+0x0000fb12    l1520
+           (0x3 bytes)
+0x0000fb15 Section: 832obj/menu.o,.rodata.10a
+0x0000fb15    l1521
+           (0x3 bytes)
+0x0000fb18 Section: 832obj/menu.o,.rodata.10b
+0x0000fb18    l1522
+           (0x3 bytes)
+0x0000fb1b Section: 832obj/menu.o,.rodata.10c
+0x0000fb1b    l1523
+           (0x3 bytes)
+0x0000fb1e Section: 832obj/menu.o,.rodata.10d
+0x0000fb1e    l1524
+           (0x3 bytes)
+0x0000fb21 Section: 832obj/menu.o,.rodata.10e
+0x0000fb21    l1525
+           (0x3 bytes)
+0x0000fb24 Section: 832obj/menu.o,.text.10f
+0x0000fb24    _DebugMessage
+           (0x42 bytes)
+0x0000fb66 Section: 832obj/menu.o,.data.110
+0x0000fb68    _config_filter_msg
+           (0x12 bytes)
+0x0000fb78 Section: 832obj/menu.o,.data.111
+0x0000fb78    _config_memory_chip_msg
+           (0x10 bytes)
+0x0000fb88 Section: 832obj/menu.o,.data.112
+0x0000fb88    _config_memory_slow_msg
+           (0x10 bytes)
+0x0000fb98 Section: 832obj/menu.o,.data.113
+0x0000fb98    _menustate
+           (0x1 bytes)
+0x0000fb99 Section: 832obj/menu.o,.data.114
+0x0000fb99    _menusub
+           (0x1 bytes)
+0x0000fb9a Section: 832obj/menu.o,.data.115
+0x0000fb9c    _menumask
+           (0x6 bytes)
+0x0000fba0 Section: 832obj/menu.o,.data.117
+0x0000fba0    _config_scanlines_msg
+           (0xc bytes)
+0x0000fbac Section: 832obj/menu.o,.data.118
+0x0000fbac    _config_memory_fast_msg
+           (0x10 bytes)
+0x0000fbbc Section: 832obj/menu.o,.data.119
+0x0000fbbc    _config_cpu_msg
+           (0x10 bytes)
+0x0000fbcc Section: 832obj/menu.o,.data.11a
+0x0000fbcc    _config_hdf_msg
+           (0x1c bytes)
+0x0000fbe8 Section: 832obj/menu.o,.data.11b
+0x0000fbe8    _config_chipset_msg
+           (0x20 bytes)
+0x0000fc08 Section: 832obj/menu.o,.data.11c
+0x0000fc08    _config_turbo_msg
+           (0x10 bytes)
+0x0000fc18 Section: 832obj/menu.o,.data.11d
+0x0000fc18    _config_cd32pad_msg
+           (0x8 bytes)
+0x0000fc20 Section: 832obj/menu.o,.data.11e
+0x0000fc20    _config_autofire_msg
+           (0x10 bytes)
+0x0000fc30 Section: 832obj/menu.o,.data.11f
+0x0000fc30    _helptexts
+           (0x1c bytes)
+0x0000fc4c Section: 832obj/menu.o,.data.120
+0x0000fc4c    _config_autofire
+           (0x1 bytes)
+0x0000fc4d Section: 832obj/menu.o,.data.121
+0x0000fc50    _fs_pFileExt
+           (0x7 bytes)
+0x0000fc54 Section: 832obj/menu.o,.rodata.12c
+0x0000fc54    l1
+           (0x5 bytes)
+0x0000fc59 Section: 832obj/menu.o,.rodata.12d
+0x0000fc59    l2
+           (0xb bytes)
+0x0000fc64 Section: 832obj/menu.o,.rodata.12e
+0x0000fc64    l3
+           (0x9 bytes)
+0x0000fc6d Section: 832obj/menu.o,.rodata.12f
+0x0000fc6d    l4
+           (0x4 bytes)
+0x0000fc71 Section: 832obj/menu.o,.rodata.130
+0x0000fc71    l5
+           (0x7 bytes)
+0x0000fc78 Section: 832obj/menu.o,.rodata.131
+0x0000fc78    l6
+           (0x7 bytes)
+0x0000fc7f Section: 832obj/menu.o,.rodata.132
+0x0000fc7f    l7
+           (0x7 bytes)
+0x0000fc86 Section: 832obj/menu.o,.rodata.133
+0x0000fc86    l8
+           (0x7 bytes)
+0x0000fc8d Section: 832obj/menu.o,.rodata.134
+0x0000fc8d    l9
+           (0x7 bytes)
+0x0000fc94 Section: 832obj/menu.o,.rodata.135
+0x0000fc94    l10
+           (0x7 bytes)
+0x0000fc9b Section: 832obj/menu.o,.rodata.136
+0x0000fc9b    l11
+           (0x7 bytes)
+0x0000fca2 Section: 832obj/menu.o,.rodata.137
+0x0000fca2    l12
+           (0x7 bytes)
+0x0000fca9 Section: 832obj/menu.o,.rodata.13a
+0x0000fca9    l15
+           (0x4 bytes)
+0x0000fcad Section: 832obj/menu.o,.rodata.13b
+0x0000fcad    l16
+           (0x4 bytes)
+0x0000fcb1 Section: 832obj/menu.o,.rodata.13c
+0x0000fcb1    l17
+           (0x6 bytes)
+0x0000fcb7 Section: 832obj/menu.o,.rodata.13d
+0x0000fcb7    l18
+           (0x7 bytes)
+0x0000fcbe Section: 832obj/menu.o,.rodata.13e
+0x0000fcbe    l19
+           (0x7 bytes)
+0x0000fcc5 Section: 832obj/menu.o,.rodata.13f
+0x0000fcc5    l20
+           (0x7 bytes)
+0x0000fccc Section: 832obj/menu.o,.rodata.140
+0x0000fccc    l21
+           (0x8 bytes)
+0x0000fcd4 Section: 832obj/menu.o,.rodata.141
+0x0000fcd4    l22
+           (0x7 bytes)
+0x0000fcdb Section: 832obj/menu.o,.rodata.142
+0x0000fcdb    l23
+           (0x6 bytes)
+0x0000fce1 Section: 832obj/menu.o,.rodata.143
+0x0000fce1    l24
+           (0x2 bytes)
+0x0000fce3 Section: 832obj/menu.o,.rodata.144
+0x0000fce3    l25
+           (0xa bytes)
+0x0000fced Section: 832obj/menu.o,.rodata.145
+0x0000fced    l26
+           (0x9 bytes)
+0x0000fcf6 Section: 832obj/menu.o,.rodata.146
+0x0000fcf6    l27
+           (0x14 bytes)
+0x0000fd0a Section: 832obj/menu.o,.rodata.147
+0x0000fd0a    l28
+           (0xc bytes)
+0x0000fd16 Section: 832obj/menu.o,.rodata.148
+0x0000fd16    l29
+           (0x13 bytes)
+0x0000fd29 Section: 832obj/menu.o,.rodata.149
+0x0000fd29    l30
+           (0x13 bytes)
+0x0000fd3c Section: 832obj/menu.o,.rodata.14a
+0x0000fd3c    l31
+           (0x13 bytes)
+0x0000fd4f Section: 832obj/menu.o,.rodata.14b
+0x0000fd4f    l32
+           (0x13 bytes)
+0x0000fd62 Section: 832obj/menu.o,.rodata.14c
+0x0000fd62    l33
+           (0x9 bytes)
+0x0000fd6b Section: 832obj/menu.o,.rodata.14d
+0x0000fd6b    l34
+           (0xa bytes)
+0x0000fd75 Section: 832obj/menu.o,.rodata.14e
+0x0000fd75    l35
+           (0x4 bytes)
+0x0000fd79 Section: 832obj/menu.o,.rodata.14f
+0x0000fd79    l36
+           (0x4 bytes)
+0x0000fd7d Section: 832obj/menu.o,.rodata.150
+0x0000fd7d    l37
+           (0x4 bytes)
+0x0000fd81 Section: 832obj/menu.o,.rodata.151
+0x0000fd81    l38
+           (0x4 bytes)
+0x0000fd85 Section: 832obj/menu.o,.rodata.152
+0x0000fd85    l39
+           (0x4 bytes)
+0x0000fd89 Section: 832obj/menu.o,.rodata.153
+0x0000fd89    l40
+           (0x4 bytes)
+0x0000fd8d Section: 832obj/menu.o,.rodata.154
+0x0000fd8d    l41
+           (0x7 bytes)
+0x0000fd94 Section: 832obj/menu.o,.rodata.155
+0x0000fd94    l42
+           (0x7 bytes)
+0x0000fd9b Section: 832obj/menu.o,.rodata.156
+0x0000fd9b    l43
+           (0x7 bytes)
+0x0000fda2 Section: 832obj/menu.o,.rodata.157
+0x0000fda2    l44
+           (0x7 bytes)
+0x0000fda9 Section: 832obj/menu.o,.rodata.158
+0x0000fda9    l45
+           (0x4 bytes)
+0x0000fdad Section: 832obj/menu.o,.rodata.159
+0x0000fdad    l46
+           (0x3 bytes)
+0x0000fdb0 Section: 832obj/menu.o,.rodata.15a
+0x0000fdb0    l47
+           (0x15 bytes)
+0x0000fdc5 Section: 832obj/menu.o,.rodata.15b
+0x0000fdc5    l48
+           (0x16 bytes)
+0x0000fddb Section: 832obj/menu.o,.rodata.15c
+0x0000fddb    l49
+           (0x18 bytes)
+0x0000fdf3 Section: 832obj/menu.o,.rodata.15d
+0x0000fdf3    l50
+           (0x16 bytes)
+0x0000fe09 Section: 832obj/menu.o,.rodata.15e
+0x0000fe09    l51
+           (0x141 bytes)
+0x0000ff4a Section: 832obj/menu.o,.rodata.15f
+0x0000ff4a    l52
+           (0x150 bytes)
+0x0001009a Section: 832obj/menu.o,.rodata.160
+0x0001009a    l53
+           (0xf7 bytes)
+0x00010191 Section: 832obj/menu.o,.rodata.161
+0x00010191    l54
+           (0x142 bytes)
+0x000102d3 Section: 832obj/menu.o,.rodata.162
+0x000102d3    l55
+           (0xec bytes)
+0x000103bf Section: 832obj/menu.o,.data.163
+0x000103bf    l57
+           (0x1 bytes)
+0x000103c0 Section: 832obj/mmc.o,.text.0
+0x000103c0    _MMC_Init
+0x000103df    l75
+0x0001042c    l76
+0x0001047f    l77
+0x000104bd    l78
+0x000104e4    l39
+0x000104e6    l40
+0x000104ee    l33
+0x000104f8    l41
+0x0001050a    l29
+0x0001051c    l43
+0x0001052b    l83
+0x0001053d    l22
+0x0001057d    l79
+0x000105bf    l59
+0x000105d7    l55
+0x000105e9    l61
+0x000105f8    l85
+0x0001060a    l49
+0x00010623    l80
+0x00010652    l71
+0x0001066a    l69
+0x00010679    l86
+0x0001068b    l14
+0x0001069a    l7
+           (0x2e4 bytes)
+0x000106a4 Section: 832obj/mmc.o,.rodata.1
+0x000106a4    l42
+           (0x1a bytes)
+0x000106be Section: 832obj/mmc.o,.rodata.2
+0x000106be    l44
+           (0x19 bytes)
+0x000106d7 Section: 832obj/mmc.o,.rodata.3
+0x000106d7    l24
+           (0x14 bytes)
+0x000106eb Section: 832obj/mmc.o,.rodata.4
+0x000106eb    l45
+           (0x25 bytes)
+0x00010710 Section: 832obj/mmc.o,.rodata.5
+0x00010710    l60
+           (0x1e bytes)
+0x0001072e Section: 832obj/mmc.o,.rodata.6
+0x0001072e    l62
+           (0x19 bytes)
+0x00010747 Section: 832obj/mmc.o,.rodata.7
+0x00010747    l50
+           (0x12 bytes)
+0x00010759 Section: 832obj/mmc.o,.rodata.8
+0x00010759    l63
+           (0x23 bytes)
+0x0001077c Section: 832obj/mmc.o,.rodata.9
+0x0001077c    l72
+           (0x1e bytes)
+0x0001079a Section: 832obj/mmc.o,.rodata.a
+0x0001079a    l64
+           (0x13 bytes)
+0x000107ad Section: 832obj/mmc.o,.rodata.b
+0x000107ad    l73
+           (0x24 bytes)
+0x000107d1 Section: 832obj/mmc.o,.rodata.c
+0x000107d1    l74
+           (0x1a bytes)
+0x000107eb Section: 832obj/mmc.o,.text.d
+0x000107eb    _MMC_Read
+0x00010832    l90
+0x00010843    l93
+0x00010897    l95
+0x000108b2    l98
+0x000108f5    l102
+0x00010906    l114
+0x00010920    l106
+0x00010927    l108
+0x00010948    l115
+0x00010957    l87
+           (0x179 bytes)
+0x00010964 Section: 832obj/mmc.o,.rodata.e
+0x00010964    l91
+           (0x1b bytes)
+0x0001097f Section: 832obj/mmc.o,.rodata.f
+0x0001097f    l97
+           (0x11 bytes)
+0x00010990 Section: 832obj/mmc.o,.rodata.10
+0x00010990    l96
+           (0x37 bytes)
+0x000109c7 Section: 832obj/mmc.o,.rodata.11
+0x000109c7    l104
+           (0x14 bytes)
+0x000109db Section: 832obj/mmc.o,.rodata.12
+0x000109db    l103
+           (0x2e bytes)
+0x00010a09 Section: 832obj/mmc.o,.text.13
+0x00010a09    l116
+0x00010a74    l120
+0x00010a8a    l134
+0x00010aca    l127
+0x00010ad9    l136
+0x00010adb    l135
+0x00010afa    l117
+           (0xfb bytes)
+0x00010b04 Section: 832obj/mmc.o,.rodata.14
+0x00010b04    l122
+           (0x1a bytes)
+0x00010b1e Section: 832obj/mmc.o,.rodata.15
+0x00010b1e    l121
+           (0x2a bytes)
+0x00010b48 Section: 832obj/mmc.o,.rodata.16
+0x00010b48    l128
+           (0x17 bytes)
+0x00010b5f Section: 832obj/mmc.o,.rodata.17
+0x00010b5f    l129
+           (0x23 bytes)
+0x00010b82 Section: 832obj/mmc.o,.text.18
+0x00010b82    _MMC_GetCapacity
+0x00010bc1    l141
+0x00010c11    l142
+           (0x9b bytes)
+0x00010c1d Section: 832obj/mmc.o,.text.19
+0x00010c1d    _MMC_ReadMultiple
+0x00010c6e    l146
+0x00010c7f    l149
+0x00010cd5    l151
+0x00010ce5    l171
+0x00010d00    l157
+0x00010d4e    l161
+0x00010d5f    l175
+0x00010d7c    l165
+0x00010d87    l167
+0x00010db7    l166
+0x00010dcd    l174
+0x00010dd4    l143
+           (0x1c4 bytes)
+0x00010de1 Section: 832obj/mmc.o,.rodata.1a
+0x00010de1    l147
+           (0x1c bytes)
+0x00010dfd Section: 832obj/mmc.o,.rodata.1b
+0x00010dfd    l153
+           (0x19 bytes)
+0x00010e16 Section: 832obj/mmc.o,.rodata.1c
+0x00010e16    l152
+           (0x40 bytes)
+0x00010e56 Section: 832obj/mmc.o,.rodata.1d
+0x00010e56    l163
+           (0x16 bytes)
+0x00010e6c Section: 832obj/mmc.o,.rodata.1e
+0x00010e6c    l162
+           (0x37 bytes)
+0x00010ea3 Section: 832obj/mmc.o,.text.1f
+0x00010ea3    _MMC_Write
+0x00010eeb    l180
+0x00010ef8    l183
+0x00010f4d    l185
+0x00010f5a    l188
+0x00010fc9    l193
+0x00010fdb    l204
+0x00011026    l200
+0x00011032    l206
+0x00011036    l177
+           (0x19d bytes)
+0x00011040 Section: 832obj/mmc.o,.rodata.20
+0x00011040    l181
+           (0x1b bytes)
+0x0001105b Section: 832obj/mmc.o,.rodata.21
+0x0001105b    l187
+           (0x17 bytes)
+0x00011072 Section: 832obj/mmc.o,.rodata.22
+0x00011072    l186
+           (0x38 bytes)
+0x000110aa Section: 832obj/mmc.o,.rodata.23
+0x000110aa    l195
+           (0x17 bytes)
+0x000110c1 Section: 832obj/mmc.o,.rodata.24
+0x000110c1    l194
+           (0x36 bytes)
+0x000110f7 Section: 832obj/mmc.o,.rodata.25
+0x000110f7    l202
+           (0x19 bytes)
+0x00011110 Section: 832obj/mmc.o,.rodata.26
+0x00011110    l201
+           (0x33 bytes)
+0x00011143 Section: 832obj/mmc.o,.text.27
+0x00011143    _MMC_Command
+0x000111c0    l213
+0x000111d8    l214
+           (0xa8 bytes)
+0x000111eb Section: 832obj/mmc.o,.text.28
+0x000111eb    _MMC_CMD12
+0x00011218    l227
+0x0001122f    l229
+0x0001124c    l228
+0x0001126e    l225
+0x0001127a    l230
+0x00011280    l215
+           (0x9f bytes)
+0x0001128a Section: 832obj/mmc.o,.rodata.29
+0x0001128a    l226
+           (0x2f bytes)
+0x000112b9 Section: 832obj/mmc.o,.text.2a
+0x000112b9    _MMC_CRC
+0x000112d4    l233
+0x000112f1    l238
+0x00011303    l240
+           (0x6f bytes)
+0x00011328 Section: 832obj/osd.o,.text.0
+0x00011328    _framebuffer_clear
+0x00011332    l54
+0x00011334    l55
+           (0x2e bytes)
+0x00011356 Section: 832obj/osd.o,.text.1
+0x00011356    _framebuffer_plot
+           (0x32 bytes)
+0x00011388 Section: 832obj/osd.o,.text.2
+0x00011388    l60
+           (0x20 bytes)
+0x000113a8 Section: 832obj/osd.o,.data.3
+0x000113a8    l63
+           (0x4 bytes)
+0x000113ac Section: 832obj/osd.o,.text.4
+0x000113ac    _StarsInit
+0x000113b4    l75
+0x000113da    l76
+0x000113fc    l78
+           (0x62 bytes)
+0x0001140e Section: 832obj/osd.o,.text.5
+0x0001140e    _StarsUpdate
+0x0001141e    l95
+0x00011467    l85
+0x00011481    l90
+0x000114a3    l98
+           (0xc2 bytes)
+0x000114d0 Section: 832obj/osd.o,.text.6
+0x000114d0    _OsdWriteFramebuffer
+0x0001152a    l108
+0x000115cb    l109
+           (0x105 bytes)
+0x000115d5 Section: 832obj/osd.o,.text.7
+0x000115d5    _FireworksInit
+0x00011600    l119
+0x0001167a    l118
+           (0xaf bytes)
+0x00011684 Section: 832obj/osd.o,.data.8
+0x00011684    l112
+           (0x4 bytes)
+0x00011688 Section: 832obj/osd.o,.text.9
+0x00011688    _FireworksUpdate
+0x0001169c    l140
+0x000116dc    l127
+0x000116ea    l133
+0x000116f3    l128
+0x00011713    l135
+0x00011732    l137
+0x0001173a    l139
+           (0xc6 bytes)
+0x0001174e Section: 832obj/osd.o,.text.a
+0x0001174e    l146
+0x00011758    l157
+0x0001175b    l158
+           (0x3b bytes)
+0x00011789 Section: 832obj/osd.o,.text.b
+0x00011789    _OsdSetTitle
+0x000117a6    l203
+0x000117cf    l169
+0x000117ea    l174
+0x00011800    l176
+0x00011814    l177
+0x0001182d    l209
+0x00011836    l204
+0x00011847    l210
+0x00011867    l205
+0x00011880    l211
+0x00011887    l206
+0x00011898    l212
+0x0001189a    l207
+0x000118ab    l208
+           (0x14b bytes)
+0x000118d4 Section: 832obj/osd.o,.text.c
+0x000118d4    _OsdWrite
+           (0x18 bytes)
+0x000118ec Section: 832obj/osd.o,.text.d
+0x000118ec    _OsdWriteOffset
+0x0001192b    l220
+0x0001193e    l223
+0x00011944    l224
+0x00011969    l226
+0x00011973    l227
+0x00011a37    l231
+0x00011b44    l234
+0x00011b60    l246
+0x00011b7b    l250
+0x00011b9f    l247
+0x00011cfa    l263
+0x00011d12    l254
+0x00011d27    l264
+0x00011dfb    l259
+           (0x523 bytes)
+0x00011e0f Section: 832obj/osd.o,.text.e
+0x00011e0f    _OsdDrawLogo
+0x00011e5c    l268
+0x00011e79    l300
+0x00011f23    l275
+0x00011f4d    l279
+0x00011f58    l280
+0x00011f6c    l304
+0x00011f78    l281
+0x00011f8d    l302
+0x00012038    l290
+0x00012057    l294
+0x0001205a    l295
+0x0001206e    l306
+0x00012077    l303
+0x0001208a    l307
+           (0x28e bytes)
+0x0001209d Section: 832obj/osd.o,.text.10
+0x0001209d    _OSD_PrintText
+0x000120da    l347
+0x000120f8    l349
+0x00012100    l351
+0x00012102    l352
+0x0001212b    l353
+0x0001214a    l383
+0x0001215e    l358
+0x0001216e    l360
+0x00012177    l379
+0x00012183    l384
+0x000121b2    l380
+0x000121d0    l385
+0x000121d6    l381
+0x0001222c    l386
+0x00012248    l382
+0x0001225c    l387
+           (0x1d2 bytes)
+0x0001226f Section: 832obj/osd.o,.text.11
+0x0001226f    _OsdClear
+0x00012296    l394
+           (0x43 bytes)
+0x000122b2 Section: 832obj/osd.o,.text.13
+0x000122b2    _OsdShow
+           (0x2a bytes)
+0x000122dc Section: 832obj/osd.o,.text.14
+0x000122dc    _OsdHide
+           (0x1a bytes)
+0x000122f6 Section: 832obj/osd.o,.text.15
+0x000122f6    _OsdReset
+           (0x27 bytes)
+0x0001231d Section: 832obj/osd.o,.text.17
+0x0001231d    _ConfigVideo
+           (0x3d bytes)
+0x0001235a Section: 832obj/osd.o,.text.18
+0x0001235a    _ConfigMemory
+           (0x1e bytes)
+0x00012378 Section: 832obj/osd.o,.text.19
+0x00012378    _ConfigCPU
+           (0x27 bytes)
+0x0001239f Section: 832obj/osd.o,.text.1a
+0x0001239f    _ConfigChipset
+           (0x27 bytes)
+0x000123c6 Section: 832obj/osd.o,.text.1b
+0x000123c6    _ConfigFloppy
+           (0x34 bytes)
+0x000123fa Section: 832obj/osd.o,.text.1d
+0x000123fa    _ConfigIDE
+0x0001242a    l421
+0x0001242c    l422
+0x00012438    l424
+0x0001243d    l425
+           (0x5d bytes)
+0x00012457 Section: 832obj/osd.o,.text.1e
+0x00012457    _ConfigAutofire
+           (0x28 bytes)
+0x0001247f Section: 832obj/osd.o,.text.1f
+0x0001247f    _OsdGetCtrl
+0x000124b7    l435
+0x000124d2    l438
+0x000124e4    l440
+0x000124ff    l442
+0x00012524    l446
+0x00012527    l447
+0x0001255a    l451
+0x0001255d    l452
+           (0xeb bytes)
+0x0001256a Section: 832obj/osd.o,.data.20
+0x0001256c    l431
+           (0x6 bytes)
+0x00012570 Section: 832obj/osd.o,.data.21
+0x00012570    l432
+           (0x4 bytes)
+0x00012574 Section: 832obj/osd.o,.data.22
+0x00012574    l433
+           (0x1 bytes)
+0x00012575 Section: 832obj/osd.o,.text.24
+0x00012575    _GetASCIIKey
+0x00012586    l458
+0x00012591    l455
+           (0x20 bytes)
+0x00012595 Section: 832obj/osd.o,.text.25
+0x00012595    _ScrollText
+0x000125ac    l462
+0x000125f9    l468
+0x00012615    l472
+0x0001262c    l474
+0x00012643    l476
+0x00012666    l478
+0x0001268b    l470
+           (0x100 bytes)
+0x00012695 Section: 832obj/osd.o,.text.26
+0x00012695    _ScrollReset
+           (0x14 bytes)
+0x000126a9 Section: 832obj/osd.o,.text.27
+0x000126a9    _OsdColor
+           (0x3 bytes)
+0x000126ac Section: 832obj/osd.o,.text.28
+0x000126ac    _OsdDoReset
+           (0x2d bytes)
+0x000126d9 Section: 832obj/osd.o,.rodata.29
+0x000126d9    _logodata
+           (0x46f bytes)
+0x00012b48 Section: 832obj/osd.o,.rodata.2a
+0x00012b48    _keycode_table
+           (0x80 bytes)
+0x00012bc8 Section: 832obj/osd.o,.data.2b
+0x00012bc8    _charfont
+           (0x800 bytes)
+0x000133c8 Section: 832obj/osd.o,.data.2c
+0x000133c8    _supporters
+           (0xb0 bytes)
+0x00013478 Section: 832obj/osd.o,.rodata.30
+0x00013478    l1
+           (0x10 bytes)
+0x00013488 Section: 832obj/osd.o,.rodata.31
+0x00013488    l2
+           (0xb bytes)
+0x00013493 Section: 832obj/osd.o,.rodata.32
+0x00013493    l3
+           (0xa bytes)
+0x0001349d Section: 832obj/osd.o,.rodata.33
+0x0001349d    l4
+           (0x18 bytes)
+0x000134b5 Section: 832obj/osd.o,.rodata.34
+0x000134b5    l5
+           (0xd bytes)
+0x000134c2 Section: 832obj/osd.o,.rodata.35
+0x000134c2    l6
+           (0x11 bytes)
+0x000134d3 Section: 832obj/osd.o,.rodata.36
+0x000134d3    l7
+           (0xc bytes)
+0x000134df Section: 832obj/osd.o,.rodata.37
+0x000134df    l8
+           (0xd bytes)
+0x000134ec Section: 832obj/osd.o,.rodata.38
+0x000134ec    l9
+           (0xd bytes)
+0x000134f9 Section: 832obj/osd.o,.rodata.39
+0x000134f9    l10
+           (0xd bytes)
+0x00013506 Section: 832obj/osd.o,.rodata.3a
+0x00013506    l11
+           (0xe bytes)
+0x00013514 Section: 832obj/osd.o,.rodata.3b
+0x00013514    l12
+           (0xa bytes)
+0x0001351e Section: 832obj/osd.o,.rodata.3c
+0x0001351e    l13
+           (0x12 bytes)
+0x00013530 Section: 832obj/osd.o,.rodata.3d
+0x00013530    l14
+           (0x14 bytes)
+0x00013544 Section: 832obj/osd.o,.rodata.3e
+0x00013544    l15
+           (0xe bytes)
+0x00013552 Section: 832obj/osd.o,.rodata.3f
+0x00013552    l16
+           (0x10 bytes)
+0x00013562 Section: 832obj/osd.o,.rodata.40
+0x00013562    l17
+           (0x12 bytes)
+0x00013574 Section: 832obj/osd.o,.rodata.41
+0x00013574    l18
+           (0x10 bytes)
+0x00013584 Section: 832obj/osd.o,.rodata.42
+0x00013584    l19
+           (0xa bytes)
+0x0001358e Section: 832obj/osd.o,.rodata.43
+0x0001358e    l20
+           (0xc bytes)
+0x0001359a Section: 832obj/osd.o,.rodata.44
+0x0001359a    l21
+           (0x11 bytes)
+0x000135ab Section: 832obj/osd.o,.rodata.45
+0x000135ab    l22
+           (0xc bytes)
+0x000135b7 Section: 832obj/osd.o,.rodata.46
+0x000135b7    l23
+           (0x10 bytes)
+0x000135c7 Section: 832obj/osd.o,.rodata.47
+0x000135c7    l24
+           (0xb bytes)
+0x000135d2 Section: 832obj/osd.o,.rodata.48
+0x000135d2    l25
+           (0xb bytes)
+0x000135dd Section: 832obj/osd.o,.rodata.49
+0x000135dd    l26
+           (0x10 bytes)
+0x000135ed Section: 832obj/osd.o,.rodata.4a
+0x000135ed    l27
+           (0x10 bytes)
+0x000135fd Section: 832obj/osd.o,.rodata.4b
+0x000135fd    l28
+           (0xb bytes)
+0x00013608 Section: 832obj/osd.o,.rodata.4c
+0x00013608    l29
+           (0xd bytes)
+0x00013615 Section: 832obj/osd.o,.rodata.4d
+0x00013615    l30
+           (0x10 bytes)
+0x00013625 Section: 832obj/osd.o,.rodata.4e
+0x00013625    l31
+           (0xd bytes)
+0x00013632 Section: 832obj/osd.o,.rodata.4f
+0x00013632    l32
+           (0x13 bytes)
+0x00013645 Section: 832obj/osd.o,.rodata.50
+0x00013645    l33
+           (0x9 bytes)
+0x0001364e Section: 832obj/osd.o,.rodata.51
+0x0001364e    l34
+           (0x9 bytes)
+0x00013657 Section: 832obj/osd.o,.rodata.52
+0x00013657    l35
+           (0xb bytes)
+0x00013662 Section: 832obj/osd.o,.rodata.53
+0x00013662    l36
+           (0xd bytes)
+0x0001366f Section: 832obj/osd.o,.rodata.54
+0x0001366f    l37
+           (0x11 bytes)
+0x00013680 Section: 832obj/osd.o,.rodata.55
+0x00013680    l38
+           (0x1a bytes)
+0x0001369a Section: 832obj/osd.o,.rodata.56
+0x0001369a    l39
+           (0x1b bytes)
+0x000136b5 Section: 832obj/osd.o,.rodata.57
+0x000136b5    l40
+           (0x1b bytes)
+0x000136d0 Section: 832obj/osd.o,.rodata.58
+0x000136d0    l41
+           (0x1a bytes)
+0x000136ea Section: 832obj/osd.o,.rodata.59
+0x000136ea    l42
+           (0x19 bytes)
+0x00013703 Section: 832obj/osd.o,.rodata.5a
+0x00013703    l43
+           (0x1c bytes)
+0x0001371f Section: 832obj/osd.o,.data.5b
+0x00013720    l142
+           (0x5 bytes)
+0x00013724 Section: 832obj/osd.o,.data.5c
+0x00013724    l143
+           (0x4 bytes)
+0x00013728 Section: 832obj/rafile.o,.text.0
+0x00013728    _RARead
+0x00013763    l6
+0x0001376c    l20
+0x0001377d    l23
+0x00013792    l4
+0x0001379d    l21
+0x000137d6    l24
+0x0001380a    l16
+0x0001381b    l25
+0x00013823    l15
+           (0x108 bytes)
+0x00013830 Section: 832obj/rafile.o,.text.3
+0x00013830    _RAOpen
+0x0001383f    l55
+0x0001385d    l52
+           (0x33 bytes)
+0x00013863 Section: 832obj/swap.o,.text.0
+0x00013863    _SwapBBBB
+           (0x33 bytes)
+0x00013896 Section: 832obj/swap.o,.text.1
+0x00013896    _SwapBB
+           (0x1b bytes)
+0x000138b1 Section: 832obj/uart.o,.text.0
+0x000138b1    _putchar
+           (0xc bytes)
+0x000138bd Section: 832obj/errors.o,.text.0
+0x000138bd    _ClearError
+0x000138e6    l4
+0x000138f0    l5
+0x000138f8    l11
+0x00013916    l12
+           (0x61 bytes)
+0x0001391e Section: 832obj/errors.o,.rodata.1
+0x0001391e    l10
+           (0x1 bytes)
+0x0001391f Section: 832obj/errors.o,.data.2
+0x00013920    _ErrorMask
+           (0x5 bytes)
+0x00013924 Section: 832obj/errors.o,.data.3
+0x00013924    _ErrorFatal
+           (0x4 bytes)
+0x00013928 Section: 832obj/errors.o,.data.4
+0x00013928    _ErrorMessages
+           (0x14 bytes)
+0x0001393c Section: 832obj/errors.o,.rodata.6
+0x0001393c    l13
+           (0x8 bytes)
+0x00013944 Section: 832obj/errors.o,.rodata.7
+0x00013944    l14
+           (0xb bytes)
+0x0001394f Section: 832obj/errors.o,.rodata.8
+0x0001394f    l15
+           (0xe bytes)
+0x0001395d Section: 832obj/errors.o,.rodata.9
+0x0001395d    l16
+           (0x11 bytes)
+0x0001396e Section: 832obj/errors.o,.rodata.a
+0x0001396e    l17
+           (0x14 bytes)
+0x00013982 Section: 832obj/interrupts.o,.text.0
+0x00013982    l1
+           (0xb bytes)
+0x0001398d Section: 832obj/interrupts.o,.text.1
+0x0001398d    _SetIntHandler
+           (0xf bytes)
+0x0001399c Section: 832obj/interrupts.o,.text.2
+0x0001399c    _intconstructor
+           (0x9 bytes)
+0x000139a5 Section: 832obj/interrupts.o,.text.3
+0x000139a5    _GetInterrupts
+           (0xf bytes)
+0x000139b4 Section: 832obj/interrupts.o,.text.4
+0x000139b4    _EnableInterrupts
+           (0xb bytes)
+0x000139bf Section: 832obj/interrupts.o,.text.5
+0x000139bf    _DisableInterrupts
+           (0xb bytes)
+0x000139ca Section: 832obj/c64keys.o,.text.0
+0x000139ca    _c64keyboard_write
+           (0x2a bytes)
+0x000139f4 Section: 832obj/c64keys.o,.text.1
+0x000139f4    _c64keys_inthandler
+0x00013a3e    l5
+0x00013a5b    l64
+0x00013a6e    l68
+0x00013a83    l65
+0x00013ad5    l18
+0x00013b28    l27
+0x00013b31    l25
+0x00013b4b    l33
+0x00013b56    l31
+0x00013b82    l38
+0x00013b8e    l39
+0x00013baf    l44
+0x00013bbf    l45
+0x00013bde    l47
+0x00013be7    l49
+0x00013c05    l51
+0x00013c0e    l53
+0x00013c1d    l43
+0x00013c3d    l55
+0x00013c4e    l56
+0x00013c5e    l58
+0x00013c79    l60
+0x00013caa    l13
+0x00013ce0    l62
+           (0x2f7 bytes)
+0x00013ceb Section: 832obj/c64keys.o,.text.2
+0x00013ceb    _c64keyboard_checkreset
+0x00013d0b    l76
+0x00013d11    l74
+           (0x2f bytes)
+0x00013d1a Section: 832obj/c64keys.o,.text.3
+0x00013d1a    _c64keysconstructor
+0x00013d23    l83
+           (0x2d bytes)
+0x00013d47 Section: 832obj/c64keys.o,.data.4
+0x00013d47    _specialtable
+           (0xc bytes)
+0x00013d53 Section: 832obj/c64keys.o,.data.5
+0x00013d54    _keytable
+           (0x101 bytes)
+0x00013e54 Section: 832obj/akiko.o,.text.0
+0x00013e54    _akiko_inthandler
+0x00013e8b    l6
+0x00013e97    l8
+0x00013e9a    l4
+           (0x4c bytes)
+0x00013ea0 Section: 832obj/akiko.o,.rodata.1
+0x00013ea0    l7
+           (0x15 bytes)
+0x00013eb5 Section: 832obj/akiko.o,.rodata.2
+0x00013eb5    l9
+           (0x10 bytes)
+0x00013ec5 Section: 832obj/akiko.o,.text.3
+0x00013ec5    _akikoconstructor
+           (0x3 bytes)
+0x00013ec8 Section: 832obj/audio.o,.text.1
+0x00013ec8    _audio_start
+           (0xb bytes)
+0x00013ed3 Section: 832obj/audio.o,.text.2
+0x00013ed3    _audio_stop
+           (0xb bytes)
+0x00013ede Section: 832obj/audio.o,.text.3
+0x00013ede    _audio_clear
+0x00013efe    l12
+0x00013f1e    l20
+0x00013f25    l22
+           (0x53 bytes)
+0x00013f31 Section: 832obj/drivesounds.o,.text.0
+0x00013f31    _drivesounds_enable
+           (0xe bytes)
+0x00013f3f Section: 832obj/drivesounds.o,.text.1
+0x00013f3f    _drivesounds_disable
+0x00013f58    l6
+           (0x1b bytes)
+0x00013f5a Section: 832obj/drivesounds.o,.text.2
+0x00013f5a    _drivesounds_queueevent
+0x00013f73    l12
+0x00013fae    l10
+           (0x5a bytes)
+0x00013fb4 Section: 832obj/drivesounds.o,.text.3
+0x00013fb4    _drivesounds_stop
+           (0xd bytes)
+0x00013fc1 Section: 832obj/drivesounds.o,.text.4
+0x00013fc1    _drivesounds_start
+0x00013fe8    l18
+           (0x29 bytes)
+0x00013fea Section: 832obj/drivesounds.o,.text.5
+0x00013fea    _drivesounds_nextevent
+0x00014011    l22
+           (0x38 bytes)
+0x00014022 Section: 832obj/drivesounds.o,.text.6
+0x00014022    _drivesounds_finishsound
+0x00014050    l26
+           (0x32 bytes)
+0x00014054 Section: 832obj/drivesounds.o,.text.7
+0x00014054    _drivesounds_render
+0x00014088    l32
+0x0001409a    l34
+0x000140ab    l121
+0x000140b7    l122
+0x000140de    l43
+0x000140e7    l131
+0x000140ee    l123
+0x00014119    l49
+0x00014122    l132
+0x00014129    l124
+0x00014159    l55
+0x00014162    l133
+0x00014168    l125
+0x0001417d    l134
+0x0001419d    l61
+0x000141bf    l63
+0x000141e0    l66
+0x00014202    l69
+0x000142c4    l126
+0x00014316    l135
+0x0001432c    l79
+0x00014343    l81
+0x0001435d    l72
+0x000143c9    l127
+0x00014406    l136
+0x0001441d    l93
+0x00014436    l86
+0x0001447f    l128
+0x000144ab    l137
+0x000144c4    l98
+0x000144f3    l129
+0x000144ff    l138
+0x00014506    l130
+0x0001451a    l115
+0x0001453a    l118
+           (0x4f9 bytes)
+0x0001454d Section: 832obj/drivesounds.o,.text.8
+0x0001454d    _countstep
+0x00014557    l147
+0x00014568    l146
+           (0x2b bytes)
+0x00014578 Section: 832obj/drivesounds.o,.text.9
+0x00014578    _pickstep
+0x0001458e    l167
+0x00014596    l168
+0x000145c1    l161
+0x000145e7    l163
+0x000145ef    l170
+0x0001460b    l169
+0x00014620    l172
+           (0xb4 bytes)
+0x0001462c Section: 832obj/drivesounds.o,.text.a
+0x0001462c    _drivesounds_fill
+0x00014652    l203
+0x0001466e    l182
+0x0001469d    l185
+0x000146c1    l190
+0x000146d5    l193
+0x00014706    l196
+0x00014743    l200
+0x00014763    l202
+0x0001476d    l204
+0x00014778    l176
+           (0x15b bytes)
+0x00014787 Section: 832obj/drivesounds.o,.text.b
+0x00014787    _drivesounds_init
+0x00014811    l227
+0x0001485f    l219
+0x00014861    l222
+0x00014867    l228
+0x0001486f    l213
+0x0001487b    l210
+0x00014885    l225
+           (0x117 bytes)
+0x0001489e Section: 832obj/drivesounds.o,.rodata.c
+0x0001489e    l221
+           (0x1b bytes)
+0x000148b9 Section: 832obj/drivesounds.o,.rodata.d
+0x000148b9    l211
+           (0x18 bytes)
+0x000148d1 Section: 832obj/drivesounds.o,.rodata.e
+0x000148d1    l214
+           (0x9 bytes)
+0x000148da Section: 832obj/drivesounds.o,.rodata.f
+0x000148da    l224
+           (0x23 bytes)
+0x000148fd Section: 832obj/drivesounds.o,.rodata.10
+0x000148fd    l226
+           (0x1d bytes)
+0x0001491a Section: 832obj/drivesounds.o,.text.11
+0x0001491a    _drivesounds_loaded
+           (0x8 bytes)
+0x00014922 Section: 832obj/rtc.o,.text.0
+0x00014922    _HandleRTC
+0x000149ba    l5
+           (0xa0 bytes)
+0x000149c2 Section: 832obj/rtc.o,.data.1
+0x000149c4    l3
+           (0x6 bytes)
+0x000149c8 Section: <internal>,__ctors_start__
+0x000149c8    __ctors_start__
+           (0x0 bytes)
+0x000149c8 Section: (null),.ctor.000
+           (0x4 bytes)
+0x000149cc Section: 832obj/interrupts.o,.ctor.100.interrupts
+           (0x4 bytes)
+0x000149d0 Section: 832obj/akiko.o,.ctor.101.akiko
+           (0x4 bytes)
+0x000149d4 Section: 832obj/c64keys.o,.ctor.101.c64keys
+           (0x4 bytes)
+0x000149d8 Section: <internal>,__ctors_end__
+0x000149d8    __ctors_end__
+           (0x0 bytes)
+0x000149d8 Section: <internal>,__dtors_start__
+0x000149d8    __dtors_start__
+           (0x0 bytes)
+0x000149d8 Section: (null),.dtor.000
+           (0x4 bytes)
+0x000149dc Section: <internal>,__dtors_end__
+0x000149dc    __dtors_end__
+           (0x0 bytes)
+0x000149dc Section: <internal>,__bss_start__
+0x000149dc    __bss_start__
+           (0x0 bytes)
+0x000149dc Section: ../../EightThirtyTwo/lib832/lib832.a,.bss.a
+0x000149dc    l1
+           (0x10 bytes)
+0x000149ec Section: 832obj/config.o,.bss.3c
+0x000149ec    _file
+           (0x12c bytes)
+0x00014b18 Section: 832obj/config.o,.bss.3d
+0x00014b18    _config
+           (0xd0 bytes)
+0x00014be8 Section: 832obj/config.o,.bss.3e
+0x00014be8    _DebugMode
+           (0x1 bytes)
+0x00014be9 Section: 832obj/config.o,.bss.3f
+0x00014be9    _configfilename
+           (0xc bytes)
+0x00014bf5 Section: 832obj/config.o,.bss.40
+0x00014bf5    _romkey
+           (0xc00 bytes)
+0x000157f5 Section: 832obj/config.o,.bss.41
+0x000157f8    _romfile
+           (0x337 bytes)
+0x00015b2c Section: 832obj/fat.o,.bss.3d
+0x00015b2c    l348
+           (0x105 bytes)
+0x00015c31 Section: 832obj/fat.o,.bss.59
+0x00015c34    _partitions
+           (0x43 bytes)
+0x00015c74 Section: 832obj/fat.o,.bss.5a
+0x00015c74    _partitioncount
+           (0x4 bytes)
+0x00015c78 Section: 832obj/fat.o,.bss.5b
+0x00015c78    _sector_buffer
+           (0x400 bytes)
+0x00016078 Section: 832obj/fat.o,.bss.5c
+0x00016078    _cluster_size
+           (0x1 bytes)
+0x00016079 Section: 832obj/fat.o,.bss.5d
+0x0001607c    _cluster_mask
+           (0x7 bytes)
+0x00016080 Section: 832obj/fat.o,.bss.5e
+0x00016080    _fat32
+           (0x1 bytes)
+0x00016081 Section: 832obj/fat.o,.bss.61
+0x00016081    _fattype
+           (0x1 bytes)
+0x00016082 Section: 832obj/fat.o,.bss.62
+0x00016084    _boot_sector
+           (0x6 bytes)
+0x00016088 Section: 832obj/fat.o,.bss.63
+0x00016088    _fat_start
+           (0x4 bytes)
+0x0001608c Section: 832obj/fat.o,.bss.64
+0x0001608c    _data_start
+           (0x4 bytes)
+0x00016090 Section: 832obj/fat.o,.bss.65
+0x00016090    _root_directory_cluster
+           (0x4 bytes)
+0x00016094 Section: 832obj/fat.o,.bss.66
+0x00016094    _root_directory_start
+           (0x4 bytes)
+0x00016098 Section: 832obj/fat.o,.bss.67
+0x00016098    _root_directory_size
+           (0x4 bytes)
+0x0001609c Section: 832obj/fat.o,.bss.68
+0x0001609c    _fat_number
+           (0x1 bytes)
+0x0001609d Section: 832obj/fat.o,.bss.69
+0x0001609e    _dir_entries
+           (0x3 bytes)
+0x000160a0 Section: 832obj/fat.o,.bss.6a
+0x000160a0    _fat_size
+           (0x4 bytes)
+0x000160a4 Section: 832obj/fat.o,.bss.6b
+0x000160a4    _fat_buffer
+           (0x200 bytes)
+0x000162a4 Section: 832obj/fat.o,.bss.6c
+0x000162a4    _buffered_fat_index
+           (0x4 bytes)
+0x000162a8 Section: 832obj/fat.o,.bss.6d
+0x000162a8    _DirEntryLFN
+           (0x828 bytes)
+0x00016ad0 Section: 832obj/fat.o,.bss.6e
+0x00016ad0    _DirEntry
+           (0x100 bytes)
+0x00016bd0 Section: 832obj/fat.o,.bss.6f
+0x00016bd0    _sort_table
+           (0x8 bytes)
+0x00016bd8 Section: 832obj/fat.o,.bss.70
+0x00016bd8    _nDirEntries
+           (0x1 bytes)
+0x00016bd9 Section: 832obj/fat.o,.bss.71
+0x00016bd9    _iSelectedEntry
+           (0x1 bytes)
+0x00016bda Section: 832obj/fat.o,.bss.72
+0x00016bdc    _iCurrentDirectory
+           (0x6 bytes)
+0x00016be0 Section: 832obj/fat.o,.bss.73
+0x00016be0    _iPreviousDirectory
+           (0x4 bytes)
+0x00016be4 Section: 832obj/fat.o,.bss.74
+0x00016be4    _t_DirEntryLFN
+           (0x828 bytes)
+0x0001740c Section: 832obj/fat.o,.bss.75
+0x0001740c    _t_DirEntry
+           (0x100 bytes)
+0x0001750c Section: 832obj/fat.o,.bss.76
+0x0001750c    _t_sort_table
+           (0x8 bytes)
+0x00017514 Section: 832obj/fat.o,.bss.77
+0x00017514    l112
+           (0x105 bytes)
+0x00017619 Section: 832obj/fdd.o,.bss.1e
+0x0001761c    _df
+           (0xaf3 bytes)
+0x0001810c Section: 832obj/fdd.o,.bss.1f
+0x0001810c    _drives
+           (0x1 bytes)
+0x0001810d Section: 832obj/fdd.o,.bss.21
+0x0001810d    l1
+           (0x4 bytes)
+0x00018111 Section: 832obj/fpga.o,.bss.19
+0x00018114    _checksum_pre
+           (0x7 bytes)
+0x00018118 Section: 832obj/fpga.o,.bss.1a
+0x00018118    _kickfoundstr
+           (0x4 bytes)
+0x0001811c Section: 832obj/fpga.o,.bss.1b
+0x0001811c    _applypatchstr
+           (0x4 bytes)
+0x00018120 Section: 832obj/boot.o,.bss.f
+0x00018120    l1
+           (0x4 bytes)
+0x00018124 Section: 832obj/hdd.o,.bss.41
+0x00018124    _debugmsg
+           (0x28 bytes)
+0x0001814c Section: 832obj/hdd.o,.bss.42
+0x0001814c    _debugmsg2
+           (0x28 bytes)
+0x00018174 Section: 832obj/hdd.o,.bss.43
+0x00018174    _hdf
+           (0x4510 bytes)
+0x0001c684 Section: 832obj/hdd.o,.bss.44
+0x0001c684    _rdbfile
+           (0x12c bytes)
+0x0001c7b0 Section: 832obj/hdd.o,.bss.45
+0x0001c7b0    l1
+           (0x4 bytes)
+0x0001c7b4 Section: 832obj/hdd.o,.bss.46
+0x0001c7b4    l2
+           (0xc bytes)
+0x0001c7c0 Section: 832obj/hdd.o,.bss.47
+0x0001c7c0    l93
+           (0x200 bytes)
+0x0001c9c0 Section: 832obj/hdd.o,.bss.48
+0x0001c9c0    l94
+           (0x8 bytes)
+0x0001c9c8 Section: 832obj/main.o,.bss.d
+0x0001c9c8    _s
+           (0x28 bytes)
+0x0001c9f0 Section: 832obj/menu.o,.bss.e1
+0x0001c9f0    l83
+           (0x1 bytes)
+0x0001c9f1 Section: 832obj/menu.o,.bss.e2
+0x0001c9f1    l84
+           (0x68 bytes)
+0x0001ca59 Section: 832obj/menu.o,.bss.e3
+0x0001ca5c    l85
+           (0x13 bytes)
+0x0001ca6c Section: 832obj/menu.o,.bss.e4
+0x0001ca6c    l86
+           (0x1 bytes)
+0x0001ca6d Section: 832obj/menu.o,.bss.e5
+0x0001ca70    l89
+           (0x7 bytes)
+0x0001ca74 Section: 832obj/menu.o,.bss.e6
+0x0001ca74    l90
+           (0x4 bytes)
+0x0001ca78 Section: 832obj/menu.o,.bss.e8
+0x0001ca78    l1344
+           (0x4 bytes)
+0x0001ca7c Section: 832obj/menu.o,.bss.122
+0x0001ca7c    _errorpage
+           (0x1 bytes)
+0x0001ca7d Section: 832obj/menu.o,.bss.123
+0x0001ca7d    _parentstate
+           (0x1 bytes)
+0x0001ca7e Section: 832obj/menu.o,.bss.124
+0x0001ca7e    _parentsub
+           (0x1 bytes)
+0x0001ca7f Section: 832obj/menu.o,.bss.125
+0x0001ca80    _menu_timer
+           (0x5 bytes)
+0x0001ca84 Section: 832obj/menu.o,.bss.126
+0x0001ca84    _DirEntryInfo
+           (0x28 bytes)
+0x0001caac Section: 832obj/menu.o,.bss.127
+0x0001caac    _DiskInfo
+           (0x5 bytes)
+0x0001cab1 Section: 832obj/menu.o,.bss.128
+0x0001cab4    _confirmfunc
+           (0x7 bytes)
+0x0001cab8 Section: 832obj/menu.o,.bss.129
+0x0001cab8    _fs_Options
+           (0x1 bytes)
+0x0001cab9 Section: 832obj/menu.o,.bss.12a
+0x0001cab9    _fs_MenuSelect
+           (0x1 bytes)
+0x0001caba Section: 832obj/menu.o,.bss.12b
+0x0001caba    _fs_MenuCancel
+           (0x1 bytes)
+0x0001cabb Section: 832obj/menu.o,.bss.164
+0x0001cabb    l56
+           (0x101 bytes)
+0x0001cbbc Section: 832obj/mmc.o,.bss.2b
+0x0001cbbc    l1
+           (0x4 bytes)
+0x0001cbc0 Section: 832obj/mmc.o,.bss.2c
+0x0001cbc0    l2
+           (0x1 bytes)
+0x0001cbc1 Section: 832obj/mmc.o,.bss.2d
+0x0001cbc4    l3
+           (0x7 bytes)
+0x0001cbc8 Section: 832obj/mmc.o,.bss.2e
+0x0001cbc8    l4
+           (0x1 bytes)
+0x0001cbc9 Section: 832obj/mmc.o,.bss.2f
+0x0001cbc9    l5
+           (0x1 bytes)
+0x0001cbca Section: 832obj/mmc.o,.bss.30
+0x0001cbca    l6
+           (0x10 bytes)
+0x0001cbda Section: 832obj/osd.o,.bss.23
+0x0001cbda    l430
+           (0x1 bytes)
+0x0001cbdb Section: 832obj/osd.o,.bss.2d
+0x0001cbdc    _stars
+           (0x401 bytes)
+0x0001cfdc Section: 832obj/osd.o,.bss.2e
+0x0001cfdc    _framebuffer
+           (0x800 bytes)
+0x0001d7dc Section: 832obj/osd.o,.bss.2f
+0x0001d7dc    _supporter
+           (0x4 bytes)
+0x0001d7e0 Section: 832obj/osd.o,.bss.5d
+0x0001d7e0    l144
+           (0x4 bytes)
+0x0001d7e4 Section: 832obj/osd.o,.bss.5e
+0x0001d7e4    l145
+           (0x40 bytes)
+0x0001d824 Section: 832obj/errors.o,.bss.5
+0x0001d824    _Errors
+           (0x3c bytes)
+0x0001d860 Section: 832obj/c64keys.o,.bss.6
+0x0001d860    _c64keys
+           (0x70 bytes)
+0x0001d8d0 Section: 832obj/drivesounds.o,.bss.12
+0x0001d8d0    _drivesounds
+           (0x1dc bytes)
+0x0001daac Section: <internal>,__bss_end__
+0x0001daac    __bss_end__

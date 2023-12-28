@@ -1,0 +1,6 @@
+#define MM_FIRMWARE_VERSION "2023-12-14"
+#define MM_VERSTRING "$VER:AMR231214-832"
+#define MM_YEAR 2023
+#define MM_MONTH 12
+#define MM_DAY 14
+#define MM_WEEKDAY 4

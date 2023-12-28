@@ -46,6 +46,11 @@ module minimig_mist_top (
   // MINIMIG specific
   output wire           AUDIO_L,    // sigma-delta DAC output left
   output wire           AUDIO_R,    // sigma-delta DAC output right
+`ifdef I2S_AUDIO
+  output        I2S_BCK,
+  output        I2S_LRCK,
+  output        I2S_DATA,
+`endif
   // SPI
   inout wire            SPI_DO,     // inout
   input wire            SPI_DI,
@@ -540,6 +545,7 @@ vidclkcntrl vidclkcntrl (
 	.outclk    ( clk_vid )
 );
 
+
 wire rtg_ena;	// RTG screen on/off
 wire rtg_clut;	// Are we in high-colour or 8-bit CLUT mode?
 wire rtg_16bit; // Is high-colour mode 15 or 16 bit?
@@ -873,5 +879,19 @@ hybrid_pwm_sd sd(
 	.q_r(AUDIO_R)
 );
 
+`ifdef I2S_AUDIO
+i2s i2s (
+	.reset(!sdctl_rst),
+	.clk(clk_28),
+	.clk_rate(32'd28_000_000),
+
+	.sclk(I2S_BCK),
+	.lrclk(I2S_LRCK),
+	.sdata(I2S_DATA),
+
+	.left_chan(ldata),
+	.right_chan(rdata)
+);
+`endif
 endmodule
 

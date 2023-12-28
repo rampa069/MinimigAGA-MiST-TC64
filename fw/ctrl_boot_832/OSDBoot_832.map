@@ -1,0 +1,376 @@
+           (0x0 bytes)
+0x00000000 Section: ../../EightThirtyTwo/lib832/crt0.a,.text.startup
+0x00000000    _start
+0x0000000d    _InterruptVector
+0x0000001d    .start1
+0x00000023    .start2
+0x00000000    _STACKSIZE
+           (0x29 bytes)
+0x00000029 Section: ../../EightThirtyTwo/lib832/crt0.a,.text.interrupt
+0x00000029    _interrupt
+           (0x1 bytes)
+0x0000002a Section: ../../EightThirtyTwo/lib832/crt0.a,.text.premain2
+0x0000002a    _premain2
+0x0000002a    .endloop2
+           (0x3 bytes)
+0x0000002d Section: ../../EightThirtyTwo/lib832/crt0.a,.text.premain
+0x0000002d    _premain
+0x0000003d    .stackloop
+0x0000004d    .clrwordloop
+0x0000005a    .clrbyteloop
+0x00000069    .ctorloop
+0x00000072    .ctordone
+0x0000007d    .dtorloop
+0x00000088    .endloop
+           (0x5f bytes)
+0x0000008c Section: 832obj/boot.o,.text.0
+0x0000008c    _BootDiag
+0x000000a5    l6
+0x000000b4    l7
+0x000000b6    .functiontail
+           (0x32 bytes)
+0x000000be Section: 832obj/boot.o,.text.1
+0x000000be    _ErrorCode
+           (0x48 bytes)
+0x00000106 Section: 832obj/boot.o,.text.2
+0x00000106    __boot
+           (0xb bytes)
+0x00000111 Section: 832obj/boot.o,.text.4
+0x00000111    _main
+0x0000015f    l43
+0x000001a4    l35
+0x000001ad    l33
+0x000001b6    l30
+0x000001bd    l41
+           (0xb7 bytes)
+0x000001c8 Section: 832obj/boot.o,.rodata.5
+0x000001c8    l36
+           (0xc bytes)
+0x000001d4 Section: 832obj/boot.o,.rodata.6
+0x000001d4    l38
+           (0x15 bytes)
+0x000001e9 Section: 832obj/boot.o,.rodata.7
+0x000001e9    l40
+           (0x1c bytes)
+0x00000205 Section: 832obj/boot.o,.rodata.8
+0x00000205    l31
+           (0x17 bytes)
+0x0000021c Section: 832obj/boot.o,.rodata.9
+0x0000021c    l28
+           (0x16 bytes)
+0x00000232 Section: 832obj/boot.o,.rodata.a
+0x00000232    l42
+           (0x1e bytes)
+0x00000250 Section: 832obj/boot.o,.data.b
+0x00000250    _bootdiag_bin
+           (0x12 bytes)
+0x00000262 Section: 832obj/boot.o,.data.c
+0x00000262    _bootdiag_bin_len
+           (0x4 bytes)
+0x00000266 Section: 832obj/spi.o,.text.0
+0x00000266    _SPI_PUMP
+           (0x59 bytes)
+0x000002bf Section: 832obj/spi.o,.text.1
+0x000002bf    _cmd_write
+0x000002de    l6
+0x0000032a    l12
+0x00000343    l13
+0x00000361    .functiontail
+           (0xaa bytes)
+0x00000369 Section: 832obj/spi.o,.text.2
+0x00000369    _spi_spin
+0x0000036c    l20
+           (0x13 bytes)
+0x0000037c Section: 832obj/spi.o,.text.3
+0x0000037c    _wait_initV2
+0x00000385    l45
+0x000003bd    l33
+0x000003c0    l28
+0x000003c8    l22
+           (0x4f bytes)
+0x000003cb Section: 832obj/spi.o,.text.8
+0x000003cb    _wait_init
+0x000003dc    l62
+0x000003f7    l54
+0x00000402    l47
+           (0x3a bytes)
+0x00000405 Section: 832obj/spi.o,.rodata.b
+0x00000405    l49
+           (0xa bytes)
+0x0000040f Section: 832obj/spi.o,.text.c
+0x0000040f    _is_sdhc
+0x0000043b    l68
+0x00000452    l70
+0x0000045a    l99
+0x000004a2    l88
+0x000004a6    l89
+0x000004af    l95
+0x000004b7    l64
+           (0xac bytes)
+0x000004bb Section: 832obj/spi.o,.rodata.12
+0x000004bb    l66
+           (0x17 bytes)
+0x000004d2 Section: 832obj/spi.o,.text.13
+0x000004d2    _spi_init
+0x000004e2    l113
+0x00000505    l107
+0x0000050f    l109
+0x0000052e    l112
+0x0000053e    l101
+           (0x6f bytes)
+0x00000541 Section: 832obj/spi.o,.text.15
+0x00000541    _sd_read_sector
+0x00000576    l133
+0x0000058c    l134
+0x000005a7    l128
+0x000005b6    l117
+           (0x7b bytes)
+0x000005bc Section: 832obj/swap.o,.text.0
+0x000005bc    _SwapBBBB
+0x000005ed    .functiontail
+           (0x39 bytes)
+0x000005f5 Section: 832obj/swap.o,.text.1
+0x000005f5    _SwapBB
+           (0x19 bytes)
+0x0000060e Section: 832obj/minfat.o,.text.0
+0x0000060e    _compare
+0x00000621    l9
+0x0000063a    l8
+0x00000644    l10
+0x00000646    l1
+0x00000648    .functiontail
+           (0x42 bytes)
+0x00000650 Section: 832obj/minfat.o,.text.1
+0x00000650    _FindDrive
+0x0000067f    l15
+0x000006a1    l17
+0x000006bb    l20
+0x000006d4    l23
+0x00000716    l29
+0x00000732    l32
+0x00000752    l36
+0x0000075a    l27
+0x00000780    l40
+0x000007a4    l44
+0x000007be    l47
+0x000007c3    l48
+0x000007e2    l51
+0x000007f9    l53
+0x000007fe    l54
+0x00000853    l59
+0x000008e3    l57
+0x0000093f    l61
+0x00000941    l11
+           (0x2f5 bytes)
+0x00000945 Section: 832obj/minfat.o,.rodata.2
+0x00000945    l33
+           (0x1e bytes)
+0x00000963 Section: 832obj/minfat.o,.rodata.3
+0x00000963    l34
+           (0x18 bytes)
+0x0000097b Section: 832obj/minfat.o,.rodata.4
+0x0000097b    l37
+           (0x27 bytes)
+0x000009a2 Section: 832obj/minfat.o,.rodata.5
+0x000009a2    l46
+           (0x1d bytes)
+0x000009bf Section: 832obj/minfat.o,.rodata.6
+0x000009bf    l60
+           (0x9 bytes)
+0x000009c8 Section: 832obj/minfat.o,.rodata.7
+0x000009c8    l13
+           (0xd bytes)
+0x000009d5 Section: 832obj/minfat.o,.rodata.8
+0x000009d5    l18
+           (0x9 bytes)
+0x000009de Section: 832obj/minfat.o,.rodata.9
+0x000009de    l21
+           (0x9 bytes)
+0x000009e7 Section: 832obj/minfat.o,.rodata.a
+0x000009e7    l24
+           (0x9 bytes)
+0x000009f0 Section: 832obj/minfat.o,.rodata.b
+0x000009f0    l25
+           (0x13 bytes)
+0x00000a03 Section: 832obj/minfat.o,.rodata.c
+0x00000a03    l38
+           (0x18 bytes)
+0x00000a1b Section: 832obj/minfat.o,.rodata.d
+0x00000a1b    l41
+           (0x9 bytes)
+0x00000a24 Section: 832obj/minfat.o,.rodata.e
+0x00000a24    l45
+           (0x9 bytes)
+0x00000a2d Section: 832obj/minfat.o,.text.f
+0x00000a2d    _GetCluster
+0x00000a48    l65
+0x00000a52    l66
+0x00000a79    l70
+0x00000a7d    l68
+0x00000a9c    l72
+0x00000aac    l73
+0x00000aae    l62
+           (0x84 bytes)
+0x00000ab1 Section: 832obj/minfat.o,.text.10
+0x00000ab1    _FileOpen
+0x00000adf    l77
+0x00000ae6    l78
+0x00000ae9    l107
+0x00000af7    l108
+0x00000b1c    l87
+0x00000b1f    l89
+0x00000b89    l98
+0x00000b8e    l99
+0x00000bab    l96
+0x00000bbd    l110
+0x00000bf7    l109
+0x00000bf9    l74
+           (0x14d bytes)
+0x00000bfe Section: 832obj/minfat.o,.rodata.11
+0x00000bfe    l88
+           (0x1d bytes)
+0x00000c1b Section: 832obj/minfat.o,.rodata.12
+0x00000c1b    l100
+           (0x11 bytes)
+0x00000c2c Section: 832obj/minfat.o,.rodata.13
+0x00000c2c    l103
+           (0x18 bytes)
+0x00000c44 Section: 832obj/minfat.o,.text.14
+0x00000c44    _LoadFile
+0x00000c75    l124
+0x00000ca7    l119
+0x00000cc1    l121
+0x00000cd5    l114
+0x00000ce4    l122
+0x00000ce9    l111
+           (0xa9 bytes)
+0x00000ced Section: 832obj/minfat.o,.rodata.15
+0x00000ced    l123
+           (0xf bytes)
+0x00000cfc Section: 832obj/uart.o,.text.0
+0x00000cfc    _putchar
+           (0x8 bytes)
+0x00000d04 Section: ../../EightThirtyTwo/lib832/lib832.a,.text.0
+0x00000d04    l2
+0x00000d2a    l6
+0x00000d30    l20
+0x00000d52    l23
+0x00000d58    l21
+0x00000d63    l15
+0x00000d66    l16
+0x00000d70    l24
+0x00000d7a    l17
+0x00000d96    l25
+           (0x9f bytes)
+0x00000da3 Section: ../../EightThirtyTwo/lib832/lib832.a,.rodata.1
+0x00000da3    l4
+           (0x11 bytes)
+0x00000db4 Section: ../../EightThirtyTwo/lib832/lib832.a,.text.2
+0x00000db4    l26
+0x00000dc4    l33
+0x00000ddb    l34
+           (0x31 bytes)
+0x00000de5 Section: ../../EightThirtyTwo/lib832/lib832.a,.text.3
+0x00000de5    __printfcore
+0x00000e0e    l73
+0x00000e89    l42
+0x00000e91    l46
+0x00000e99    l47
+0x00000ea1    l50
+0x00000ebd    l51
+0x00000ec5    l52
+0x00000edc    l53
+0x00000eee    l54
+0x00000ef6    l59
+0x00000f02    l60
+0x00000f23    l62
+0x00000f4c    l67
+0x00000f6d    l40
+0x00000f82    l71
+0x00000f8e    l72
+0x00000fa1    l74
+           (0x1c8 bytes)
+0x00000fad Section: ../../EightThirtyTwo/lib832/lib832.a,.text.5
+0x00000fad    _printf
+           (0x14 bytes)
+0x00000fc1 Section: ../../EightThirtyTwo/lib832/lib832.a,.text.1
+0x00000fc1    _puts
+0x00000fd0    l11
+0x00000fdd    l12
+           (0x24 bytes)
+0x00000fe5 Section: ../../EightThirtyTwo/lib832/lib832.a,.text._div_32by32
+0x00000fe5    _div_u32byu32
+0x00000ff7    .start
+0x00001005    .realign
+0x00001008    .next
+0x00001015    .end
+0x00001019    _div_s32bys32
+           (0x65 bytes)
+0x0000104a Section: <internal>,__ctors_start__
+0x0000104a    __ctors_start__
+           (0x0 bytes)
+0x0000104a Section: <internal>,__ctors_end__
+0x0000104a    __ctors_end__
+           (0x0 bytes)
+0x0000104a Section: <internal>,__dtors_start__
+0x0000104a    __dtors_start__
+           (0x0 bytes)
+0x0000104a Section: <internal>,__dtors_end__
+0x0000104a    __dtors_end__
+           (0x0 bytes)
+0x0000104a Section: <internal>,__bss_start__
+0x0000104c    __bss_start__
+           (0x2 bytes)
+0x0000104c Section: 832obj/spi.o,.bss.17
+0x0000104c    _SDHCtype
+           (0x4 bytes)
+0x00001050 Section: 832obj/minfat.o,.bss.16
+0x00001050    _sector_buffer
+           (0x200 bytes)
+0x00001250 Section: 832obj/minfat.o,.bss.17
+0x00001250    _cluster_size
+           (0x4 bytes)
+0x00001254 Section: 832obj/minfat.o,.bss.18
+0x00001254    _cluster_mask
+           (0x4 bytes)
+0x00001258 Section: 832obj/minfat.o,.bss.19
+0x00001258    _fat32
+           (0x4 bytes)
+0x0000125c Section: 832obj/minfat.o,.bss.1c
+0x0000125c    _fat_start
+           (0x4 bytes)
+0x00001260 Section: 832obj/minfat.o,.bss.1d
+0x00001260    _data_start
+           (0x4 bytes)
+0x00001264 Section: 832obj/minfat.o,.bss.1e
+0x00001264    _root_directory_cluster
+           (0x4 bytes)
+0x00001268 Section: 832obj/minfat.o,.bss.1f
+0x00001268    _root_directory_start
+           (0x4 bytes)
+0x0000126c Section: 832obj/minfat.o,.bss.20
+0x0000126c    _root_directory_size
+           (0x4 bytes)
+0x00001270 Section: 832obj/minfat.o,.bss.21
+0x00001270    _fat_number
+           (0x4 bytes)
+0x00001274 Section: 832obj/minfat.o,.bss.22
+0x00001274    _dir_entries
+           (0x4 bytes)
+0x00001278 Section: 832obj/minfat.o,.bss.23
+0x00001278    _fat_size
+           (0x4 bytes)
+0x0000127c Section: 832obj/minfat.o,.bss.24
+0x0000127c    _partitioncount
+           (0x4 bytes)
+0x00001280 Section: 832obj/minfat.o,.bss.25
+0x00001280    _buffered_fat_index
+           (0x4 bytes)
+0x00001284 Section: 832obj/minfat.o,.bss.26
+0x00001284    _file
+           (0xc bytes)
+0x00001290 Section: ../../EightThirtyTwo/lib832/lib832.a,.bss.a
+0x00001290    l1
+           (0x10 bytes)
+0x000012a0 Section: <internal>,__bss_end__
+0x000012a0    __bss_end__

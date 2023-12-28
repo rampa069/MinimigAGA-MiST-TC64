@@ -21,6 +21,7 @@
 bin/
 rel/
 fpga/*/out/
+fpga/*/output_files/
 fpga/*/db/
 fpga/*/incremental_db/
 greybox_tmp/
@@ -33,4 +34,11 @@ rtl/minimig/minimig_version.vh
 
 # ignore Quartus work files
 *qws
+*.qdf
 PLLJ_PLLSPE_INFO.txt
+*.ppf
+*.cnx*
+qmegawiz_errors_log.txt
+*.rpt
+*description.txt
+

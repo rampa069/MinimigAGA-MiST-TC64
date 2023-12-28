@@ -1,4 +1,4 @@
-// megafunction wizard: %ALTPLL%
+// megafunction wizard: %ALTPLL%VBB%
 // GENERATION: STANDARD
 // VERSION: WM1.0
 // MODULE: altpll 
@@ -17,7 +17,6 @@
 // 22.1std.1 Build 917 02/14/2023 SC Lite Edition
 // ************************************************************
 
-
 //Copyright (C) 2023  Intel Corporation. All rights reserved.
 //Your use of Intel Corporation's design tools, logic functions 
 //and other software and tools, and any partner logic 
@@ -33,148 +32,42 @@
 //refer to the applicable agreement for further details, at
 //https://fpgasoftware.intel.com/eula.
 
-
-// synopsys translate_off
-`timescale 1 ps / 1 ps
-// synopsys translate_on
 module amiga_clk_altera (
 	areset,
+	configupdate,
 	inclk0,
+	scanclk,
+	scanclkena,
+	scandata,
 	c0,
 	c1,
 	c2,
-	locked);
+	locked,
+	scandataout,
+	scandone);
 
 	input	  areset;
+	input	  configupdate;
 	input	  inclk0;
+	input	  scanclk;
+	input	  scanclkena;
+	input	  scandata;
 	output	  c0;
 	output	  c1;
 	output	  c2;
 	output	  locked;
+	output	  scandataout;
+	output	  scandone;
 `ifndef ALTERA_RESERVED_QIS
 // synopsys translate_off
 `endif
 	tri0	  areset;
+	tri0	  configupdate;
+	tri0	  scanclkena;
+	tri0	  scandata;
 `ifndef ALTERA_RESERVED_QIS
 // synopsys translate_on
 `endif
-
-	wire [4:0] sub_wire0;
-	wire  sub_wire4;
-	wire [0:0] sub_wire7 = 1'h0;
-	wire [2:2] sub_wire3 = sub_wire0[2:2];
-	wire [1:1] sub_wire2 = sub_wire0[1:1];
-	wire [0:0] sub_wire1 = sub_wire0[0:0];
-	wire  c0 = sub_wire1;
-	wire  c1 = sub_wire2;
-	wire  c2 = sub_wire3;
-	wire  locked = sub_wire4;
-	wire  sub_wire5 = inclk0;
-	wire [1:0] sub_wire6 = {sub_wire7, sub_wire5};
-
-	altpll	altpll_component (
-				.areset (areset),
-				.inclk (sub_wire6),
-				.clk (sub_wire0),
-				.locked (sub_wire4),
-				.activeclock (),
-				.clkbad (),
-				.clkena ({6{1'b1}}),
-				.clkloss (),
-				.clkswitch (1'b0),
-				.configupdate (1'b0),
-				.enable0 (),
-				.enable1 (),
-				.extclk (),
-				.extclkena ({4{1'b1}}),
-				.fbin (1'b1),
-				.fbmimicbidir (),
-				.fbout (),
-				.fref (),
-				.icdrclk (),
-				.pfdena (1'b1),
-				.phasecounterselect ({4{1'b1}}),
-				.phasedone (),
-				.phasestep (1'b1),
-				.phaseupdown (1'b1),
-				.pllena (1'b1),
-				.scanaclr (1'b0),
-				.scanclk (1'b0),
-				.scanclkena (1'b1),
-				.scandata (1'b0),
-				.scandataout (),
-				.scandone (),
-				.scanread (1'b0),
-				.scanwrite (1'b0),
-				.sclkout0 (),
-				.sclkout1 (),
-				.vcooverrange (),
-				.vcounderrange ());
-	defparam
-		altpll_component.bandwidth_type = "AUTO",
-		altpll_component.clk0_divide_by = 625,
-		altpll_component.clk0_duty_cycle = 50,
-		altpll_component.clk0_multiply_by = 1418,
-		altpll_component.clk0_phase_shift = "-3000",
-		altpll_component.clk1_divide_by = 625,
-		altpll_component.clk1_duty_cycle = 50,
-		altpll_component.clk1_multiply_by = 1418,
-		altpll_component.clk1_phase_shift = "0",
-		altpll_component.clk2_divide_by = 5000,
-		altpll_component.clk2_duty_cycle = 50,
-		altpll_component.clk2_multiply_by = 2833,
-		altpll_component.clk2_phase_shift = "0",
-		altpll_component.compensate_clock = "CLK0",
-		altpll_component.inclk0_input_frequency = 20000,
-		altpll_component.intended_device_family = "MAX 10",
-		altpll_component.lpm_hint = "CBX_MODULE_PREFIX=amiga_clk_altera",
-		altpll_component.lpm_type = "altpll",
-		altpll_component.operation_mode = "NORMAL",
-		altpll_component.pll_type = "AUTO",
-		altpll_component.port_activeclock = "PORT_UNUSED",
-		altpll_component.port_areset = "PORT_USED",
-		altpll_component.port_clkbad0 = "PORT_UNUSED",
-		altpll_component.port_clkbad1 = "PORT_UNUSED",
-		altpll_component.port_clkloss = "PORT_UNUSED",
-		altpll_component.port_clkswitch = "PORT_UNUSED",
-		altpll_component.port_configupdate = "PORT_UNUSED",
-		altpll_component.port_fbin = "PORT_UNUSED",
-		altpll_component.port_inclk0 = "PORT_USED",
-		altpll_component.port_inclk1 = "PORT_UNUSED",
-		altpll_component.port_locked = "PORT_USED",
-		altpll_component.port_pfdena = "PORT_UNUSED",
-		altpll_component.port_phasecounterselect = "PORT_UNUSED",
-		altpll_component.port_phasedone = "PORT_UNUSED",
-		altpll_component.port_phasestep = "PORT_UNUSED",
-		altpll_component.port_phaseupdown = "PORT_UNUSED",
-		altpll_component.port_pllena = "PORT_UNUSED",
-		altpll_component.port_scanaclr = "PORT_UNUSED",
-		altpll_component.port_scanclk = "PORT_UNUSED",
-		altpll_component.port_scanclkena = "PORT_UNUSED",
-		altpll_component.port_scandata = "PORT_UNUSED",
-		altpll_component.port_scandataout = "PORT_UNUSED",
-		altpll_component.port_scandone = "PORT_UNUSED",
-		altpll_component.port_scanread = "PORT_UNUSED",
-		altpll_component.port_scanwrite = "PORT_UNUSED",
-		altpll_component.port_clk0 = "PORT_USED",
-		altpll_component.port_clk1 = "PORT_USED",
-		altpll_component.port_clk2 = "PORT_USED",
-		altpll_component.port_clk3 = "PORT_UNUSED",
-		altpll_component.port_clk4 = "PORT_UNUSED",
-		altpll_component.port_clk5 = "PORT_UNUSED",
-		altpll_component.port_clkena0 = "PORT_UNUSED",
-		altpll_component.port_clkena1 = "PORT_UNUSED",
-		altpll_component.port_clkena2 = "PORT_UNUSED",
-		altpll_component.port_clkena3 = "PORT_UNUSED",
-		altpll_component.port_clkena4 = "PORT_UNUSED",
-		altpll_component.port_clkena5 = "PORT_UNUSED",
-		altpll_component.port_extclk0 = "PORT_UNUSED",
-		altpll_component.port_extclk1 = "PORT_UNUSED",
-		altpll_component.port_extclk2 = "PORT_UNUSED",
-		altpll_component.port_extclk3 = "PORT_UNUSED",
-		altpll_component.self_reset_on_loss_lock = "OFF",
-		altpll_component.width_clock = 5;
-
 
 endmodule
 
@@ -203,9 +96,9 @@ endmodule
 // Retrieval info: PRIVATE: DUTY_CYCLE0 STRING "50.00000000"
 // Retrieval info: PRIVATE: DUTY_CYCLE1 STRING "50.00000000"
 // Retrieval info: PRIVATE: DUTY_CYCLE2 STRING "50.00000000"
-// Retrieval info: PRIVATE: EFF_OUTPUT_FREQ_VALUE0 STRING "113.440002"
-// Retrieval info: PRIVATE: EFF_OUTPUT_FREQ_VALUE1 STRING "113.440002"
-// Retrieval info: PRIVATE: EFF_OUTPUT_FREQ_VALUE2 STRING "28.330000"
+// Retrieval info: PRIVATE: EFF_OUTPUT_FREQ_VALUE0 STRING "113.500641"
+// Retrieval info: PRIVATE: EFF_OUTPUT_FREQ_VALUE1 STRING "113.500641"
+// Retrieval info: PRIVATE: EFF_OUTPUT_FREQ_VALUE2 STRING "28.375160"
 // Retrieval info: PRIVATE: EXPLICIT_SWITCHOVER_COUNTER STRING "0"
 // Retrieval info: PRIVATE: EXT_FEEDBACK_RADIO STRING "0"
 // Retrieval info: PRIVATE: GLOCKED_COUNTER_EDIT_CHANGED STRING "1"
@@ -219,7 +112,7 @@ endmodule
 // Retrieval info: PRIVATE: INCLK1_FREQ_EDIT_CHANGED STRING "1"
 // Retrieval info: PRIVATE: INCLK1_FREQ_UNIT_CHANGED STRING "1"
 // Retrieval info: PRIVATE: INCLK1_FREQ_UNIT_COMBO STRING "MHz"
-// Retrieval info: PRIVATE: INTENDED_DEVICE_FAMILY STRING "MAX 10"
+// Retrieval info: PRIVATE: INTENDED_DEVICE_FAMILY STRING "Cyclone IV GX"
 // Retrieval info: PRIVATE: INT_FEEDBACK__MODE_RADIO STRING "1"
 // Retrieval info: PRIVATE: LOCKED_OUTPUT_CHECK STRING "1"
 // Retrieval info: PRIVATE: LONG_SCAN_RADIO STRING "1"
@@ -236,9 +129,9 @@ endmodule
 // Retrieval info: PRIVATE: MULT_FACTOR1 NUMERIC "1"
 // Retrieval info: PRIVATE: MULT_FACTOR2 NUMERIC "1"
 // Retrieval info: PRIVATE: NORMAL_MODE_RADIO STRING "1"
-// Retrieval info: PRIVATE: OUTPUT_FREQ0 STRING "113.44000000"
-// Retrieval info: PRIVATE: OUTPUT_FREQ1 STRING "113.44000000"
-// Retrieval info: PRIVATE: OUTPUT_FREQ2 STRING "28.33000000"
+// Retrieval info: PRIVATE: OUTPUT_FREQ0 STRING "113.50064000"
+// Retrieval info: PRIVATE: OUTPUT_FREQ1 STRING "113.50064000"
+// Retrieval info: PRIVATE: OUTPUT_FREQ2 STRING "28.37516000"
 // Retrieval info: PRIVATE: OUTPUT_FREQ_MODE0 STRING "1"
 // Retrieval info: PRIVATE: OUTPUT_FREQ_MODE1 STRING "1"
 // Retrieval info: PRIVATE: OUTPUT_FREQ_MODE2 STRING "1"
@@ -264,8 +157,8 @@ endmodule
 // Retrieval info: PRIVATE: PLL_PFDENA_CHECK STRING "0"
 // Retrieval info: PRIVATE: PLL_TARGET_HARCOPY_CHECK NUMERIC "0"
 // Retrieval info: PRIVATE: PRIMARY_CLK_COMBO STRING "inclk0"
-// Retrieval info: PRIVATE: RECONFIG_FILE STRING "amiga_clk_altera.mif"
-// Retrieval info: PRIVATE: SACN_INPUTS_CHECK STRING "0"
+// Retrieval info: PRIVATE: RECONFIG_FILE STRING "amigaclk_pal.mif"
+// Retrieval info: PRIVATE: SACN_INPUTS_CHECK STRING "1"
 // Retrieval info: PRIVATE: SCAN_FEATURE_ENABLED STRING "1"
 // Retrieval info: PRIVATE: SELF_RESET_LOCK_LOSS STRING "0"
 // Retrieval info: PRIVATE: SHORT_SCAN_RADIO STRING "0"
@@ -278,8 +171,6 @@ endmodule
 // Retrieval info: PRIVATE: STICKY_CLK0 STRING "1"
 // Retrieval info: PRIVATE: STICKY_CLK1 STRING "1"
 // Retrieval info: PRIVATE: STICKY_CLK2 STRING "1"
-// Retrieval info: PRIVATE: STICKY_CLK3 STRING "0"
-// Retrieval info: PRIVATE: STICKY_CLK4 STRING "0"
 // Retrieval info: PRIVATE: SWITCHOVER_COUNT_EDIT NUMERIC "1"
 // Retrieval info: PRIVATE: SWITCHOVER_FEATURE_ENABLED STRING "1"
 // Retrieval info: PRIVATE: SYNTH_WRAPPER_GEN_POSTFIX STRING "0"
@@ -293,21 +184,21 @@ endmodule
 // Retrieval info: PRIVATE: ZERO_DELAY_RADIO STRING "0"
 // Retrieval info: LIBRARY: altera_mf altera_mf.altera_mf_components.all
 // Retrieval info: CONSTANT: BANDWIDTH_TYPE STRING "AUTO"
-// Retrieval info: CONSTANT: CLK0_DIVIDE_BY NUMERIC "625"
+// Retrieval info: CONSTANT: CLK0_DIVIDE_BY NUMERIC "312500"
 // Retrieval info: CONSTANT: CLK0_DUTY_CYCLE NUMERIC "50"
-// Retrieval info: CONSTANT: CLK0_MULTIPLY_BY NUMERIC "1418"
+// Retrieval info: CONSTANT: CLK0_MULTIPLY_BY NUMERIC "709379"
 // Retrieval info: CONSTANT: CLK0_PHASE_SHIFT STRING "-3000"
-// Retrieval info: CONSTANT: CLK1_DIVIDE_BY NUMERIC "625"
+// Retrieval info: CONSTANT: CLK1_DIVIDE_BY NUMERIC "312500"
 // Retrieval info: CONSTANT: CLK1_DUTY_CYCLE NUMERIC "50"
-// Retrieval info: CONSTANT: CLK1_MULTIPLY_BY NUMERIC "1418"
+// Retrieval info: CONSTANT: CLK1_MULTIPLY_BY NUMERIC "709379"
 // Retrieval info: CONSTANT: CLK1_PHASE_SHIFT STRING "0"
-// Retrieval info: CONSTANT: CLK2_DIVIDE_BY NUMERIC "5000"
+// Retrieval info: CONSTANT: CLK2_DIVIDE_BY NUMERIC "1250000"
 // Retrieval info: CONSTANT: CLK2_DUTY_CYCLE NUMERIC "50"
-// Retrieval info: CONSTANT: CLK2_MULTIPLY_BY NUMERIC "2833"
+// Retrieval info: CONSTANT: CLK2_MULTIPLY_BY NUMERIC "709379"
 // Retrieval info: CONSTANT: CLK2_PHASE_SHIFT STRING "0"
 // Retrieval info: CONSTANT: COMPENSATE_CLOCK STRING "CLK0"
 // Retrieval info: CONSTANT: INCLK0_INPUT_FREQUENCY NUMERIC "20000"
-// Retrieval info: CONSTANT: INTENDED_DEVICE_FAMILY STRING "MAX 10"
+// Retrieval info: CONSTANT: INTENDED_DEVICE_FAMILY STRING "Cyclone IV GX"
 // Retrieval info: CONSTANT: LPM_TYPE STRING "altpll"
 // Retrieval info: CONSTANT: OPERATION_MODE STRING "NORMAL"
 // Retrieval info: CONSTANT: PLL_TYPE STRING "AUTO"
@@ -317,7 +208,7 @@ endmodule
 // Retrieval info: CONSTANT: PORT_CLKBAD1 STRING "PORT_UNUSED"
 // Retrieval info: CONSTANT: PORT_CLKLOSS STRING "PORT_UNUSED"
 // Retrieval info: CONSTANT: PORT_CLKSWITCH STRING "PORT_UNUSED"
-// Retrieval info: CONSTANT: PORT_CONFIGUPDATE STRING "PORT_UNUSED"
+// Retrieval info: CONSTANT: PORT_CONFIGUPDATE STRING "PORT_USED"
 // Retrieval info: CONSTANT: PORT_FBIN STRING "PORT_UNUSED"
 // Retrieval info: CONSTANT: PORT_INCLK0 STRING "PORT_USED"
 // Retrieval info: CONSTANT: PORT_INCLK1 STRING "PORT_UNUSED"
@@ -329,11 +220,11 @@ endmodule
 // Retrieval info: CONSTANT: PORT_PHASEUPDOWN STRING "PORT_UNUSED"
 // Retrieval info: CONSTANT: PORT_PLLENA STRING "PORT_UNUSED"
 // Retrieval info: CONSTANT: PORT_SCANACLR STRING "PORT_UNUSED"
-// Retrieval info: CONSTANT: PORT_SCANCLK STRING "PORT_UNUSED"
-// Retrieval info: CONSTANT: PORT_SCANCLKENA STRING "PORT_UNUSED"
-// Retrieval info: CONSTANT: PORT_SCANDATA STRING "PORT_UNUSED"
-// Retrieval info: CONSTANT: PORT_SCANDATAOUT STRING "PORT_UNUSED"
-// Retrieval info: CONSTANT: PORT_SCANDONE STRING "PORT_UNUSED"
+// Retrieval info: CONSTANT: PORT_SCANCLK STRING "PORT_USED"
+// Retrieval info: CONSTANT: PORT_SCANCLKENA STRING "PORT_USED"
+// Retrieval info: CONSTANT: PORT_SCANDATA STRING "PORT_USED"
+// Retrieval info: CONSTANT: PORT_SCANDATAOUT STRING "PORT_USED"
+// Retrieval info: CONSTANT: PORT_SCANDONE STRING "PORT_USED"
 // Retrieval info: CONSTANT: PORT_SCANREAD STRING "PORT_UNUSED"
 // Retrieval info: CONSTANT: PORT_SCANWRITE STRING "PORT_UNUSED"
 // Retrieval info: CONSTANT: PORT_clk0 STRING "PORT_USED"
@@ -354,20 +245,33 @@ endmodule
 // Retrieval info: CONSTANT: PORT_extclk3 STRING "PORT_UNUSED"
 // Retrieval info: CONSTANT: SELF_RESET_ON_LOSS_LOCK STRING "OFF"
 // Retrieval info: CONSTANT: WIDTH_CLOCK NUMERIC "5"
+// Retrieval info: CONSTANT: scan_chain_mif_file STRING "amigaclk_pal.mif"
 // Retrieval info: USED_PORT: @clk 0 0 5 0 OUTPUT_CLK_EXT VCC "@clk[4..0]"
 // Retrieval info: USED_PORT: areset 0 0 0 0 INPUT GND "areset"
 // Retrieval info: USED_PORT: c0 0 0 0 0 OUTPUT_CLK_EXT VCC "c0"
 // Retrieval info: USED_PORT: c1 0 0 0 0 OUTPUT_CLK_EXT VCC "c1"
 // Retrieval info: USED_PORT: c2 0 0 0 0 OUTPUT_CLK_EXT VCC "c2"
+// Retrieval info: USED_PORT: configupdate 0 0 0 0 INPUT GND "configupdate"
 // Retrieval info: USED_PORT: inclk0 0 0 0 0 INPUT_CLK_EXT GND "inclk0"
 // Retrieval info: USED_PORT: locked 0 0 0 0 OUTPUT GND "locked"
+// Retrieval info: USED_PORT: scanclk 0 0 0 0 INPUT_CLK_EXT VCC "scanclk"
+// Retrieval info: USED_PORT: scanclkena 0 0 0 0 INPUT GND "scanclkena"
+// Retrieval info: USED_PORT: scandata 0 0 0 0 INPUT GND "scandata"
+// Retrieval info: USED_PORT: scandataout 0 0 0 0 OUTPUT VCC "scandataout"
+// Retrieval info: USED_PORT: scandone 0 0 0 0 OUTPUT VCC "scandone"
 // Retrieval info: CONNECT: @areset 0 0 0 0 areset 0 0 0 0
+// Retrieval info: CONNECT: @configupdate 0 0 0 0 configupdate 0 0 0 0
 // Retrieval info: CONNECT: @inclk 0 0 1 1 GND 0 0 0 0
 // Retrieval info: CONNECT: @inclk 0 0 1 0 inclk0 0 0 0 0
+// Retrieval info: CONNECT: @scanclk 0 0 0 0 scanclk 0 0 0 0
+// Retrieval info: CONNECT: @scanclkena 0 0 0 0 scanclkena 0 0 0 0
+// Retrieval info: CONNECT: @scandata 0 0 0 0 scandata 0 0 0 0
 // Retrieval info: CONNECT: c0 0 0 0 0 @clk 0 0 1 0
 // Retrieval info: CONNECT: c1 0 0 0 0 @clk 0 0 1 1
 // Retrieval info: CONNECT: c2 0 0 0 0 @clk 0 0 1 2
 // Retrieval info: CONNECT: locked 0 0 0 0 @locked 0 0 0 0
+// Retrieval info: CONNECT: scandataout 0 0 0 0 @scandataout 0 0 0 0
+// Retrieval info: CONNECT: scandone 0 0 0 0 @scandone 0 0 0 0
 // Retrieval info: GEN_FILE: TYPE_NORMAL amiga_clk_altera.v TRUE
 // Retrieval info: GEN_FILE: TYPE_NORMAL amiga_clk_altera.ppf TRUE
 // Retrieval info: GEN_FILE: TYPE_NORMAL amiga_clk_altera.inc FALSE
@@ -375,5 +279,7 @@ endmodule
 // Retrieval info: GEN_FILE: TYPE_NORMAL amiga_clk_altera.bsf FALSE
 // Retrieval info: GEN_FILE: TYPE_NORMAL amiga_clk_altera_inst.v FALSE
 // Retrieval info: GEN_FILE: TYPE_NORMAL amiga_clk_altera_bb.v TRUE
+// Retrieval info: GEN_FILE: TYPE_NORMAL amiga_clk_altera.mif TRUE
+// Retrieval info: GEN_FILE: TYPE_NORMAL amigaclk_pal.mif TRUE
 // Retrieval info: LIB_FILE: altera_mf
 // Retrieval info: CBX_MODULE_PREFIX: ON
