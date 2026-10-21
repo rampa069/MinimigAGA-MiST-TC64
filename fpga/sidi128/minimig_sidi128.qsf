@@ -49,7 +49,7 @@ set_global_assignment -name SMART_RECOMPILE ON
 # ==========================
 set_location_assignment PIN_AB9 -to LED
 set_location_assignment PIN_G21 -to CLOCK_27[0]
-set_location_assignment PIN_G22 -to CLOCK_50[0]
+set_location_assignment PIN_G22 -to CLOCK_50
 set_location_assignment PIN_R1 -to VGA_R[7]
 set_location_assignment PIN_R2 -to VGA_R[6]
 set_location_assignment PIN_R3 -to VGA_R[5]
@@ -442,6 +442,7 @@ set_global_assignment -name VERILOG_MACRO "MINIMIG_USE_MIDI_PINS=1"
 set_global_assignment -name VERILOG_MACRO "MINIMIG_TOCCATA=1"
 set_global_assignment -name VERILOG_MACRO "MINIMIG_CDDA=1"
 set_global_assignment -name VERILOG_MACRO "MINIMIG_SIDI128_EXPANSION=1"
+set_global_assignment -name VERILOG_MACRO "MINIMIG_CLOCK27_IN=1"
 set_global_assignment -name VERILOG_MACRO "MINIMIG_HRTMON_CART=1"
 set_global_assignment -name VERILOG_MACRO "MINIMIG_DRIVESOUNDS=1"
 set_global_assignment -name VERILOG_MACRO "MINIMIG_CONTROL_BOARD=1"

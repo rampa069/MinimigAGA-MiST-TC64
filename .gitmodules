@@ -1,6 +1,7 @@
 [submodule "rtl/tg68k"]
 	path = rtl/tg68k
-	url = https://github.com/TobiFlex/TG68K.C.git
+	url = https://github.com/rampa069/TG68K.C.git
+	branch = bus32
 [submodule "EightThirtyTwo"]
 	path = EightThirtyTwo
 	url = https://github.com/robinsonb5/EightThirtyTwo

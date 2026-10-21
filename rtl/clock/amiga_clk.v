@@ -148,21 +148,25 @@ amigaclk_pll_reconfig amigaclk_pll_reconfig_i
 	.write_rom_ena(pll_write_rom_ena)
 );
 
-//amiga_clk_altera amiga_clk_i
-//(
-//	.inclk0       (clk_in),
-//	.c0           (clk_sdram),
-//	.c1           (clk_114  ),
-//	.c2           (clk_28   ),
-//	.areset       (pll_areset),
-//	.scanclk      (pll_scanclk),
-//	.scandata     (pll_scandata),
-//	.scanclkena   (pll_scanclkena),
-//	.configupdate (pll_configupdate),
-//	.scandataout  (pll_scandataout),
-//	.scandone     (pll_scandone),
-//	.locked       (locked)
-//);
+// the reconfigurable PLL (PAL/NTSC), unless MINIMIG_ALTERA already put the
+// plain one above (Poseidon)
+`ifndef MINIMIG_ALTERA
+amiga_clk_altera amiga_clk_i
+(
+	.inclk0       (clk_in),
+	.c0           (clk_sdram),
+	.c1           (clk_114  ),
+	.c2           (clk_28   ),
+	.areset       (pll_areset),
+	.scanclk      (pll_scanclk),
+	.scandata     (pll_scandata),
+	.scanclkena   (pll_scanclkena),
+	.configupdate (pll_configupdate),
+	.scandataout  (pll_scandataout),
+	.scandone     (pll_scandone),
+	.locked       (locked)
+);
+`endif
 
 always @(posedge clk_in) begin
 	reg ntsc_d, ntsc_d2, ntsc_d3;

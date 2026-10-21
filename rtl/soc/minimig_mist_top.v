@@ -21,6 +21,9 @@ module minimig_mist_top (
 //  input  wire [  2-1:0] CLOCK_27,   // 27 MHz
 //  input  wire [  2-1:0] CLOCK_50,   // 50 MHz
   input  wire           CLOCK_50,   // 50 MHz
+`ifdef MINIMIG_CLOCK27_IN
+  input  wire [  1-1:0] CLOCK_27,   // 27 MHz (SiDi128: the board's own oscillator)
+`endif
   // LED outputs
   output wire           LED,        // LED Yellow
   // UART
@@ -317,12 +320,18 @@ assign SDRAM2_BA        = sdram2_ba;
 
 wire clk_27mhz, pll27_locked;
 
+`ifdef MINIMIG_CLOCK27_IN
+// a board with a 27 MHz oscillator feeds amiga_clk directly
+assign clk_27mhz    = CLOCK_27[0];
+assign pll27_locked = 1'b1;
+`else
 clock27 pll_inst (
 	.areset(pll_rst),
 	.inclk0(CLOCK_50),       // Connect system clock input to PLL input
    .c0(clk_27mhz),     // Output 27 MHz clock
    .locked(pll27_locked) // Output lock status
 );
+`endif
 
 // reset
 assign pll_rst          = 1'b0;

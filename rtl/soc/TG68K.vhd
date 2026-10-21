@@ -35,7 +35,10 @@ generic
 		havec2p : boolean := true;
 		havecart : boolean := true;
 		dualsdram : boolean := false;
-		useprofiler : boolean := false
+		useprofiler : boolean := false;
+		-- the CPU type 68020 (cpu = "11") runs the kernel in its 68040 mode
+		-- (FPU and MMU, rampa069/TG68K.C bus32); 68EC020 stays a 24-bit 68020
+		cpu68040 : boolean := true
 	);
 port(
 	clk           : in      std_logic;
@@ -164,6 +167,8 @@ signal sel_audio        : std_logic;
 signal sel_gayle_ide    : std_logic;
 
 signal cpu_mode         : std_logic_vector(1 downto 0);
+signal cpu_kernel       : std_logic_vector(1 downto 0);
+SIGNAL mmu_on           : std_logic;
 SIGNAL cpu_internal     : std_logic;
 SIGNAL cpu_fetch        : std_logic;
 SIGNAL cpu_read         : std_logic;
@@ -222,7 +227,8 @@ sel_eth<='0';
 				ELSIF rising_edge(clk) THEN
 					NMI_addr <= VBR_out + X"0000007c";
 					sel_nmi_vector_addr <= '0';
-					IF (cpuaddr(31 downto 2) = NMI_addr(31 downto 2)) THEN
+					-- VBR is a logical address once the 68040 MMU translates, and cpuaddr is physical
+					IF (cpuaddr(31 downto 2) = NMI_addr(31 downto 2)) AND mmu_on='0' THEN
 						sel_nmi_vector_addr <= '1';
 					END IF;
 				END IF;
@@ -405,6 +411,7 @@ end generate;
   cpuaddr <= addrtg68 WHEN cpu="11" ELSE X"00" & addrtg68(23 downto 0);
 
   cpu_mode <= cpu(1) & (cpu(1) or cpu(0));
+  cpu_kernel <= "10" WHEN cpu68040 AND cpu="11" ELSE cpu_mode;
 
 pf68K_Kernel_inst: entity work.TG68KdotC_Kernel
   generic map (
@@ -423,7 +430,7 @@ pf68K_Kernel_inst: entity work.TG68KdotC_Kernel
     data_in         => datatg68,      -- : in std_logic_vector(15 downto 0);
     IPL             => cpuIPL,        -- : in std_logic_vector(2 downto 0):="111";
     IPL_autovector  => '1',           -- : in std_logic:='0';
-    CPU             => cpu_mode,
+    CPU             => cpu_kernel,
     regin_out       => open,          -- : out std_logic_vector(31 downto 0);
     addr_out        => addrtg68,      -- : buffer std_logic_vector(31 downto 0);
     data_write      => w_datatg68,    -- : out std_logic_vector(15 downto 0);
@@ -435,7 +442,8 @@ pf68K_Kernel_inst: entity work.TG68KdotC_Kernel
     nResetOut       => nResetOut,
     skipFetch       => skipFetch,     -- : out std_logic
     CACR_out        => CACR,
-    VBR_out         => VBR_out
+    VBR_out         => VBR_out,
+    MMU_on_out      => mmu_on
   );
   CACR_out <= CACR;
 
