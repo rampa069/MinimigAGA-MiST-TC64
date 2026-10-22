@@ -188,6 +188,54 @@ SIGNAL sel_nmi_vector   : std_logic;
 signal block_turbo : std_logic := '0';
 signal throttle_sel : std_logic_vector(1 downto 0);
 
+-- m68k_cpu (rtl/m68k/TG68KdotC_Kernel.sv) in place of TG68K.C's kernel
+component TG68KdotC_Kernel
+	generic(
+		SR_Read : integer := 2;
+		VBR_Stackframe : integer := 2;
+		extAddr_Mode : integer := 2;
+		MUL_Mode : integer := 2;
+		DIV_Mode : integer := 2;
+		BitField : integer := 2;
+		BarrelShifter : integer := 1;
+		MUL_Hardware : integer := 1;
+		D_Cache_Bit : integer := 0;
+		FPU_FPSP : integer := 1;
+		MMU_REG_XLATE : integer := 0
+	);
+	port(
+		clk : in std_logic;
+		nReset : in std_logic;
+		clkena_in : in std_logic := '1';
+		data_in : in std_logic_vector(15 downto 0);
+		IPL : in std_logic_vector(2 downto 0) := "111";
+		IPL_autovector : in std_logic := '0';
+		berr : in std_logic := '0';
+		CPU : in std_logic_vector(1 downto 0) := "00";
+		addr_out : out std_logic_vector(31 downto 0);
+		data_write : out std_logic_vector(15 downto 0);
+		nWr : out std_logic;
+		nUDS : out std_logic;
+		nLDS : out std_logic;
+		busstate : out std_logic_vector(1 downto 0);
+		longword : out std_logic;
+		newpc : out std_logic;
+		long_req : out std_logic;
+		long_ack : in std_logic := '0';
+		data_in_lo : in std_logic_vector(15 downto 0) := (others => '0');
+		data_write_lo : out std_logic_vector(15 downto 0);
+		nResetOut : out std_logic;
+		FC : out std_logic_vector(2 downto 0);
+		clr_berr : out std_logic;
+		skipFetch : out std_logic;
+		regin_out : out std_logic_vector(31 downto 0);
+		CACR_out : out std_logic_vector(3 downto 0);
+		D_CACHE_out : out std_logic;
+		VBR_out : out std_logic_vector(31 downto 0);
+		MMU_on_out : out std_logic
+	);
+end component;
+
 component profile_cpu
 port (
 	clk : in std_logic;
@@ -413,7 +461,7 @@ end generate;
   cpu_mode <= cpu(1) & (cpu(1) or cpu(0));
   cpu_kernel <= "10" WHEN cpu68040 AND cpu="11" ELSE cpu_mode;
 
-pf68K_Kernel_inst: entity work.TG68KdotC_Kernel
+pf68K_Kernel_inst: TG68KdotC_Kernel
   generic map (
     SR_Read         => 2, -- 0=>user,   1=>privileged,    2=>switchable with CPU(0)
     VBR_Stackframe  => 2, -- 0=>no,     1=>yes/extended,  2=>switchable with CPU(0)
