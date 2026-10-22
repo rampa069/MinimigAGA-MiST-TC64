@@ -116,3 +116,7 @@ set_multicycle_path -from {minimig_virtual_top:virtual_top|VideoStream:myaudiost
 #  set_false_path -from [get_ports $tms] -to *
 #  set_false_path -from [get_ports $tdi] -to *
 #}
+
+# the kernel multicycles again by full name, whatever the hierarchy prefix
+set_multicycle_path -from {*TG68K:tg68k|TG68KdotC_Kernel:pf68K_Kernel_inst|*} -setup 4
+set_multicycle_path -from {*TG68K:tg68k|TG68KdotC_Kernel:pf68K_Kernel_inst|*} -hold 3
