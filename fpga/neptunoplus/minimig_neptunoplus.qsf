@@ -1,0 +1,377 @@
+# NeptunoPlus (EP4CGX150DF27I7, 50 MHz): the Poseidon project of this tree
+# (same FPGA, CLOCK_50 into the clock27 PLL) with the pins, macros and top
+# of delgrom/MinimigAGA-MiST-TC64 fpga/neptunoplus; neptuno2_top.sv passes
+# CLOCK_50 to minimig_mist_top as "guest".
+
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
+set_global_assignment -name NUM_PARALLEL_PROCESSORS 8
+set_global_assignment -name LAST_QUARTUS_VERSION "17.0.2 Lite Edition"
+set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:build_id.tcl"
+set_global_assignment -name SMART_RECOMPILE OFF
+set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
+set_global_assignment -name MAX_CORE_JUNCTION_TEMP 85
+set_global_assignment -name DEVICE_FILTER_PIN_COUNT 672
+set_global_assignment -name DEVICE_FILTER_PACKAGE FBGA
+set_global_assignment -name DEVICE_FILTER_SPEED_GRADE 7
+set_global_assignment -name CYCLONEII_OPTIMIZATION_TECHNIQUE BALANCED
+set_global_assignment -name SYNTH_TIMING_DRIVEN_SYNTHESIS ON
+set_global_assignment -name ALLOW_SYNCH_CTRL_USAGE ON
+set_global_assignment -name VHDL_INPUT_VERSION VHDL_1993
+set_global_assignment -name VHDL_SHOW_LMF_MAPPING_MESSAGES OFF
+set_global_assignment -name DEVICE EP4CGX150DF27I7
+set_global_assignment -name FAMILY "Cyclone IV GX"
+set_global_assignment -name ENABLE_CONFIGURATION_PINS OFF
+set_global_assignment -name ENABLE_NCE_PIN OFF
+set_global_assignment -name ENABLE_BOOT_SEL_PIN OFF
+set_global_assignment -name CYCLONEIII_CONFIGURATION_SCHEME "PASSIVE SERIAL"
+set_global_assignment -name CRC_ERROR_OPEN_DRAIN OFF
+set_global_assignment -name FORCE_CONFIGURATION_VCCIO ON
+set_global_assignment -name STRATIX_DEVICE_IO_STANDARD "3.3-V LVTTL"
+set_global_assignment -name CYCLONEII_RESERVE_NCEO_AFTER_CONFIGURATION "USE AS REGULAR IO"
+set_global_assignment -name RESERVE_DATA0_AFTER_CONFIGURATION "USE AS REGULAR IO"
+set_global_assignment -name RESERVE_DATA1_AFTER_CONFIGURATION "USE AS REGULAR IO"
+set_global_assignment -name RESERVE_FLASH_NCE_AFTER_CONFIGURATION "USE AS REGULAR IO"
+set_global_assignment -name RESERVE_DCLK_AFTER_CONFIGURATION "USE AS REGULAR IO"
+set_global_assignment -name OPTIMIZE_HOLD_TIMING "ALL PATHS"
+set_global_assignment -name OPTIMIZE_MULTI_CORNER_TIMING ON
+set_global_assignment -name FITTER_EFFORT "STANDARD FIT"
+set_global_assignment -name GENERATE_RBF_FILE ON
+set_global_assignment -name USE_CONFIGURATION_DEVICE OFF
+set_global_assignment -name ENABLE_SIGNALTAP OFF
+set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "NO HEAT SINK WITH STILL AIR"
+set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
+set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -rise
+set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -fall
+set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -rise
+set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -fall
+set_global_assignment -name FORCE_SYNCH_CLEAR OFF
+set_global_assignment -name PRE_MAPPING_RESYNTHESIS ON
+set_global_assignment -name DSP_BLOCK_BALANCING "DSP BLOCKS"
+set_global_assignment -name AUTO_MERGE_PLLS OFF
+set_global_assignment -name VERILOG_FILE build_id.v
+set_global_assignment -name OPTIMIZATION_MODE "HIGH PERFORMANCE EFFORT"
+set_global_assignment -name VHDL_FILE ../../rtl/jtag/simple_uart.vhd
+set_global_assignment -name VERILOG_FILE ../../rtl/jtag/rs232_jtag.v
+set_global_assignment -name VERILOG_FILE ../../rtl/rtg/rtg_video.v
+set_global_assignment -name VHDL_FILE ../../EightThirtyTwo/RTL/debug_fifo.vhd
+set_global_assignment -name VHDL_FILE ../../EightThirtyTwo/RTL/altera/debug_bridge_jtag.vhd
+set_global_assignment -name VHDL_FILE ../../EightThirtyTwo/RTL/altera/debug_virtualjtag.vhd
+set_global_assignment -name VERILOG_FILE ../../rtl/jtag/profile_cpu.v
+set_global_assignment -name QIP_FILE ../../rtl/mist/vidclkcntrl.qip
+set_global_assignment -name VERILOG_FILE ../../rtl/soc/minimig_mist_top.v
+set_global_assignment -name VERILOG_FILE ../../rtl/mist/user_io.v
+set_global_assignment -name VERILOG_FILE ../../rtl/mist/i2c_master.v
+set_global_assignment -name VERILOG_FILE ../../rtl/clock/amiga_clk.v
+set_global_assignment -name VERILOG_FILE ../../rtl/io/i_sync.v
+set_global_assignment -name VERILOG_FILE ../../rtl/fifo/sync_fifo.v
+set_global_assignment -name QIP_FILE ../../rtl/minimig/minimig.qip
+set_global_assignment -name QIP_FILE ../../rtl/sdram/sdram.qip
+set_global_assignment -name QIP_FILE ../../rtl/soc/tg68.qip
+set_global_assignment -name VHDL_FILE ../../rtl/akiko/cornerturn.vhd
+set_global_assignment -name VHDL_FILE ../../rtl/akiko/akiko.vhd
+set_global_assignment -name VHDL_FILE ../../rtl/rtg/VideoStream.vhd
+set_global_assignment -name VERILOG_FILE ../../rtl/sdram/dpram_inf_generic.v
+set_global_assignment -name VHDL_FILE ../../rtl/audio/audiofilter.vhd
+set_global_assignment -name VERILOG_FILE ../../rtl/virtual/hybrid_pwm_sd.v
+set_global_assignment -name VHDL_FILE ../../rtl/virtual/video_vga_dither.vhd
+set_global_assignment -name VHDL_FILE ../../rtl/mist/RGBtoYPbPr.vhd
+set_global_assignment -name VHDL_FILE ../../rtl/audio/AudioMix.vhd
+set_global_assignment -name VERILOG_FILE ../../rtl/audio/i2s.v
+set_global_assignment -name VERILOG_FILE ../../rtl/audio/spdif.v
+set_global_assignment -name QIP_FILE ../../rtl/poseidon/amiga_clk_altera.qip
+set_global_assignment -name QIP_FILE ../../rtl/mist/amigaclk_reconfig_pal.qip
+set_global_assignment -name QIP_FILE ../../rtl/mist/amigaclk_reconfig_ntsc.qip
+set_global_assignment -name QIP_FILE ../../rtl/mist/amigaclk_pll_reconfig.qip
+set_global_assignment -name SYSTEMVERILOG_FILE "../../rtl/fpga-toccata/toccata_volume.sv"
+set_global_assignment -name SYSTEMVERILOG_FILE "../../rtl/fpga-toccata/toccata_playback.sv"
+set_global_assignment -name SYSTEMVERILOG_FILE "../../rtl/fpga-toccata/toccata_fifo.sv"
+set_global_assignment -name SYSTEMVERILOG_FILE "../../rtl/fpga-toccata/toccata_capture.sv"
+set_global_assignment -name SYSTEMVERILOG_FILE "../../rtl/fpga-toccata/toccata.sv"
+set_global_assignment -name SIGNALTAP_FILE output_files/tg68k.stp
+set_global_assignment -name SIGNALTAP_FILE output_files/spi.stp
+set_global_assignment -name SIGNALTAP_FILE hdmi.stp
+set_global_assignment -name VHDL_FILE ../../rtl/drivesounds/drivesounds.vhd
+set_global_assignment -name SIGNALTAP_FILE output_files/stp1.stp
+set_global_assignment -name SIGNALTAP_FILE stp1.stp
+set_global_assignment -name VERILOG_FILE ../../rtl/jtag/edge_capture.v
+set_global_assignment -name QIP_FILE clock27.qip
+set_global_assignment -name ENABLE_DRC_SETTINGS OFF
+set_global_assignment -name OPTIMIZE_TIMING "NORMAL COMPILATION"
+
+set_global_assignment -name TOP_LEVEL_ENTITY neptuno2_top
+set_global_assignment -name SYSTEMVERILOG_FILE neptuno2_top.sv
+set_global_assignment -name SDC_FILE minimig_neptunoplus.sdc
+set_global_assignment -name VERILOG_MACRO "MINIMIG_ALTERA=1"
+set_global_assignment -name VERILOG_MACRO "MINIMIG_CYCLONE4=1"
+set_global_assignment -name VERILOG_MACRO "MINIMIG_TOCCATA=1"
+set_global_assignment -name VERILOG_MACRO "MINIMIG_DRIVESOUNDS=1"
+set_global_assignment -name VERILOG_MACRO "MINIMIG_CONTROL_BOARD=1"
+set_global_assignment -name VERILOG_MACRO "MINIMIG_CDDA=1"
+set_global_assignment -name VERILOG_MACRO "MINIMIG_HRTMON_CART=1"
+set_global_assignment -name VERILOG_MACRO "MINIMIG_VGA_8BIT=1"
+set_global_assignment -name VERILOG_MACRO "MINIMIG_I2S_AUDIO=1"
+set_global_assignment -name VERILOG_MACRO "MINIMIG_CAPTURE_SYNC=1"
+
+set_location_assignment PIN_A25 -to LED
+set_location_assignment PIN_B14 -to CLOCK_50
+set_location_assignment PIN_AE19 -to VGA_R[7]
+set_location_assignment PIN_AD19 -to VGA_R[6]
+set_location_assignment PIN_AC19 -to VGA_R[5]
+set_location_assignment PIN_AF18 -to VGA_R[4]
+set_location_assignment PIN_AE18 -to VGA_R[3]
+set_location_assignment PIN_AC18 -to VGA_R[2]
+set_location_assignment PIN_AD16 -to VGA_R[1]
+set_location_assignment PIN_AE15 -to VGA_R[0]
+set_location_assignment PIN_AF24 -to VGA_B[7]
+set_location_assignment PIN_AC21 -to VGA_B[6]
+set_location_assignment PIN_AE23 -to VGA_B[5]
+set_location_assignment PIN_AE22 -to VGA_B[4]
+set_location_assignment PIN_AD20 -to VGA_B[3]
+set_location_assignment PIN_AF20 -to VGA_B[2]
+set_location_assignment PIN_AF15 -to VGA_B[1]
+set_location_assignment PIN_AC16 -to VGA_B[0]
+set_location_assignment PIN_AD21 -to VGA_G[7]
+set_location_assignment PIN_AF23 -to VGA_G[6]
+set_location_assignment PIN_AF22 -to VGA_G[5]
+set_location_assignment PIN_AE21 -to VGA_G[4]
+set_location_assignment PIN_AF21 -to VGA_G[3]
+set_location_assignment PIN_AF19 -to VGA_G[2]
+set_location_assignment PIN_AD17 -to VGA_G[1]
+set_location_assignment PIN_AF16 -to VGA_G[0]
+set_location_assignment PIN_AD18 -to VGA_VS
+set_location_assignment PIN_AE17 -to VGA_HS
+set_location_assignment PIN_AF17 -to AUDIO_L
+set_location_assignment PIN_AC17 -to AUDIO_R
+set_location_assignment PIN_C21 -to AUDIO_IN
+set_location_assignment PIN_AD15 -to I2S_LRCK
+set_location_assignment PIN_AC15 -to I2S_BCK
+set_location_assignment PIN_AE14 -to I2S_DATA
+set_location_assignment PIN_B17 -to UART_RX
+set_location_assignment PIN_B19 -to UART_TX
+set_location_assignment PIN_AC14 -to SPI_DO
+set_location_assignment PIN_AF12 -to SPI_DI
+set_location_assignment PIN_AF11 -to SPI_SCK
+set_location_assignment PIN_AC10 -to SPI_SS2
+set_location_assignment PIN_AD10 -to SPI_SS3
+set_location_assignment PIN_AE9 -to SPI_SS4
+set_location_assignment PIN_AD14 -to CONF_DATA0
+set_location_assignment PIN_L25 -to SDRAM_A[0]
+set_location_assignment PIN_L26 -to SDRAM_A[1]
+set_location_assignment PIN_M25 -to SDRAM_A[2]
+set_location_assignment PIN_M26 -to SDRAM_A[3]
+set_location_assignment PIN_N22 -to SDRAM_A[4]
+set_location_assignment PIN_N23 -to SDRAM_A[5]
+set_location_assignment PIN_N24 -to SDRAM_A[6]
+set_location_assignment PIN_M22 -to SDRAM_A[7]
+set_location_assignment PIN_M24 -to SDRAM_A[8]
+set_location_assignment PIN_L23 -to SDRAM_A[9]
+set_location_assignment PIN_K26 -to SDRAM_A[10]
+set_location_assignment PIN_L24 -to SDRAM_A[11]
+set_location_assignment PIN_K23 -to SDRAM_A[12]
+set_location_assignment PIN_B25 -to SDRAM_DQ[0]
+set_location_assignment PIN_B26 -to SDRAM_DQ[1]
+set_location_assignment PIN_C25 -to SDRAM_DQ[2]
+set_location_assignment PIN_C26 -to SDRAM_DQ[3]
+set_location_assignment PIN_D25 -to SDRAM_DQ[4]
+set_location_assignment PIN_D26 -to SDRAM_DQ[5]
+set_location_assignment PIN_E25 -to SDRAM_DQ[6]
+set_location_assignment PIN_E26 -to SDRAM_DQ[7]
+set_location_assignment PIN_H23 -to SDRAM_DQ[8]
+set_location_assignment PIN_G24 -to SDRAM_DQ[9]
+set_location_assignment PIN_G22 -to SDRAM_DQ[10]
+set_location_assignment PIN_F24 -to SDRAM_DQ[11]
+set_location_assignment PIN_F23 -to SDRAM_DQ[12]
+set_location_assignment PIN_E24 -to SDRAM_DQ[13]
+set_location_assignment PIN_D24 -to SDRAM_DQ[14]
+set_location_assignment PIN_C24 -to SDRAM_DQ[15]
+set_location_assignment PIN_J25 -to SDRAM_BA[0]
+set_location_assignment PIN_J26 -to SDRAM_BA[1]
+set_location_assignment PIN_H24 -to SDRAM_DQMH
+set_location_assignment PIN_F26 -to SDRAM_DQML
+set_location_assignment PIN_H25 -to SDRAM_nRAS
+set_location_assignment PIN_G26 -to SDRAM_nCAS
+set_location_assignment PIN_G25 -to SDRAM_nWE
+set_location_assignment PIN_H26 -to SDRAM_nCS
+set_location_assignment PIN_K24 -to SDRAM_CKE
+set_location_assignment PIN_E22 -to SDRAM_CLK
+set_location_assignment PIN_A4 -to SD_MISO
+set_location_assignment PIN_B4 -to SD_SCK
+set_location_assignment PIN_AD4 -to JOY_CLK
+set_location_assignment PIN_AC4 -to JOY_LOAD
+set_location_assignment PIN_AD3 -to JOY_DATA
+set_location_assignment PIN_AF4 -to JOY_XCLK
+set_location_assignment PIN_AE3 -to JOY_XLOAD
+set_location_assignment PIN_AF5 -to JOY_XDATA
+set_instance_assignment -name GLOBAL_SIGNAL OFF -to "amigaclk:amigaclk|altpll:altpll_component|_clk0"
+set_instance_assignment -name GLOBAL_SIGNAL "GLOBAL CLOCK" -to "amigaclk:amigaclk|altpll:altpll_component|_clk1"
+set_instance_assignment -name GLOBAL_SIGNAL "GLOBAL CLOCK" -to "amigaclk:amigaclk|altpll:altpll_component|_clk2"
+set_instance_assignment -name GLOBAL_SIGNAL "GLOBAL CLOCK" -to SPI_SCK
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to SDRAM_DQ[0]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to SDRAM_DQ[1]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to SDRAM_DQ[2]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to SDRAM_DQ[3]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to SDRAM_DQ[4]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to SDRAM_DQ[5]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to SDRAM_DQ[6]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to SDRAM_DQ[7]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to SDRAM_DQ[8]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to SDRAM_DQ[9]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to SDRAM_DQ[10]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to SDRAM_DQ[11]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to SDRAM_DQ[12]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to SDRAM_DQ[13]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to SDRAM_DQ[14]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to SDRAM_DQ[15]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to SDRAM_A[0]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to SDRAM_A[1]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to SDRAM_A[2]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to SDRAM_A[3]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to SDRAM_A[4]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to SDRAM_A[5]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to SDRAM_A[6]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to SDRAM_A[7]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to SDRAM_A[8]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to SDRAM_A[9]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to SDRAM_A[10]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to SDRAM_A[11]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to SDRAM_A[12]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to SDRAM_BA[0]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to SDRAM_BA[1]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to SDRAM_DQMH
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to SDRAM_DQML
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to SDRAM_nRAS
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to SDRAM_nCAS
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to SDRAM_nWE
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to SDRAM_nCS
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to VGA_R[7]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to VGA_R[6]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to VGA_R[5]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to VGA_R[4]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to VGA_R[3]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to VGA_R[2]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to VGA_R[1]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to VGA_R[0]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to VGA_B[7]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to VGA_B[6]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to VGA_B[5]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to VGA_B[4]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to VGA_B[3]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to VGA_B[2]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to VGA_B[1]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to VGA_B[0]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to VGA_G[7]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to VGA_G[6]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to VGA_G[5]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to VGA_G[4]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to VGA_G[3]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to VGA_G[2]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to VGA_G[1]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to VGA_G[0]
+set_instance_assignment -name FAST_OUTPUT_ENABLE_REGISTER ON -to SDRAM_DQ[0]
+set_instance_assignment -name FAST_OUTPUT_ENABLE_REGISTER ON -to SDRAM_DQ[1]
+set_instance_assignment -name FAST_OUTPUT_ENABLE_REGISTER ON -to SDRAM_DQ[2]
+set_instance_assignment -name FAST_OUTPUT_ENABLE_REGISTER ON -to SDRAM_DQ[3]
+set_instance_assignment -name FAST_OUTPUT_ENABLE_REGISTER ON -to SDRAM_DQ[4]
+set_instance_assignment -name FAST_OUTPUT_ENABLE_REGISTER ON -to SDRAM_DQ[5]
+set_instance_assignment -name FAST_OUTPUT_ENABLE_REGISTER ON -to SDRAM_DQ[6]
+set_instance_assignment -name FAST_OUTPUT_ENABLE_REGISTER ON -to SDRAM_DQ[7]
+set_instance_assignment -name FAST_OUTPUT_ENABLE_REGISTER ON -to SDRAM_DQ[8]
+set_instance_assignment -name FAST_OUTPUT_ENABLE_REGISTER ON -to SDRAM_DQ[9]
+set_instance_assignment -name FAST_OUTPUT_ENABLE_REGISTER ON -to SDRAM_DQ[10]
+set_instance_assignment -name FAST_OUTPUT_ENABLE_REGISTER ON -to SDRAM_DQ[11]
+set_instance_assignment -name FAST_OUTPUT_ENABLE_REGISTER ON -to SDRAM_DQ[12]
+set_instance_assignment -name FAST_OUTPUT_ENABLE_REGISTER ON -to SDRAM_DQ[13]
+set_instance_assignment -name FAST_OUTPUT_ENABLE_REGISTER ON -to SDRAM_DQ[14]
+set_instance_assignment -name FAST_OUTPUT_ENABLE_REGISTER ON -to SDRAM_DQ[15]
+set_instance_assignment -name FAST_INPUT_REGISTER ON -to SDRAM_DQ[0]
+set_instance_assignment -name FAST_INPUT_REGISTER ON -to SDRAM_DQ[1]
+set_instance_assignment -name FAST_INPUT_REGISTER ON -to SDRAM_DQ[2]
+set_instance_assignment -name FAST_INPUT_REGISTER ON -to SDRAM_DQ[3]
+set_instance_assignment -name FAST_INPUT_REGISTER ON -to SDRAM_DQ[4]
+set_instance_assignment -name FAST_INPUT_REGISTER ON -to SDRAM_DQ[5]
+set_instance_assignment -name FAST_INPUT_REGISTER ON -to SDRAM_DQ[6]
+set_instance_assignment -name FAST_INPUT_REGISTER ON -to SDRAM_DQ[7]
+set_instance_assignment -name FAST_INPUT_REGISTER ON -to SDRAM_DQ[8]
+set_instance_assignment -name FAST_INPUT_REGISTER ON -to SDRAM_DQ[9]
+set_instance_assignment -name FAST_INPUT_REGISTER ON -to SDRAM_DQ[10]
+set_instance_assignment -name FAST_INPUT_REGISTER ON -to SDRAM_DQ[11]
+set_instance_assignment -name FAST_INPUT_REGISTER ON -to SDRAM_DQ[12]
+set_instance_assignment -name FAST_INPUT_REGISTER ON -to SDRAM_DQ[13]
+set_instance_assignment -name FAST_INPUT_REGISTER ON -to SDRAM_DQ[14]
+set_instance_assignment -name FAST_INPUT_REGISTER ON -to SDRAM_DQ[15]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_A[0]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_A[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_A[2]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_A[3]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_A[4]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_A[5]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_A[6]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_A[7]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_A[8]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_A[9]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_A[10]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_A[11]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_A[12]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_DQ[0]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_DQ[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_DQ[2]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_DQ[3]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_DQ[4]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_DQ[5]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_DQ[6]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_DQ[7]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_DQ[8]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_DQ[9]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_DQ[10]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_DQ[11]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_DQ[12]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_DQ[13]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_DQ[14]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_DQ[15]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_BA[0]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_BA[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_DQML
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_DQMH
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_nRAS
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_nCAS
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_nWE
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_nCS
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_CKE
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to SDRAM_CLK
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to VGA_R[7]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to VGA_R[6]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to VGA_R[5]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to VGA_R[4]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to VGA_R[3]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to VGA_R[2]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to VGA_R[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to VGA_R[0]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to VGA_G[7]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to VGA_G[6]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to VGA_G[5]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to VGA_G[4]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to VGA_G[3]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to VGA_G[2]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to VGA_G[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to VGA_G[0]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to VGA_B[7]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to VGA_B[6]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to VGA_B[5]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to VGA_B[4]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to VGA_B[3]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to VGA_B[2]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to VGA_B[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to VGA_B[0]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to VGA_HS
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to VGA_VS
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to VGA_R[*]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to VGA_G[*]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to VGA_B[*]
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to VGA_HS
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to VGA_VS
+set_location_assignment PLL_1 -to amiga_clk|amiga_clk_i|altpll_component|auto_generated|pll1
+
+set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
+set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
+set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
