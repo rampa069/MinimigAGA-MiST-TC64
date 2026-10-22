@@ -4,22 +4,25 @@ set_time_format -unit ns -decimal_places 3
 
 
 #create clocks
-create_clock -name pll_in_clk -period 20 [get_ports {clk50m}]
-
-# pll clocks
-derive_pll_clocks
+create_clock -name pll_in_clk -period 20 [get_ports {CLOCK_50}]
 
 # name PLL clocks
 set pll_sdram "virtual_top|amiga_clk|amiga_clk_i|altpll_component|auto_generated|pll1|clk[0]"
 set clk_114   "virtual_top|amiga_clk|amiga_clk_i|altpll_component|auto_generated|pll1|clk[1]"
 set clk_28    "virtual_top|amiga_clk|amiga_clk_i|altpll_component|auto_generated|pll1|clk[2]"
 
+# pll clocks
+derive_pll_clocks
+
+
 # generated clocks
+
 create_generated_clock -name clk_sdram -source [get_pins {virtual_top|amiga_clk|amiga_clk_i|altpll_component|auto_generated|pll1|clk[0]}] [get_ports {DRAM_CLK}]
-create_generated_clock -name clk_spi -source [get_pins $clk_114] -divide_by 4 [get_nets {minimig_virtual_top:virtual_top|cfide:mycfide|sck}]
+create_generated_clock -name spiclk -source [get_pins {virtual_top|amiga_clk|amiga_clk_i|altpll_component|auto_generated|pll1|clk[2]}] -divide_by 2 [get_registers {minimig_virtual_top:virtual_top|cfide:mycfide|sck}]
 
 # name SDRAM ports
-set sdram_outputs [get_ports {DRAM_DQ[*] DRAM_ADDR[*] DRAM_LDQM DRAM_UDQM DRAM_WE_N  DRAM_CAS_N DRAM_RAS_N DRAM_BA[*] }]
+set sdram_outputs [get_ports {DRAM_ADDR[*] DRAM_LDQM DRAM_UDQM DRAM_WE_N DRAM_CAS_N DRAM_RAS_N DRAM_CS_N DRAM_BA[*] DRAM_CKE}]
+set sdram_dqoutputs [get_ports {DRAM_DQ[*]}]
 set sdram_inputs  [get_ports {DRAM_DQ[*]}]
 
 
@@ -32,49 +35,38 @@ derive_clock_uncertainty
 
 
 # input delay
-set_input_delay -clock clk_sdram -max 3.0 $sdram_inputs
-set_input_delay -clock clk_sdram -min 2.0 $sdram_inputs
+set_input_delay -clock clk_sdram -max 6.0 $sdram_inputs
+set_input_delay -clock clk_sdram -min 4.0 $sdram_inputs
 
-set_input_delay -clock $clk_114 0.5 [get_ports low_d[*]]
-set_input_delay -clock $clk_114 0.5 [get_ports ps2iec[*]]
-set_input_delay -clock $clk_114 0.5 [get_ports {ba_in dotclk_n ioef ir_data phi2_n reset_btn romlh spi_miso usart_cts}]
+set_input_delay -clock $clk_114 .5 [get_ports {PS2_KEYBOARD_DAT}]
+set_input_delay -clock $clk_114 .5 [get_ports {PS2_KEYBOARD_CLK}]
+set_input_delay -clock $clk_114 .5 [get_ports {PS2_MOUSE_DAT}]
+set_input_delay -clock $clk_114 .5 [get_ports {PS2_MOUSE_CLK}]
 
 
 #output delay
-#set_output_delay -clock $clk_sdram -max  1.5 [get_ports sm_clk]
-#set_output_delay -clock $clk_sdram -min -0.8 [get_ports sm_clk]
+#set_output_delay -clock $clk_sdram -max  1.5 [get_ports DRAM_CLK]
+#set_output_delay -clock $clk_sdram -min -0.8 [get_ports DRAM_CLK]
 set_output_delay -clock clk_sdram -max  1.5 $sdram_outputs
+set_output_delay -clock clk_sdram -max  1.5 $sdram_dqoutputs
 set_output_delay -clock clk_sdram -min -0.8 $sdram_outputs
+set_output_delay -clock clk_sdram -min -0.8 $sdram_dqoutputs
 
-set_output_delay -clock $clk_114 0.5 [get_ports low_d[*]]
-set_output_delay -clock $clk_114 0.5 [get_ports low_a[*]]
-set_output_delay -clock $clk_114 0.5 [get_ports ser_out*]
-set_output_delay -clock $clk_114 0.5 [get_ports {game_out irq_out mmc_cs ps2iec_sel rw_out sa15_out}]
-set_output_delay -clock $clk_114 0.5 [get_ports {sa_oe sd_dir sd_oe spi_clk spi_mosi}]
+set_output_delay -clock $clk_114 .5 [get_ports {VGA_R[*]}]
+set_output_delay -clock $clk_114 .5 [get_ports {VGA_G[*]}]
+set_output_delay -clock $clk_114 .5 [get_ports {VGA_B[*]}]
+set_output_delay -clock $clk_114 .5 [get_ports {VGA_*S}]
+
 
 # false paths
 
-set_false_path -from [get_clocks {virtual_top|amiga_clk|amiga_clk_i|altpll_component|auto_generated|pll1|clk[1]}] -to [get_clocks {clk_spi}]
-set_false_path -from [get_clocks {virtual_top|amiga_clk|amiga_clk_i|altpll_component|auto_generated|pll1|clk[2]}] -to [get_clocks {clk_spi}]
-set_false_path -from [get_clocks {clk_spi}] -to [get_clocks {virtual_top|amiga_clk|amiga_clk_i|altpll_component|auto_generated|pll1|clk[1]}]
-
-set_false_path -to {sigma_*}
-set_false_path -to {red[*]}
-set_false_path -to {grn[*]}
-set_false_path -to {blu[*]}
-set_false_path -to {vga_hsync}
-set_false_path -to {vga_vsync}
-set_false_path -from {usart_clk usart_rts usart_tx}
-set_false_path -to {usart_rx iec_dat_out rtc_cs}
-
+set_clock_groups -asynchronous -group [get_clocks {spiclk}] -group [get_clocks ${clk_114}]
+set_clock_groups -asynchronous -group [get_clocks {pll_in_clk}] -group [get_clocks ${clk_28}]
 
 # multicycle paths
 
-set_multicycle_path -from {minimig_virtual_top:virtual_top|EightThirtyTwo_Bridge:hostcpu|eightthirtytwo_cpu:my832|*} -to {minimig_virtual_top:virtual_top|EightThirtyTwo_Bridge:hostcpu|eightthirtytwo_cpu:my832|eightthirtytwo_alu:alu|mulresult[*]} -setup -end 2
-set_multicycle_path -from {minimig_virtual_top:virtual_top|EightThirtyTwo_Bridge:hostcpu|eightthirtytwo_cpu:my832|*} -to {minimig_virtual_top:virtual_top|EightThirtyTwo_Bridge:hostcpu|eightthirtytwo_cpu:my832|eightthirtytwo_alu:alu|mulresult[*]} -hold -end 2
-
-# Adjust data window for SDRAM reads by 1 cycle
-set_multicycle_path -from clk_sdram -to [get_clocks $clk_114] -setup 2
+#set_multicycle_path -from {virtual_top|TG68K:tg68k|TG68KdotC_Kernel:pf68K_Kernel_inst|*} -setup 4
+#set_multicycle_path -from {virtual_top|TG68K:tg68k|TG68KdotC_Kernel:pf68K_Kernel_inst|*} -hold 3
 
 set_multicycle_path -from {virtual_top|tg68k|pf68K_Kernel_inst|*} -setup 4
 set_multicycle_path -from {virtual_top|tg68k|pf68K_Kernel_inst|*} -hold 3
@@ -85,28 +77,47 @@ set_multicycle_path -from {virtual_top|tg68k|pf68K_Kernel_inst|memaddr*} -to {vi
 set_multicycle_path -from {virtual_top|tg68k|addr[*]} -setup 3
 set_multicycle_path -from {virtual_top|tg68k|addr[*]} -hold 2
 
-set_multicycle_path -from {virtual_top|sdram|cpu_cache|itram|*} -to {virtual_top|sdram|cpu_cache|cpu_cacheline_*[*][*]} -setup 2
-set_multicycle_path -from {virtual_top|sdram|cpu_cache|itram|*} -to {virtual_top|sdram|cpu_cache|cpu_cacheline_*[*][*]} -hold 1
-set_multicycle_path -from {virtual_top|sdram|cpu_cache|dtram|*} -to {virtual_top|sdram|cpu_cache|cpu_cacheline_*[*][*]} -setup 2
-set_multicycle_path -from {virtual_top|sdram|cpu_cache|dtram|*} -to {virtual_top|sdram|cpu_cache|cpu_cacheline_*[*][*]} -hold 1
+#set_multicycle_path -from {virtual_top|sdram|cpu_cache|itram|*} -to {virtual_top|sdram|cpu_cache|cpu_cacheline_*[*][*]} -setup 2
+#set_multicycle_path -from {virtual_top|sdram|cpu_cache|itram|*} -to {virtual_top|sdram|cpu_cache|cpu_cacheline_*[*][*]} -hold 1
+#set_multicycle_path -from {virtual_top|sdram|cpu_cache|dtram|*} -to {virtual_top|sdram|cpu_cache|cpu_cacheline_*[*][*]} -setup 2
+#set_multicycle_path -from {virtual_top|sdram|cpu_cache|dtram|*} -to {virtual_top|sdram|cpu_cache|cpu_cacheline_*[*][*]} -hold 1
 
 set_multicycle_path -from [get_clocks $clk_28] -to [get_clocks $clk_114] -setup 4
 set_multicycle_path -from [get_clocks $clk_28] -to [get_clocks $clk_114] -hold 3
 
+# Move data window for SDRAM reads by 1 cycle
+set_multicycle_path -from clk_sdram -to [get_clocks $clk_114] -setup 2
+
 # Neither in nor out of the C2P requires single-cycle speed
-set_multicycle_path -from {minimig_virtual_top:virtual_top|TG68K:tg68k|akiko:myakiko|cornerturn:myc2p|rdptr[*]} -to {minimig_virtual_top:virtual_top|TG68K:tg68k|TG68KdotC_Kernel:pf68K_Kernel_inst|*} -setup -end 2
-set_multicycle_path -from {minimig_virtual_top:virtual_top|TG68K:tg68k|akiko:myakiko|cornerturn:myc2p|rdptr[*]} -to {minimig_virtual_top:virtual_top|TG68K:tg68k|TG68KdotC_Kernel:pf68K_Kernel_inst|*} -hold -end 2
-set_multicycle_path -from {minimig_virtual_top:virtual_top|TG68K:tg68k|akiko:myakiko|cornerturn:myc2p|buf[*][*]} -to {minimig_virtual_top:virtual_top|TG68K:tg68k|TG68KdotC_Kernel:pf68K_Kernel_inst|*} -setup -end 2
-set_multicycle_path -from {minimig_virtual_top:virtual_top|TG68K:tg68k|akiko:myakiko|cornerturn:myc2p|buf[*][*]} -to {minimig_virtual_top:virtual_top|TG68K:tg68k|TG68KdotC_Kernel:pf68K_Kernel_inst|*} -hold -end 2
+set_multicycle_path -from {minimig_virtual_top:virtual_top|TG68K:tg68k|akiko:myakiko|cornerturn:\c2p:myc2p|rdptr[*]} -to {minimig_virtual_top:virtual_top|TG68K:tg68k|TG68KdotC_Kernel:pf68K_Kernel_inst|*} -setup -end 2
+set_multicycle_path -from {minimig_virtual_top:virtual_top|TG68K:tg68k|akiko:myakiko|cornerturn:\c2p:myc2p|rdptr[*]} -to {minimig_virtual_top:virtual_top|TG68K:tg68k|TG68KdotC_Kernel:pf68K_Kernel_inst|*} -hold -end 2
+set_multicycle_path -from {minimig_virtual_top:virtual_top|TG68K:tg68k|akiko:myakiko|cornerturn:\c2p:myc2p|buf[*][*]} -to {minimig_virtual_top:virtual_top|TG68K:tg68k|TG68KdotC_Kernel:pf68K_Kernel_inst|*} -setup -end 2
+set_multicycle_path -from {minimig_virtual_top:virtual_top|TG68K:tg68k|akiko:myakiko|cornerturn:\c2p:myc2p|buf[*][*]} -to {minimig_virtual_top:virtual_top|TG68K:tg68k|TG68KdotC_Kernel:pf68K_Kernel_inst|*} -hold -end 2
 
 # Likewise RTG and audio address have 8 cycles of downtime between bursts
-set_multicycle_path -from {minimig_virtual_top:virtual_top|VideoStream:myvs|address_high[*]} -to {minimig_virtual_top:virtual_top|sdram_ctrl:sdram|*} -setup -end 2
-set_multicycle_path -from {minimig_virtual_top:virtual_top|VideoStream:myvs|address_high[*]} -to {minimig_virtual_top:virtual_top|sdram_ctrl:sdram|*} -hold -end 2
-set_multicycle_path -from {minimig_virtual_top:virtual_top|VideoStream:myvs|outptr[*]} -to {minimig_virtual_top:virtual_top|sdram_ctrl:sdram|*} -setup -end 2
-set_multicycle_path -from {minimig_virtual_top:virtual_top|VideoStream:myvs|outptr[*]} -to {minimig_virtual_top:virtual_top|sdram_ctrl:sdram|*} -hold -end 2
-set_multicycle_path -from {minimig_virtual_top:virtual_top|VideoStream:myaudiostream|*} -to {minimig_virtual_top:virtual_top|sdram_ctrl:sdram|*} -setup -end 2
-set_multicycle_path -from {minimig_virtual_top:virtual_top|VideoStream:myaudiostream|*} -to {minimig_virtual_top:virtual_top|sdram_ctrl:sdram|*} -hold -end 2
+set_multicycle_path -from {minimig_virtual_top:virtual_top|rtg_video:rtg|VideoStream:myvs|fetch_address[*]} -to {minimig_virtual_top:virtual_top|sdram_ctrl:sdram|*} -setup -end 2
+set_multicycle_path -from {minimig_virtual_top:virtual_top|rtg_video:rtg|VideoStream:myvs|fetch_address[*]} -to {minimig_virtual_top:virtual_top|sdram_ctrl:sdram|*} -hold -end 2
+set_multicycle_path -from {minimig_virtual_top:virtual_top|VideoStream:myaudiostream|fetch_address[*]} -to {minimig_virtual_top:virtual_top|sdram_ctrl:sdram|*} -setup -end 2
+set_multicycle_path -from {minimig_virtual_top:virtual_top|VideoStream:myaudiostream|fetch_address[*]} -to {minimig_virtual_top:virtual_top|sdram_ctrl:sdram|*} -hold -end 2
 
-# C64 IO signals are stable long before the IO entity writes them to the bus...
-set_multicycle_path -to {low_a[*]} -setup -end 4
-set_multicycle_path -to {low_a[*]} -hold -end 3
+# JTAG
+#set ports [get_ports -nowarn {altera_reserved_tck}]
+#if {[get_collection_size $ports] == 1} {
+#  create_clock -name tck -period 100.000 [get_ports {altera_reserved_tck}]
+#  set_clock_groups -exclusive -group altera_reserved_tck
+#  set_output_delay -clock tck 20 [get_ports altera_reserved_tdo]
+#  set_input_delay  -clock tck 20 [get_ports altera_reserved_tdi]
+#  set_input_delay  -clock tck 20 [get_ports altera_reserved_tms]
+#  set tck altera_reserved_tck
+#  set tms altera_reserved_tms
+#  set tdi altera_reserved_tdi
+#  set tdo altera_reserved_tdo
+#  set_false_path -from *                -to [get_ports $tdo]
+#  set_false_path -from [get_ports $tms] -to *
+#  set_false_path -from [get_ports $tdi] -to *
+#}
+
+# UAReloaded: the Neptuno constraints (same FPGA, top ports and 50 MHz PLL);
+# the kernel multicycles again by full name, whatever the hierarchy prefix
+set_multicycle_path -from {*TG68K:tg68k|TG68KdotC_Kernel:pf68K_Kernel_inst|*} -setup 4
+set_multicycle_path -from {*TG68K:tg68k|TG68KdotC_Kernel:pf68K_Kernel_inst|*} -hold 3

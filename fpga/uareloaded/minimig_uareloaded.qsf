@@ -346,8 +346,8 @@ set_global_assignment -name VERILOG_MACRO "MINIMIG_EXTRA_KEYBOARD=1"
 set_global_assignment -name VERILOG_MACRO "MINIMIG_CYCLONE4=1"
 set_global_assignment -name VERILOG_MACRO "MINIMIG_PARALLEL_AUDIO=1"
 set_global_assignment -name VERILOG_MACRO "MINIMIG_HOST_DIRECT=1"
-set_global_assignment -name VERILOG_MACRO "MINIMIG_ALTERA_PLL_RECONFIG=1"
-set_global_assignment -name QIP_FILE ../../rtl/mist/amiga_clk_altera.qip
+set_global_assignment -name VERILOG_MACRO "MINIMIG_ALTERA=1"
+set_global_assignment -name QIP_FILE ../../rtl/neptuno/amiga_clk_altera.qip
 set_global_assignment -name QIP_FILE ../../rtl/mist/amigaclk_reconfig_ntsc.qip
 set_global_assignment -name QIP_FILE ../../rtl/mist/vidclkcntrl.qip
 set_global_assignment -name QIP_FILE ../../rtl/mist/amigaclk_reconfig_pal.qip
@@ -360,8 +360,6 @@ set_global_assignment -name QIP_FILE ../../rtl/sdram/sdram.qip
 set_global_assignment -name QIP_FILE ../../rtl/minimig/minimig.qip
 set_global_assignment -name QIP_FILE ../../rtl/host/host.qip
 set_global_assignment -name QIP_FILE ../../EightThirtyTwo/RTL/eightthirtytwo.qip
-set_global_assignment -name QIP_FILE ../../EightThirtyTwo/RTL/debug_virtualjtag.qip
-set_global_assignment -name QIP_FILE ../../EightThirtyTwo/RTL/debug_fifo_altera.qip
 set_global_assignment -name QIP_FILE ../../EightThirtyTwo/RTL/debug_bridge_jtag.qip
 set_global_assignment -name QIP_FILE ../../rtl/soc/tg68.qip
 set_global_assignment -name VERILOG_FILE ../../rtl/soc/minimig_virtual_top.v
