@@ -27,7 +27,11 @@ module m68k_cpu
   parameter bit FPU_FAST = 1'b0,        // (m68k_core's): TG68K.C's FPU ALU (the fast one misses 35 ns)
   parameter bit MMU_REG = 1'b1,         // (m68k_core's): registered translations
   parameter bit FETCH_REG = 1'b1,       // (m68k_core's): fetch requests from registers
-  parameter bit AG_LOAD = 1'b0          // (m68k_core's): loads from OF only
+  parameter bit AG_LOAD = 1'b0,         // (m68k_core's): loads from OF only
+  // the line port (m68k_lpu): a window of memory served in 16-byte lines
+  parameter bit LINE_PORT = 1'b0,
+  parameter logic [31:0] LP_LO = 32'h40000000,
+  parameter logic [31:0] LP_HI = 32'h48000000
 )
 (
   input  logic        clk,
@@ -59,6 +63,17 @@ module m68k_cpu
 
   // for the testbench: the caches on whatever CACR says (0 in a design)
   input  logic        force_cache,
+
+  // the line port (with LINE_PORT; see m68k_lpu): changes on enabled edges,
+  // lp_done and lp_rdata held by the machine until lp_req falls
+  input  logic        lp_en,
+  output logic        lp_req,
+  output logic        lp_we,
+  output logic [31:0] lp_addr,
+  output logic [3:0]  lp_be,
+  output logic [31:0] lp_wdata,
+  input  logic        lp_done,
+  input  logic [127:0] lp_rdata,
 
   // retirement, for the testbench trace (m68k_core's)
   output logic        dbg_retire,
@@ -98,7 +113,15 @@ module m68k_cpu
   logic [1:0]  ctl_cacr;
   logic        ctl_cinv, ctl_reset;
   logic [1:0]  ctl_cinv_c;
-  // the instruction cache's side of the bus interface
+  // the caches' requests (to the line port unit), and its side of the bus
+  // interface
+  logic        ci_req, ci_gnt, ci_rvalid, ci_err;
+  logic [31:0] ci_addr, ci_rdata;
+  logic [2:0]  ci_fc;
+  logic        cd_req, cd_we, cd_gnt, cd_rvalid, cd_err;
+  logic [31:0] cd_addr, cd_wdata, cd_rdata;
+  size_e       cd_size;
+  logic [2:0]  cd_fc;
   logic        bi_req, bi_gnt, bi_rvalid, bi_err;
   logic [31:0] bi_addr, bi_rdata;
   logic [2:0]  bi_fc;
@@ -134,16 +157,25 @@ module m68k_cpu
     .c_req(i_req), .c_addr(i_addr), .c_fc(i_fc), .c_gnt(i_gnt), .c_rvalid(i_rvalid), .c_err(i_err),
     .c_rdata(i_rdata),
     .snoop(d_req && d_we && d_gnt), .snoop_addr(d_addr), .wb_empty,
-    .b_req(bi_req), .b_addr(bi_addr), .b_fc(bi_fc), .b_gnt(bi_gnt), .b_rvalid(bi_rvalid), .b_err(bi_err),
-    .b_rdata(bi_rdata)
+    .b_req(ci_req), .b_addr(ci_addr), .b_fc(ci_fc), .b_gnt(ci_gnt), .b_rvalid(ci_rvalid), .b_err(ci_err),
+    .b_rdata(ci_rdata)
   );
 
   m68k_dcache #(.NC0_LO(NC0_LO), .NC0_HI(NC0_HI), .NC1_LO(NC1_LO), .NC1_HI(NC1_HI)) dcache (
     .clk, .rst, .ce(clkena_in), .enable(ctl_cacr[1] || force_cache), .inval(ctl_cinv && ctl_cinv_c[0]),
     .c_req(d_req), .c_we(d_we), .c_addr(d_addr), .c_size(d_size), .c_wdata(d_wdata), .c_fc(d_fc),
     .c_gnt(d_gnt), .c_rvalid(d_rvalid), .c_err(d_err), .c_rdata(d_rdata), .wb_empty,
-    .b_req(bd_req), .b_we(bd_we), .b_addr(bd_addr), .b_size(bd_size), .b_wdata(bd_wdata), .b_fc(bd_fc),
-    .b_gnt(bd_gnt), .b_rvalid(bd_rvalid), .b_err(bd_err), .b_rdata(bd_rdata)
+    .b_req(cd_req), .b_we(cd_we), .b_addr(cd_addr), .b_size(cd_size), .b_wdata(cd_wdata), .b_fc(cd_fc),
+    .b_gnt(cd_gnt), .b_rvalid(cd_rvalid), .b_err(cd_err), .b_rdata(cd_rdata)
+  );
+
+  m68k_lpu #(.LINE_PORT(LINE_PORT), .LP_LO(LP_LO), .LP_HI(LP_HI)) lpu (
+    .clk, .rst, .ce(clkena_in), .lp_en,
+    .ci_req, .ci_addr, .ci_fc, .ci_gnt, .ci_rvalid, .ci_err, .ci_rdata,
+    .cd_req, .cd_we, .cd_addr, .cd_size, .cd_wdata, .cd_fc, .cd_gnt, .cd_rvalid, .cd_err, .cd_rdata,
+    .bi_req, .bi_addr, .bi_fc, .bi_gnt, .bi_rvalid, .bi_err, .bi_rdata,
+    .bd_req, .bd_we, .bd_addr, .bd_size, .bd_wdata, .bd_fc, .bd_gnt, .bd_rvalid, .bd_err, .bd_rdata,
+    .lp_req, .lp_we, .lp_addr, .lp_be, .lp_wdata, .lp_done, .lp_rdata
   );
 
   m68k_biu biu (

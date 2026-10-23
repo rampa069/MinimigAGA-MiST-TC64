@@ -130,7 +130,8 @@ module m68k_dcache
   logic [2:0]  f_fc;
   logic [1:0]  f_next, f_got;
   logic [2:0]  f_left;
-  logic        f_wait, f_bad;
+  logic        f_wait, f_bad;              // f_wait: an access straight through on the bus
+  logic [2:0]  f_out;                      // a fill's longs asked for, not answered yet
 
   // what an access is: buffered (a write the cache keeps), straight
   // through (an access it does not keep, a read across a long), or a read
@@ -144,7 +145,7 @@ module m68k_dcache
   assign c_free = (st == ST_IDLE && !s1_miss && !(s1_v && s1_direct)) || bus_resp;
   assign c_gnt = c_req && c_free && !wq_v[WBN - 1];   // (acted on at enabled edges only)
   // the long asked for of a fill, answered as it comes
-  assign fill_crit = st == ST_FILL && f_wait && b_rvalid && f_got == f_addr[3:2];
+  assign fill_crit = st == ST_FILL && f_out != 3'd0 && b_rvalid && f_got == f_addr[3:2];
   assign c_rvalid = (st == ST_IDLE && (s1_rd_hit || s1_wr)) || bus_resp || fill_crit;
   assign c_err = (bus_resp || fill_crit) && b_err;
   assign c_rdata = (st == ST_BUS) ? b_rdata : fill_crit ? extract(b_rdata, f_addr[1:0], f_size) :
@@ -158,7 +159,7 @@ module m68k_dcache
       b_req = !wq_out;
       b_we = 1'b1; b_addr = wq_a[0]; b_size = wq_s[0]; b_wdata = wq_d[0]; b_fc = wq_fc[0];
     end else if (st == ST_FILL) begin
-      b_req = f_left != 3'd0 && !f_wait;
+      b_req = f_left != 3'd0;            // (asked for one after the other, answered in order)
       b_addr = {f_addr[31:4], f_next, 2'b00}; b_size = SZ_L;
     end else if (st == ST_BUS) begin
       b_req = !f_wait;
@@ -168,8 +169,8 @@ module m68k_dcache
 
   // the RAM writes: a long of a fill, a write that hits
   logic        fill_wr, fill_end, hit_wr;
-  assign fill_wr = ce && st == ST_FILL && !wq_v[0] && b_rvalid && f_wait;
-  assign fill_end = fill_wr && f_left == 3'd0;
+  assign fill_wr = ce && st == ST_FILL && !wq_v[0] && b_rvalid && f_out != 3'd0;
+  assign fill_end = fill_wr && f_left == 3'd0 && f_out == 3'd1;
   assign hit_wr = ce && s1_wr && s1_in && s1_tag_hit;
 
   always_ff @(posedge clk) begin
@@ -187,6 +188,7 @@ module m68k_dcache
       s1_v <= 1'b0;
       st <= ST_IDLE;
       f_wait <= 1'b0;
+      f_out <= 3'd0;
       wq_out <= 1'b0;
       for (int i = 0; i < WBN; i++) wq_v[i] <= 1'b0;
       for (int i = 0; i < LINES; i++) valid[i] <= 1'b0;
@@ -254,23 +256,23 @@ module m68k_dcache
         f_size <= s1_size;
         f_fc <= s1_fc;
         f_next <= s1_addr[3:2];
+        f_got <= s1_addr[3:2];
         f_left <= 3'd4;
         f_bad <= 1'b0;
-        f_wait <= 1'b0;
         st <= ST_FILL;
         valid[s1_addr[11:4]] <= 1'b0;
       end
 
+      if (st == ST_FILL)
+        f_out <= f_out + 3'(!wq_v[0] && b_req && b_gnt) - 3'(fill_wr);
       if (st == ST_FILL && !wq_v[0] && b_req && b_gnt) begin
-        f_wait <= 1'b1;
-        f_got <= f_next;
         f_next <= f_next + 2'd1;
         f_left <= f_left - 3'd1;
       end
       if (fill_wr) begin
-        f_wait <= 1'b0;
+        f_got <= f_got + 2'd1;
         if (b_err) f_bad <= 1'b1;
-        if (f_left == 3'd0) begin
+        if (f_left == 3'd0 && f_out == 3'd1) begin
           valid[f_addr[11:4]] <= !(f_bad || b_err);
           st <= ST_IDLE;
         end

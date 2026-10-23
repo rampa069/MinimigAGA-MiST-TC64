@@ -5,7 +5,8 @@
 // A fetch (an aligned long) is looked up on the enabled edge that takes it
 // and answered on the next one when it hits. A miss fills the line through
 // the bus interface, the long asked for first (it answers as it comes) and
-// the others after it, wrapping; the line becomes valid once all four are
+// the others after it, wrapping, asked for one after the other without
+// waiting for the answers (which come in order); the line becomes valid once all four are
 // in. Fetches the cache does not keep go straight to the bus: CACR IE clear,
 // or an address in one of the windows never cached (NC0, NC1: memory that
 // something else than this core writes, as the Amiga's chip RAM, and
@@ -84,8 +85,10 @@ module m68k_icache
   logic [2:0]  f_fc;
   logic [1:0]  f_next;                  // the long of the line to ask for next
   logic [2:0]  f_left;                  // longs not asked for yet
-  logic        f_wait;                  // one asked for, not answered yet
-  logic [1:0]  f_got;                   // the long being answered
+  logic [2:0]  f_out;                   // asked for, not answered yet
+  logic        f_wait;
+  assign f_wait = f_out != 3'd0;
+  logic [1:0]  f_got;                   // the long the next answer is
   logic        f_bad;                   // the line will not be valid (an error, a write to it)
   logic        resp_v, resp_err;
   logic [31:0] resp_d;
@@ -96,7 +99,7 @@ module m68k_icache
   assign c_rdata = resp_v ? resp_d : q_data;
 
   // (a fetch waits for the data cache's buffered writes: they may be code)
-  assign b_req = wb_empty && ((st == ST_FILL && f_left != 3'd0 && !f_wait) || (st == ST_BYPASS && !f_wait));
+  assign b_req = wb_empty && ((st == ST_FILL && f_left != 3'd0) || (st == ST_BYPASS && !f_wait));
   assign b_addr = st == ST_BYPASS ? f_addr : {f_addr[31:4], f_next, 2'b00};
   assign b_fc = f_fc;
 
@@ -112,7 +115,7 @@ module m68k_icache
   // a long of the fill comes in; the last one writes the tag
   logic fill_wr, fill_end;
   assign fill_wr = ce && st == ST_FILL && b_rvalid && f_wait;
-  assign fill_end = fill_wr && f_left == 3'd0;
+  assign fill_end = fill_wr && f_left == 3'd0 && f_out == 3'd1;
 
   always_ff @(posedge clk) begin
     if (ce) begin
@@ -130,7 +133,7 @@ module m68k_icache
       st <= ST_IDLE;
       resp_v <= 1'b0;
       sn_v <= 1'b0;
-      f_wait <= 1'b0;
+      f_out <= 3'd0;
       for (int i = 0; i < LINES; i++) valid[i] <= 1'b0;
     end else if (ce) begin
       resp_v <= 1'b0;
@@ -149,21 +152,20 @@ module m68k_icache
         f_addr <= s1_addr;
         f_fc <= s1_fc;
         f_next <= s1_addr[3:2];
+        f_got <= s1_addr[3:2];
         f_left <= 3'd4;
         f_bad <= 1'b0;
-        f_wait <= 1'b0;
         st <= s1_c ? ST_FILL : ST_BYPASS;
         if (s1_c) valid[s1_addr[11:4]] <= 1'b0;
       end
 
+      f_out <= f_out + 3'(b_req && b_gnt) - 3'(b_rvalid && f_wait);
       if (b_req && b_gnt) begin
-        f_wait <= 1'b1;
-        f_got <= f_next;
         f_next <= f_next + 2'd1;
         if (st == ST_FILL) f_left <= f_left - 3'd1;
       end
       if (b_rvalid && f_wait) begin
-        f_wait <= 1'b0;
+        f_got <= f_got + 2'd1;
         if (st == ST_BYPASS) begin
           resp_v <= 1'b1; resp_err <= b_err; resp_d <= b_rdata;
           st <= ST_IDLE;
@@ -172,7 +174,7 @@ module m68k_icache
             resp_v <= 1'b1; resp_err <= b_err; resp_d <= b_rdata;
           end
           if (b_err) f_bad <= 1'b1;
-          if (f_left == 3'd0) begin
+          if (f_left == 3'd0 && f_out == 3'd1) begin
             // the line is in: valid unless an error or a write spoilt it
             valid[f_addr[11:4]] <= !(f_bad || b_err || sn_fill);
             st <= ST_IDLE;

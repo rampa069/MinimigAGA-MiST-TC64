@@ -38,7 +38,10 @@ generic
 		useprofiler : boolean := false;
 		-- the CPU type 68020 (cpu = "11") runs the kernel in its 68040 mode
 		-- (FPU and MMU, rampa069/TG68K.C bus32); 68EC020 stays a 24-bit 68020
-		cpu68040 : boolean := true
+		cpu68040 : boolean := true;
+		-- the m68k core's line port (rtl/m68k: m68k_lpu, m68k_lp_minimig) for
+		-- the first Zorro III block, served by minimig_mist_top
+		lineport : boolean := false
 	);
 port(
 	clk           : in      std_logic;
@@ -105,12 +108,31 @@ port(
 	-- Host interface
 	host_req : out std_logic;
 	host_ack : in std_logic :='0';
-	host_q : in std_logic_vector(15 downto 0) := "----------------"
+	host_q : in std_logic_vector(15 downto 0) := "----------------";
+	-- the m68k core's line port (with lineport)
+	lp_en         : in      std_logic := '0';
+	lp_req        : out     std_logic;
+	lp_we         : out     std_logic;
+	lp_addr       : out     std_logic_vector(31 downto 0);
+	lp_be         : out     std_logic_vector(3 downto 0);
+	lp_wdata      : out     std_logic_vector(31 downto 0);
+	lp_done       : in      std_logic := '0';
+	lp_rdata      : in      std_logic_vector(127 downto 0) := (others => '0')
 );
 end TG68K;
 
 
 ARCHITECTURE logic OF TG68K IS
+-- the line port's window: the first Zorro III block, all of the second
+-- SDRAM with two, its first 16 MB with one (TG68K's ramaddr mapping)
+function lp_hi_f(d : boolean) return integer is
+begin
+	if d then return 16#44000000#; else return 16#41000000#; end if;
+end function;
+function b2i(b : boolean) return integer is
+begin
+	if b then return 1; else return 0; end if;
+end function;
 SIGNAL addrtg68         : std_logic_vector(31 downto 0);
 SIGNAL cpuaddr          : std_logic_vector(31 downto 0);
 SIGNAL r_data           : std_logic_vector(15 downto 0);
@@ -201,7 +223,10 @@ component TG68KdotC_Kernel
 		MUL_Hardware : integer := 1;
 		D_Cache_Bit : integer := 0;
 		FPU_FPSP : integer := 1;
-		MMU_REG_XLATE : integer := 0
+		MMU_REG_XLATE : integer := 0;
+		LINE_PORT : integer := 0;
+		LP_LO : integer := 16#40000000#;
+		LP_HI : integer := 16#48000000#
 	);
 	port(
 		clk : in std_logic;
@@ -232,7 +257,15 @@ component TG68KdotC_Kernel
 		CACR_out : out std_logic_vector(3 downto 0);
 		D_CACHE_out : out std_logic;
 		VBR_out : out std_logic_vector(31 downto 0);
-		MMU_on_out : out std_logic
+		MMU_on_out : out std_logic;
+		lp_en : in std_logic := '0';
+		lp_req : out std_logic;
+		lp_we : out std_logic;
+		lp_addr : out std_logic_vector(31 downto 0);
+		lp_be : out std_logic_vector(3 downto 0);
+		lp_wdata : out std_logic_vector(31 downto 0);
+		lp_done : in std_logic := '0';
+		lp_rdata : in std_logic_vector(127 downto 0) := (others => '0')
 	);
 end component;
 
@@ -469,7 +502,9 @@ pf68K_Kernel_inst: TG68KdotC_Kernel
     MUL_Mode        => 2, -- 0=>16Bit,  1=>32Bit,         2=>switchable with CPU(1),  3=>no MUL,
     DIV_Mode        => 2, -- 0=>16Bit,  1=>32Bit,         2=>switchable with CPU(1),  3=>no DIV,
     BitField        => 2, -- 0=>no,     1=>yes,           2=>switchable with CPU(1)
-	MUL_Hardware    => 1  -- 0=>no,     1=>yes
+	MUL_Hardware    => 1, -- 0=>no,     1=>yes
+    LINE_PORT       => b2i(lineport),
+    LP_HI           => lp_hi_f(dualsdram)
   )
   PORT MAP (
     clk             => clk,           -- : in std_logic;
@@ -491,7 +526,15 @@ pf68K_Kernel_inst: TG68KdotC_Kernel
     skipFetch       => skipFetch,     -- : out std_logic
     CACR_out        => CACR,
     VBR_out         => VBR_out,
-    MMU_on_out      => mmu_on
+    MMU_on_out      => mmu_on,
+    lp_en           => lp_en,
+    lp_req          => lp_req,
+    lp_we           => lp_we,
+    lp_addr         => lp_addr,
+    lp_be           => lp_be,
+    lp_wdata        => lp_wdata,
+    lp_done         => lp_done,
+    lp_rdata        => lp_rdata
   );
   CACR_out <= CACR;
 

@@ -4,7 +4,10 @@
 // takes the core with no change but a component declaration, and its SDC
 // still finds the instance (pf68K_Kernel_inst). The generics are taken and
 // ignored (the core is always the 68040), and so are CPU and
-// IPL_autovector (interrupts are autovectored); regin_out is 0.
+// IPL_autovector (interrupts are autovectored); regin_out is 0. LINE_PORT,
+// LP_LO and LP_HI, and the lp_ ports after TG68K.C's, are m68k_cpu's line
+// port (m68k_lpu): a wrapper that does not use it leaves them unconnected
+// (lp_en and lp_done low).
 
 /* verilator lint_off UNUSEDPARAM */       // (TG68K.C's generics, taken and ignored)
 module TG68KdotC_Kernel #(
@@ -18,7 +21,10 @@ module TG68KdotC_Kernel #(
   parameter int MUL_Hardware = 1,
   parameter int D_Cache_Bit = 0,
   parameter int FPU_FPSP = 1,
-  parameter int MMU_REG_XLATE = 0
+  parameter int MMU_REG_XLATE = 0,
+  parameter int LINE_PORT = 0,
+  parameter int LP_LO = 32'h40000000,
+  parameter int LP_HI = 32'h48000000
 ) (
   /* verilator lint_on UNUSEDPARAM */
   input  logic        clk,
@@ -49,16 +55,26 @@ module TG68KdotC_Kernel #(
   output logic [3:0]  CACR_out,
   output logic        D_CACHE_out,
   output logic [31:0] VBR_out,
-  output logic        MMU_on_out
+  output logic        MMU_on_out,
+
+  input  logic        lp_en,
+  output logic        lp_req,
+  output logic        lp_we,
+  output logic [31:0] lp_addr,
+  output logic [3:0]  lp_be,
+  output logic [31:0] lp_wdata,
+  input  logic        lp_done,
+  input  logic [127:0] lp_rdata
 );
 
   /* verilator lint_off PINCONNECTEMPTY */   // (the testbench's outputs, not used here)
-  m68k_cpu core68k (
+  m68k_cpu #(.LINE_PORT(LINE_PORT != 0), .LP_LO(LP_LO), .LP_HI(LP_HI)) core68k (
     .clk, .nReset, .clkena_in, .data_in, .IPL, .berr,
     .addr_out, .data_write, .nWr, .nUDS, .nLDS, .busstate, .longword, .newpc,
     .long_req, .long_ack, .data_in_lo, .data_write_lo,
     .nResetOut, .FC, .clr_berr, .skipFetch, .CACR_out, .D_CACHE_out, .VBR_out, .MMU_on_out,
     .force_cache(1'b0),
+    .lp_en, .lp_req, .lp_we, .lp_addr, .lp_be, .lp_wdata, .lp_done, .lp_rdata,
     .dbg_retire(), .dbg_first(), .dbg_last(), .dbg_pc(), .dbg_op(), .dbg_npc(), .dbg_unimpl(),
     .dbg_regs(), .dbg_sr(), .dbg_st(), .dbg_st_addr(), .dbg_st_size(), .dbg_st_data(),
     .dbg_fwr(), .dbg_fwr_addr(), .dbg_fwr_size(), .dbg_fwr_data(),

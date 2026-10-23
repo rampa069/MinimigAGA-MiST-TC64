@@ -196,6 +196,18 @@ wire   [  3:0] tg68_cpustate;
 wire           tg68_nrst_out;
 wire           tg68_clds;
 wire           tg68_cuds;
+// the SDRAM controllers' CPU port: TG68K's, or shared with the m68k core's
+// line port (MINIMIG_M68K_LINEPORT: m68k_lp_minimig)
+wire [ 32-1:0] sd_cad;
+wire   [  3:0] sd_cpustate;
+wire           sd_clds;
+wire           sd_cuds;
+wire [ 16-1:0] sd_cin;
+wire           sd_cpuena;
+wire           m68k_lp_en, m68k_lp_req, m68k_lp_we, m68k_lp_done;
+wire [ 32-1:0] m68k_lp_addr, m68k_lp_wdata;
+wire   [  3:0] m68k_lp_be;
+wire [128-1:0] m68k_lp_rdata;
 wire [  4-1:0] tg68_CACR_out;
 wire [ 32-1:0] tg68_VBR_out;
 wire           tg68_ovr;
@@ -409,8 +421,15 @@ localparam havecart="true";
 localparam havecart="false";
 `endif
 
+`ifdef MINIMIG_M68K_LINEPORT
+localparam lineport="true";
+`else
+localparam lineport="false";
+`endif
+
 TG68K #(
   .dualsdram(dualsdram),
+  .lineport(lineport),
   .useprofiler(useprofiler),
   .haveaudio(auxaudio),
   .havecart(havecart)
@@ -475,8 +494,62 @@ TG68K #(
   .audio_buf(aud_addr[15]),
   .audio_int(aud_int),
   .host_req(tg68_host_req),
-  .host_ack(tg68_host_ack)
+  .host_ack(tg68_host_ack),
+  .lp_en(m68k_lp_en),
+  .lp_req(m68k_lp_req),
+  .lp_we(m68k_lp_we),
+  .lp_addr(m68k_lp_addr),
+  .lp_be(m68k_lp_be),
+  .lp_wdata(m68k_lp_wdata),
+  .lp_done(m68k_lp_done),
+  .lp_rdata(m68k_lp_rdata)
 );
+
+`ifdef MINIMIG_M68K_LINEPORT
+`ifdef MINIMIG_DUAL_SDRAM
+localparam lp_dual = 1'b1;
+`else
+localparam lp_dual = 1'b0;
+`endif
+m68k_lp_minimig #(.DUALSDRAM(lp_dual)) m68k_lp (
+  .clk          (clk_114          ),
+  .reset_n      (tg68_rst         ),
+  .z3ram_ena    (board_configured[1]),
+  .lp_en        (m68k_lp_en       ),
+  .lp_req       (m68k_lp_req      ),
+  .lp_we        (m68k_lp_we       ),
+  .lp_addr      (m68k_lp_addr     ),
+  .lp_be        (m68k_lp_be       ),
+  .lp_wdata     (m68k_lp_wdata    ),
+  .lp_done      (m68k_lp_done     ),
+  .lp_rdata     (m68k_lp_rdata    ),
+  .tg_cad       (tg68_cad[26:1]   ),
+  .tg_cpustate  (tg68_cpustate    ),
+  .tg_cuds      (tg68_cuds        ),
+  .tg_clds      (tg68_clds        ),
+  .tg_cin       (tg68_cin         ),
+  .tg_cpuena    (tg68_cpuena      ),
+  .m_cad        (sd_cad[26:1]     ),
+  .m_cpustate   (sd_cpustate      ),
+  .m_cuds       (sd_cuds          ),
+  .m_clds       (sd_clds          ),
+  .m_cin        (sd_cin           ),
+  .s_cpuena     (sd_cpuena        ),
+  .s_cout       (tg68_cout        )
+);
+assign sd_cad[31:27] = 5'd0;
+assign sd_cad[0] = 1'b0;
+`else
+assign sd_cad = tg68_cad;
+assign sd_cpustate = tg68_cpustate;
+assign sd_cuds = tg68_cuds;
+assign sd_clds = tg68_clds;
+assign sd_cin = tg68_cin;
+assign tg68_cpuena = sd_cpuena;
+assign m68k_lp_en = 1'b0;
+assign m68k_lp_done = 1'b0;
+assign m68k_lp_rdata = 128'd0;
+`endif
 
 assign tg68_host_ack=tg68_host_req; // Prevent lockups on reads to not-yet-implemented Akiko registers.
 
@@ -522,13 +595,13 @@ sdram_ctrl sdram (
   .hostRD       (host_data),
   .hostena      (host_ack),
   // Fast RAM
-  .cpuena       (tg68_cpuena      ),
+  .cpuena       (sd_cpuena        ),
   .cpuRD        (tg68_cout        ),
-  .cpuWR        (tg68_cin         ),
-  .cpuAddr      (tg68_cad[25:1]   ),
-  .cpuU         (tg68_cuds        ),
-  .cpuL         (tg68_clds        ),
-  .cpustate     (tg68_cpustate    ),
+  .cpuWR        (sd_cin           ),
+  .cpuAddr      (sd_cad[25:1]     ),
+  .cpuU         (sd_cuds          ),
+  .cpuL         (sd_clds          ),
+  .cpustate     (sd_cpustate      ),
   // Chip RAM
   .chipWR       (ram_data         ),
   .chipWR2      (tg68_dat_out2    ),
@@ -570,9 +643,9 @@ sdram_ctrl sdram (
 
 reg sel_2ndram;
 always @(posedge clk_114)
-  sel_2ndram <= tg68_cad[26];
+  sel_2ndram <= sd_cad[26];
 
-assign         tg68_cpuena = chipram_ready | fastram_ready;
+assign         sd_cpuena = chipram_ready | fastram_ready;
 assign         tg68_cout = sel_2ndram? fastram_cout : chipram_cout;
 
 //chipram
@@ -607,11 +680,11 @@ sdram_ctrl #(.addr_prefix_bits(1), .addr_prefix(0), .fast_write(1)) sdram (
   // Fast RAM
   .cpuena       (chipram_ready    ),
   .cpuRD        (chipram_cout     ),
-  .cpuWR        (tg68_cin         ),
-  .cpuAddr      (tg68_cad[26:1]   ),
-  .cpuU         (tg68_cuds        ),
-  .cpuL         (tg68_clds        ),
-  .cpustate     (tg68_cpustate    ),
+  .cpuWR        (sd_cin           ),
+  .cpuAddr      (sd_cad[26:1]     ),
+  .cpuU         (sd_cuds          ),
+  .cpuL         (sd_clds          ),
+  .cpustate     (sd_cpustate      ),
   // Chip RAM
   .chipWR       (ram_data         ),
   .chipWR2      (tg68_dat_out2    ),
@@ -673,11 +746,11 @@ sdram_ctrl #(.shortcut(1'b1), .addr_prefix_bits(1), .addr_prefix(1), .fast_write
   // Fast RAM
   .cpuena       (fastram_ready    ),
   .cpuRD        (fastram_cout     ),
-  .cpuWR        (tg68_cin         ),
-  .cpuAddr      (tg68_cad[26:1]   ),
-  .cpuU         (tg68_cuds        ),
-  .cpuL         (tg68_clds        ),
-  .cpustate     (tg68_cpustate    ),
+  .cpuWR        (sd_cin           ),
+  .cpuAddr      (sd_cad[26:1]     ),
+  .cpuU         (sd_cuds          ),
+  .cpuL         (sd_clds          ),
+  .cpustate     (sd_cpustate      ),
   // Chip RAM
   .chipWR       (                 ),
   .chipWR2      (                 ),

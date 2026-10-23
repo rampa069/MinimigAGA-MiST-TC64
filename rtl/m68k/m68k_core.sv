@@ -6,8 +6,11 @@ module m68k_core
   import m68k_pkg::*;
 #(
   // loads in [IO_LO, IO_HI) have side effects (Amiga: the CIAs, the custom
-  // chips, the clock): they are made only once nothing older can branch
-  // away or store to them. Other loads may go early.
+  // chips, the clock, Gayle's IDE data port): they are made from OF only,
+  // once nothing older is left in flight (EX, WB, the store buffer), so a
+  // flush cannot make them again (an interrupt taken by an older
+  // instruction) and they come after every older store (a command written,
+  // then the status read). Other loads may go early.
   parameter logic [31:0] IO_LO = 32'h00A00000,
   parameter logic [31:0] IO_HI = 32'h00F00000,
   // stores from SYNC_LO up are made from WB, before the instruction retires,
@@ -1117,11 +1120,11 @@ module m68k_core
   assign ag_sc = st_check(ag_ea, ag_u.msize, 1'b1);
   assign of_want = of_v && (of_need_ind ? !of_ind_issued : (of_u.load && !of_ld_issued && !of_ld_have)) &&
                    !of_sc[33] && !(of_need_ind && of_sc[32]) &&      // (a pointer is not forwarded: it waits)
-                   !(is_io(of_ea) && ex_v && ex_u.br != BR_NONE);
+                   !(is_io(of_ea) && (ex_v || wb_v || sb_v[0]));
   assign of_fwd = of_want && of_sc[32] && !of_need_ind;
   assign ld_req = of_want && !of_fwd && d_free && !ws_req;
   assign ag_want = ag_fire && ag_u.load && !ag_u.ind && !ag_sc[33] &&
-                   !(is_io(ag_ea) && ((of_v && of_u.br != BR_NONE) || (ex_v && ex_u.br != BR_NONE)));
+                   !is_io(ag_ea);
   assign ag_fwd = ag_want && ag_sc[32];
   assign ag_ld_req = AG_LOAD && ag_want && !ag_fwd && d_free && !ld_req && !ws_req;
   // a store from SYNC_LO up: made from WB once the store buffer is empty

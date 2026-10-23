@@ -449,6 +449,8 @@ set_global_assignment -name VERILOG_MACRO "MINIMIG_CONTROL_BOARD=1"
 set_global_assignment -name VERILOG_MACRO "MINIMIG_AUX_AUDIO=1"
 # m68k_cpu (rtl/m68k): leaves out its simulation-only code
 set_global_assignment -name VERILOG_MACRO "SYNTHESIS=1"
+# m68k_cpu's line port to the SDRAM controllers (rtl/m68k/m68k_lp_minimig.sv)
+set_global_assignment -name VERILOG_MACRO "MINIMIG_M68K_LINEPORT=1"
 
 set_global_assignment -name FORCE_SYNCH_CLEAR OFF
 set_global_assignment -name PRE_MAPPING_RESYNTHESIS ON
