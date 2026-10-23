@@ -451,7 +451,11 @@ set_global_assignment -name VERILOG_MACRO "MINIMIG_AUX_AUDIO=1"
 set_global_assignment -name VERILOG_MACRO "SYNTHESIS=1"
 # m68k_cpu's line port to the SDRAM controllers (rtl/m68k/m68k_lp_minimig.sv)
 set_global_assignment -name VERILOG_MACRO "MINIMIG_M68K_LINEPORT=1"
+# the second SDRAM as the m68k core's own (rtl/m68k/m68k_sdram_minimig.sv)
+set_global_assignment -name VERILOG_MACRO "MINIMIG_M68K_SDRAM2=1"
 set_global_assignment -name VERILOG_MACRO "MINIMIG_M68K_060=1"
+# the m68k core on a clock of its own (CPU card style: rtl/m68k m68k_cpu ASYNC)
+set_global_assignment -name VERILOG_MACRO "MINIMIG_M68K_ACCEL=1"
 
 set_global_assignment -name FORCE_SYNCH_CLEAR OFF
 set_global_assignment -name PRE_MAPPING_RESYNTHESIS ON
@@ -465,8 +469,8 @@ set_global_assignment -name VHDL_FILE ../../EightThirtyTwo/RTL/debug_fifo.vhd
 set_global_assignment -name VHDL_FILE ../../EightThirtyTwo/RTL/altera/debug_bridge_jtag.vhd
 set_global_assignment -name VHDL_FILE ../../EightThirtyTwo/RTL/altera/debug_virtualjtag.vhd
 set_global_assignment -name VERILOG_FILE ../../rtl/jtag/profile_cpu.v
-set_global_assignment -name SDC_FILE ../mist/minimig_mist.sdc
-set_global_assignment -name SDC_FILE ../mist/minimig_mist_sdram2.sdc
+set_global_assignment -name SDC_FILE ../mist/minimig_mist_accel.sdc
+set_global_assignment -name SDC_FILE ../mist/minimig_mist_sdram2_accel.sdc
 set_global_assignment -name QIP_FILE ../../rtl/mist/vidclkcntrl.qip
 set_global_assignment -name VERILOG_FILE ../../rtl/soc/minimig_mist_top.v
 set_global_assignment -name VERILOG_FILE ../../rtl/mist/user_io.v
@@ -489,6 +493,7 @@ set_global_assignment -name VHDL_FILE ../../rtl/audio/AudioMix.vhd
 set_global_assignment -name VERILOG_FILE ../../rtl/audio/i2s.v
 set_global_assignment -name VERILOG_FILE ../../rtl/audio/spdif.v
 set_global_assignment -name QIP_FILE ../../rtl/sidi128/amiga_clk_altera.qip
+set_global_assignment -name VERILOG_FILE ../../rtl/sidi128/m68k_cpu_pll.v
 set_global_assignment -name QIP_FILE ../../rtl/mist/amigaclk_reconfig_pal.qip
 set_global_assignment -name QIP_FILE ../../rtl/mist/amigaclk_reconfig_ntsc.qip
 set_global_assignment -name QIP_FILE ../../rtl/mist/amigaclk_pll_reconfig.qip

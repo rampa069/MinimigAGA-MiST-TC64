@@ -1546,16 +1546,13 @@ module m68k_decode
     if (op[15:12] == 4'hF && nv == 4'd0 &&
         ((op[11:9] == 3'b001 && op[8:7] == 2'b00) || op[11:5] == 7'b0110001))
       nv = 4'd1;
-    if (bad) begin
-      u = '0;
-      u.unimpl = 1'b1;
-      n = 4'd0;
-      nsteps = 5'd1;
-    end else if (op[15:12] == 4'hA) begin
+    // (an opcode or addressing mode no 68040 or 68060 has is illegal:
+    // vector 4, an F-line's 11)
+    if (op[15:12] == 4'hA) begin
       u = exc_u(8'd10, 1'b0, 1'b0);
       n = 4'd0;
       nsteps = 5'd1;
-    end else if (ill) begin
+    end else if (ill || bad) begin
       u = exc_u(op[15:12] == 4'hF ? 8'd11 : 8'd4, 1'b0, 1'b0);
       n = 4'd0;
       nsteps = 5'd1;

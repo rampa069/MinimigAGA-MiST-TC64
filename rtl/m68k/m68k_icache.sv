@@ -46,6 +46,8 @@ module m68k_icache
   input  logic        snoop,
   input  logic [31:0] snoop_addr,
   input  logic        wb_empty,       // the data cache's write buffer is empty: memory is up to date
+  output logic        f_want,         // a fill or a fetch straight through waits for the bus
+  output logic [31:4] f_line,         // its line (for a data cache in copyback: dirty there?)
 
   // to the bus interface
   output logic        b_req,
@@ -101,6 +103,8 @@ module m68k_icache
   // (a fetch waits for the data cache's buffered writes: they may be code)
   assign b_req = wb_empty && ((st == ST_FILL && f_left != 3'd0) || (st == ST_BYPASS && !f_wait));
   assign b_addr = st == ST_BYPASS ? f_addr : {f_addr[31:4], f_next, 2'b00};
+  assign f_want = st != ST_IDLE;
+  assign f_line = f_addr[31:4];
   assign b_fc = f_fc;
 
   // the tags of the core's writes, read on a second port

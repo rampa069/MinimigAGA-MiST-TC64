@@ -88,7 +88,11 @@ module m68k_fpu #(
   // 1: m68k_fpu_alu_fast, the same results in fewer cycles (0: the
   // arithmetic unit of TG68K.C cycle for cycle, as the equivalence tests need)
   parameter bit FAST_ALU = 1'b0,
-  parameter bit MC68060 = 1'b0
+  parameter bit MC68060 = 1'b0,
+  // 1: the arithmetic unit's result, exceptions and done taken into
+  // registers first (a cycle more an operation: its rounding off the paths
+  // into FPn and the FPSR); 0 as TG68K.C, for the equivalence tests
+  parameter bit ALU_REG = 1'b0
 ) (
   input  logic        clk,
   input  logic        reset,
@@ -196,6 +200,9 @@ module m68k_fpu #(
   logic [1:0]  alu_rm, alu_rp;
   logic [79:0] alu_dst, alu_src, alu_res;
   logic [5:0]  alu_exc;
+  logic        alu_done_u;             // the unit's answer as the sequencer takes it (ALU_REG)
+  logic [79:0] alu_res_u;
+  logic [5:0]  alu_exc_u;
   logic        wr_fp;                 // write the result to FPn
   logic        set_cc;
   logic        store;                 // opclass 011
@@ -527,7 +534,27 @@ module m68k_fpu #(
     ufr[o + 40] = etemp[79:72]; ufr[o + 41] = etemp[71:64];
     for (int i = 0; i < 8; i++) ufr[o + 44 + i] = etemp[63 - 8 * i -: 8];
   end
-  assign alu_early = state == ST_ALU_WAIT && alu_done && !store;
+  assign alu_early = state == ST_ALU_WAIT && alu_done_u && !store;
+  generate
+  if (ALU_REG) begin : g_alureg
+    logic        d_q;
+    logic [79:0] r_q;
+    logic [5:0]  e_q;
+    always_ff @(posedge clk)
+      if (reset) d_q <= 1'b0;
+      else if (clkena) begin
+        d_q <= alu_done;
+        if (alu_done) begin r_q <= alu_res; e_q <= alu_exc; end
+      end
+    assign alu_done_u = d_q;
+    assign alu_res_u = r_q;
+    assign alu_exc_u = e_q;
+  end else begin : g_alunoreg
+    assign alu_done_u = alu_done;
+    assign alu_res_u = alu_res;
+    assign alu_exc_u = alu_exc;
+  end
+  endgenerate
   assign br_take = br_r;
   assign ftrap = ftrap_r;
   assign br_target = brt;
@@ -1177,12 +1204,12 @@ module m68k_fpu #(
             state <= ST_FINISH;
           end
           ST_ALU_WAIT:
-            if (alu_done) begin
-              e = alu_exc;
-              ar = alu_res;
+            if (alu_done_u) begin
+              e = alu_exc_u;
+              ar = alu_res_u;
               if (MC68060 && fint_r) begin
                 // FINT, FINTRZ: the moved source to an integer (no UNFL, OVFL)
-                {lneg, ar} = fint_of(alu_res, fint_z ? 2'b01 : fpcr[5:4]);
+                {lneg, ar} = fint_of(alu_res_u, fint_z ? 2'b01 : fpcr[5:4]);
                 e[0] = e[0] | lneg;
                 e[3] = 1'b0; e[2] = 1'b0;
               end
@@ -1192,9 +1219,9 @@ module m68k_fpu #(
               lneg = 1'b0;
               if (FPSP == 1 && store && alu_op == 4'hA && alu_src[79] && !e[5] && !e[4])
                 case (alu_rp)
-                  2'b00:   lneg = alu_res[7:0] == 8'h80;
-                  2'b01:   lneg = alu_res[15:0] == 16'h8000;
-                  default: lneg = alu_res[31:0] == 32'h80000000;
+                  2'b00:   lneg = alu_res_u[7:0] == 8'h80;
+                  2'b01:   lneg = alu_res_u[15:0] == 16'h8000;
+                  default: lneg = alu_res_u[31:0] == 32'h80000000;
                 endcase
               // EXC: BSUN SNAN OPERR OVFL UNFL DZ INEX2 INEX1
               fpsr[15:8] <= {1'b0, e[5], e[4], e[3], e[2], e[1], e[0], 1'b0};
@@ -1308,7 +1335,7 @@ module m68k_fpu #(
                     f[68] = 8'h00;
                     f[76] = 8'hC0; f[77] = 8'h00;
                     f[80] = 8'hFF; f[81] = 8'hFF; f[82] = 8'hFF; f[83] = 8'hFF;
-                    v32 = alu_res[31:0];
+                    v32 = alu_res_u[31:0];
                     if (alu_rp == 2'b00) v32 = 32'hFFFFFF80;
                     else if (alu_rp == 2'b01) v32 = 32'hFFFF8000;
                     f[84] = v32[31:24]; f[85] = v32[23:16];
@@ -1338,7 +1365,7 @@ module m68k_fpu #(
 
           // FMOVE FPn,<ea>: the converted result to Dn or memory
           ST_STORE: begin
-            x = alu_res;
+            x = alu_res_u;
             if (fmt == 3'b001) v32 = x_to_sgl(x);
             else               v32 = x[31:0];
             if (fmt == 3'b010) begin

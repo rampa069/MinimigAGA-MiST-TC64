@@ -85,7 +85,15 @@ module m68k_mmu #(
   input  logic        pflush_s,
   // (not in TG68K_MMU.vhd) no table search running, for a core that
   // starts PTEST only then
-  output logic        idle_o
+  output logic        idle_o,
+  // (REG_XLATE, not in TG68K_MMU.vhd) the fetches' registered entry looked
+  // at on its own: f_hit when it translates f_laddr (supervisor f_super)
+  // with no fault, f_paddr then its physical address, whatever the access
+  // on act is
+  input  logic [31:0] f_laddr,
+  input  logic        f_super,
+  output logic        f_hit,
+  output logic [31:0] f_paddr
 );
 
   localparam int N = 8;
@@ -172,6 +180,13 @@ module m68k_mmu #(
     atc_need_m = wr && !e_m[idx] && !e_w[idx] && !e_inv[idx];
     atc_fault = e_inv[idx] || (wr && e_w[idx]) || (e_s[idx] && !fc[2]);
   end
+
+  // REG_XLATE: the fetches' entry for f_laddr, apart from the shared lookup
+  logic [19:0] f_pg;
+  assign f_pg = page_of(f_laddr, tc_p);
+  assign f_hit = REG_XLATE && u_v[1] && u_super[1] == f_super && u_lp[1] == f_pg && !u_inv[1] &&
+                 !(u_s[1] && !f_super);
+  assign f_paddr = tc_p ? {u_pp[1][19:1], f_laddr[12:0]} : {u_pp[1], f_laddr[11:0]};
 
   // REG_XLATE: the registered entry of this access, and what it says
   assign u_sel = fc[1:0] == 2'b10;

@@ -8,7 +8,10 @@
 // IPL_autovector (interrupts are autovectored); regin_out is 0. LINE_PORT,
 // LP_LO and LP_HI, and the lp_ ports after TG68K.C's, are m68k_cpu's line
 // port (m68k_lpu): a wrapper that does not use it leaves them unconnected
-// (lp_en and lp_done low).
+// (lp_en and lp_done low). ASYNC and clk_cpu (after them) are m68k_cpu's:
+// the core on a clock of its own, the bus on clk; the line port's machine
+// on a clock related to clk_cpu (MinimigAGA: the same PLL), so lp_done is
+// taken as it is (LP_SYNC 0).
 
 /* verilator lint_off UNUSEDPARAM */       // (TG68K.C's generics, taken and ignored)
 module TG68KdotC_Kernel #(
@@ -26,7 +29,8 @@ module TG68KdotC_Kernel #(
   parameter int MC68060 = 0,
   parameter int LINE_PORT = 0,
   parameter int LP_LO = 32'h40000000,
-  parameter int LP_HI = 32'h48000000
+  parameter int LP_HI = 32'h48000000,
+  parameter int ASYNC = 0
 ) (
   /* verilator lint_on UNUSEDPARAM */
   input  logic        clk,
@@ -66,12 +70,14 @@ module TG68KdotC_Kernel #(
   output logic [3:0]  lp_be,
   output logic [31:0] lp_wdata,
   input  logic        lp_done,
-  input  logic [127:0] lp_rdata
+  input  logic [127:0] lp_rdata,
+  input  logic        clk_cpu
 );
 
   /* verilator lint_off PINCONNECTEMPTY */   // (the testbench's outputs, not used here)
-  m68k_cpu #(.MC68060(MC68060 != 0), .LINE_PORT(LINE_PORT != 0), .LP_LO(LP_LO), .LP_HI(LP_HI)) core68k (
-    .clk, .nReset, .clkena_in, .data_in, .IPL, .berr,
+  m68k_cpu #(.MC68060(MC68060 != 0), .LINE_PORT(LINE_PORT != 0), .LP_LO(LP_LO), .LP_HI(LP_HI),
+             .ASYNC(ASYNC != 0), .LP_SYNC(1'b0)) core68k (
+    .clk, .clk_cpu, .nReset, .clkena_in, .data_in, .IPL, .berr,
     .addr_out, .data_write, .nWr, .nUDS, .nLDS, .busstate, .longword, .newpc,
     .long_req, .long_ack, .data_in_lo, .data_write_lo,
     .nResetOut, .FC, .clr_berr, .skipFetch, .CACR_out, .D_CACHE_out, .VBR_out, .MMU_on_out,

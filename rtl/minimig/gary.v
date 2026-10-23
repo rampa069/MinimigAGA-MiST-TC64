@@ -167,9 +167,18 @@ assign t_sel_slow[2] = &memory_config[3:2] && cpu_address_in[23:19]==5'b1101_0; 
 // 512kb extra rom area at $e0 and $f0 write able only at a1k chipset mode
 //assign t_sel_slow[2] = (cpu_address_in[23:19]==5'b1110_0 || cpu_address_in[23:19]==5'b1111_0) && (a1k | cpu_rd) ? 1'b1 : 1'b0; //$E00000 - $E7FFFF & $F00000 - $F7FFFF
 
+`ifdef MINIMIG_A4000
+// an A4000's board: its IDE at $DD2000 (gayle's, moved), and the board's
+// resources at $DE0000-$DE1FFF (Ramsey, Fat Gary; no Gayle ID) reading 0
+// instead of a mirror of the chip registers
+assign sel_ide = |hdc_ena && cpu_address_in[23:16]==8'b1101_1101 ? 1'b1 : 1'b0;		//IDE registers at $DD0000 - $DDFFFF
+
+assign sel_gayle = cpu_address_in[23:13]==11'b1101_1110_000 ? 1'b1 : 1'b0;		//board resources at $DE0000 - $DE1FFF
+`else
 assign sel_ide = |hdc_ena && cpu_address_in[23:16]==8'b1101_1010 ? 1'b1 : 1'b0;		//IDE registers at $DA0000 - $DAFFFF	
 
 assign sel_gayle = |hdc_ena && cpu_address_in[23:12]==12'b1101_1110_0001 ? 1'b1 : 1'b0;		//GAYLE registers at $DE1000 - $DE1FFF
+`endif
 
 assign sel_autoconfig = cpu_address_in[23:16]==8'b1110_1000 ? 1'b1 : 1'b0;		//AUTOCONFIG registers at $E80000 - $E8FFFF
 

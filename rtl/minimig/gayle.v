@@ -132,13 +132,28 @@ wire	gayleid;			// output data (one bit wide)
 assign hd_fwr = fifo_wr;
 assign hd_frd = fifo_rd;
 
+// MINIMIG_A4000: the A4000's IDE (WinUAE's IDE_A4000): the task file at
+// $DD2020 (registers 4 bytes apart, as here at $DA2000), the control at
+// $DD3038, and at $DD3020 the interrupt status (bit 15 of the word: the
+// drive interrupts; cleared once read). No Gayle ID, CS, CFG or enable:
+// the interrupt is always on.
+`ifdef MINIMIG_A4000
+localparam A4K = 1'b1;
+`else
+localparam A4K = 1'b0;
+`endif
+wire sel_a4kirq = A4K && sel_ide && address_in[15:1]==15'h1810;           // $DD3020
+reg  a4kirq_rd;
+
 // address decoding
-assign sel_gayleid = sel_gayle && address_in[15:12]==4'b0001 ? VCC : GND;	  // GAYLEID, $DE1xxx
-assign sel_tfr = sel_ide && address_in[15:14]==2'b00 && (!address_in[12] || |hdd1_ena) ? VCC : GND; // $DA0xxx, $DA1xxx, $DA2xxx, $DA3xxx
-assign sel_cs     = sel_ide && address_in[15:12]==4'b1000 ? VCC : GND;      // GAYLE_CS_1200,  $DA8xxx
-assign sel_intreq = sel_ide && address_in[15:12]==4'b1001 ? VCC : GND;	    // GAYLE_IRQ_1200, $DA9xxx
-assign sel_intena = sel_ide && address_in[15:12]==4'b1010 ? VCC : GND;	    // GAYLE_INT_1200, $DAAxxx
-assign sel_cfg    = sel_ide && address_in[15:12]==4'b1011 ? VCC : GND;      // GAYLE_CFG_1200, $DABxxx
+assign sel_gayleid = !A4K && sel_gayle && address_in[15:12]==4'b0001 ? VCC : GND;	  // GAYLEID, $DE1xxx
+assign sel_tfr = A4K ? (sel_ide && address_in[15:13]==3'b001 && address_in[5] && !sel_a4kirq &&
+                        (!address_in[12] || |hdd1_ena)) :                                   // $DD2020, $DD3038
+                       (sel_ide && address_in[15:14]==2'b00 && (!address_in[12] || |hdd1_ena)) ? VCC : GND; // $DA0xxx, $DA1xxx, $DA2xxx, $DA3xxx
+assign sel_cs     = !A4K && sel_ide && address_in[15:12]==4'b1000 ? VCC : GND;      // GAYLE_CS_1200,  $DA8xxx
+assign sel_intreq = !A4K && sel_ide && address_in[15:12]==4'b1001 ? VCC : GND;	    // GAYLE_IRQ_1200, $DA9xxx
+assign sel_intena = !A4K && sel_ide && address_in[15:12]==4'b1010 ? VCC : GND;	    // GAYLE_INT_1200, $DAAxxx
+assign sel_cfg    = !A4K && sel_ide && address_in[15:12]==4'b1011 ? VCC : GND;      // GAYLE_CFG_1200, $DABxxx
 
 //===============================================================================================//
 
@@ -187,7 +202,11 @@ always @(posedge clk)
 
 assign gayleid = ~gayleid_cnt[1] | gayleid_cnt[0]; // Gayle ID output data
 
-assign irq = |intreq & intena; // interrupt request line (INT2)
+assign irq = |intreq & (intena | A4K); // interrupt request line (INT2)
+
+// (A4000) the status read ends: the interrupt is acknowledged
+always @(posedge clk)
+	a4kirq_rd <= sel_a4kirq && rd;
 
 wire [15:0] ide_out;
 
@@ -197,12 +216,13 @@ assign data_out = ide_out
          | (sel_intreq  && rd  ? {|intreq,     15'b000_0000_0000_0000}            : 16'h00_00)
          | (sel_intena  && rd  ? {intena,      15'b000_0000_0000_0000}            : 16'h00_00)
          | (sel_gayleid && rd  ? {gayleid,     15'b000_0000_0000_0000}            : 16'h00_00)
-         | (sel_cfg     && rd  ? {cfg,         12'b0000_0000_0000}                : 16'h00_00);
+         | (sel_cfg     && rd  ? {cfg,         12'b0000_0000_0000}                : 16'h00_00)
+         | (sel_a4kirq  && rd  ? {|intreq,     15'b000_0000_0000_0000}            : 16'h00_00);
 
 
 //===============================================================================================//
 
-wire intreq_ack = sel_intreq && hwr && !data_in[15];
+wire intreq_ack = (sel_intreq && hwr && !data_in[15]) || (a4kirq_rd && !(sel_a4kirq && rd));
 
 ide ide (
 	.clk(clk),

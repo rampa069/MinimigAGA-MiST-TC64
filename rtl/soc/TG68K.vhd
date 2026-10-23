@@ -43,10 +43,16 @@ generic
 		-- the first Zorro III block, served by minimig_mist_top
 		lineport : boolean := false;
 		-- the m68k core built as a 68060 (rtl/m68k, its MC68060), else a 68040
-		m68060 : boolean := false
+		m68060 : boolean := false;
+		-- the m68k core on a clock of its own (clk_cpu: its ASYNC), as a CPU
+		-- card's; the bus here stays on clk
+		accel : boolean := false;
+		-- an A4000's board (MINIMIG_A4000): the IDE at $DD2000, not $DA0000
+		a4000 : boolean := false
 	);
 port(
 	clk           : in      std_logic;
+	clk_cpu       : in      std_logic := '0';   -- (accel) the core's clock
 	reset         : in      std_logic;
 	clkena_in     : in      std_logic:='1';
 	IPL           : in      std_logic_vector(2 downto 0):="111";
@@ -229,7 +235,8 @@ component TG68KdotC_Kernel
 		MC68060 : integer := 0;
 		LINE_PORT : integer := 0;
 		LP_LO : integer := 16#40000000#;
-		LP_HI : integer := 16#48000000#
+		LP_HI : integer := 16#48000000#;
+		ASYNC : integer := 0
 	);
 	port(
 		clk : in std_logic;
@@ -268,7 +275,8 @@ component TG68KdotC_Kernel
 		lp_be : out std_logic_vector(3 downto 0);
 		lp_wdata : out std_logic_vector(31 downto 0);
 		lp_done : in std_logic := '0';
-		lp_rdata : in std_logic_vector(127 downto 0) := (others => '0')
+		lp_rdata : in std_logic_vector(127 downto 0) := (others => '0');
+		clk_cpu : in std_logic := '0'
 	);
 end component;
 
@@ -386,7 +394,9 @@ SINGLERAM_ZIII: if dualsdram=false generate
 	sel_z3ram3      <= '1' WHEN (cpuaddr(31 downto 30)="01") and (cpuaddr(26)='1' or cpuaddr(25 downto 24)="01") else '0'; -- and z3ram3_ena='1' ELSE '0';
 end generate;
 
-	sel_gayle_ide <= '1' when state(1 downto 0) = "10" and cpuaddr(31 downto 14)=X"00DA"&"00" else '0';
+	sel_gayle_ide <= '1' when state(1 downto 0) = "10" and
+	                 ((not a4000 and cpuaddr(31 downto 14)=X"00DA"&"00") or (a4000 and cpuaddr(31 downto 13)=X"00DD"&"001"))
+	                 else '0';
 
 	sel_akiko <= '1' when cpuaddr(31 downto 16)=X"00B8" else '0';
 	sel_32 <= '1' when cpu(1)='1' and cpuaddr(31 downto 24)/=X"00" and cpuaddr(31 downto 24)/=X"ff" else '0'; -- Decode 32-bit space, but exclude interrupt vectors
@@ -508,7 +518,8 @@ pf68K_Kernel_inst: TG68KdotC_Kernel
 	MUL_Hardware    => 1, -- 0=>no,     1=>yes
     MC68060         => b2i(m68060),
     LINE_PORT       => b2i(lineport),
-    LP_HI           => lp_hi_f(dualsdram)
+    LP_HI           => lp_hi_f(dualsdram),
+    ASYNC           => b2i(accel)
   )
   PORT MAP (
     clk             => clk,           -- : in std_logic;
@@ -538,7 +549,8 @@ pf68K_Kernel_inst: TG68KdotC_Kernel
     lp_be           => lp_be,
     lp_wdata        => lp_wdata,
     lp_done         => lp_done,
-    lp_rdata        => lp_rdata
+    lp_rdata        => lp_rdata,
+    clk_cpu         => clk_cpu
   );
   CACR_out <= CACR;
 
@@ -597,9 +609,10 @@ process(clk,cpuaddr) begin
 		end if;
 		if sel_akiko='1' and state(1)='1' and slower(2)='0' then
 			akiko_req<=not clkena;
-			if state(0)='1' then -- write cycle
-				akiko_wr<='1';
-			end if;	
+			-- read or write, for each cycle: a read straight after a write
+			-- (no other address between, as a core whose code is cached
+			-- makes them) is not a write
+			akiko_wr<=state(0);
 		end if;
 	end if;
 end process;

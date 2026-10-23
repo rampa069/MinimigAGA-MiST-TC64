@@ -20,6 +20,8 @@ module m68k_core
   // the FPU's arithmetic unit: 1 the fast one (m68k_fpu_alu_fast), 0
   // TG68K.C's (more cycles an operation, shorter paths)
   parameter bit FPU_FAST = 1'b1,
+  // (m68k_fpu's ALU_REG) the arithmetic unit's answer into registers first
+  parameter bit FPU_REG = 1'b0,
   // the MMU's REG_XLATE: 1 registered translations (the last page of the
   // fetches and of the data, one stall cycle a page change), shorter paths
   parameter bit MMU_REG = 1'b0,
@@ -278,7 +280,7 @@ module m68k_core
 
   // (the 68060's: what the M68060SP would emulate of what it has is done
   // here, FPSP 0)
-  m68k_fpu #(.FPSP(MC68060 ? 0 : 1), .FAST_ALU(FPU_FAST), .MC68060(MC68060)) fpu (
+  m68k_fpu #(.FPSP(MC68060 ? 0 : 1), .FAST_ALU(FPU_FAST), .MC68060(MC68060), .ALU_REG(FPU_REG)) fpu (
     .clk, .reset(rst), .clkena(fpu_ce),
     .start(fpu_start), .abort_in(fpu_abort), .opcode(ex_u.opcode), .cmd(ex_u.imm[15:0]), .ea(ex_ea),
     .iaddr(ex_u.pc), .done(fpu_done), .unimp(fpu_unimp), .unsupp(fpu_unsupp), .upost(fpu_upost), .ferr(fpu_ferr),
@@ -333,10 +335,18 @@ module m68k_core
   logic        f_redirect;
   logic [31:0] f_redirect_pc;
   logic [3:0]  f_consume;
+  // the fetch's BTB (m68k_fetch): what decode teaches it, its first mark
+  logic        bt_wr, bt_kill, bt_hi;
+  logic [31:2] bt_key;
+  logic [31:0] bt_target;
+  logic        mk_v;
+  logic [4:0]  mk_pos;
+  logic [31:0] mk_pc;
 
   m68k_fetch #(.REG_ADDR(FETCH_REG)) fetch (
     .clk, .rst, .ce,
     .redirect(f_redirect), .redirect_pc(f_redirect_pc), .consume(f_consume),
+    .bt_wr, .bt_kill, .bt_key, .bt_hi, .bt_target, .mk_v, .mk_pos, .mk_pc,
     .q, .qf, .q_count, .q_pc,
     .i_req(fi_req), .i_addr(fi_addr), .i_gnt(fi_gnt), .i_rvalid(fi_rvalid), .i_err(fi_err), .i_rdata
   );
@@ -563,6 +573,15 @@ module m68k_core
     return (s == SZ_B) ? 32'h000000FF : (s == SZ_W) ? 32'h0000FFFF : 32'hFFFFFFFF;
   endfunction
 
+  // cnt modulo the size + 1 (ROXL, ROXR): constant tables
+  function automatic logic [5:0] rox_mod(input logic [5:0] cnt, input size_e sz);
+    logic [5:0] t9 [64], t17 [64], t33 [64];
+    for (int i = 0; i < 64; i++) begin
+      t9[i] = 6'(i % 9); t17[i] = 6'(i % 17); t33[i] = 6'(i % 33);
+    end
+    return (sz == SZ_B) ? t9[cnt] : (sz == SZ_W) ? t17[cnt] : t33[cnt];
+  endfunction
+
   // Shifts and rotates of b by cnt (0-63) at size sz, x the X flag in:
   // {X out, C, V, result}. AS and LS: C and X the last bit out, X kept
   // and C clear for a count of 0, V of ASL set when the most significant
@@ -613,15 +632,9 @@ module m68k_core
         c = cnt != 6'd0 && (op == ALU_ROL ? res[0] : res[w - 1]);
       end
       default: begin                    // ROXL, ROXR: w + 1 bits with X on top
-        // the count modulo w + 1 (9, 17 or 33): how many times it fits,
-        // found by comparing in parallel, then one subtraction
-        begin
-          logic [2:0] nq;
-          nq = 3'd0;
-          for (int i = 1; i < 8; i++)
-            if (int'(cnt) >= i * (w + 1)) nq = 3'(i);
-          k = 6'(int'(cnt) - int'(nq) * (w + 1));
-        end
+        // the count modulo w + 1 (9, 17 or 33), from a table of the 64
+        // counts for each size (no multiplier or subtraction on the path)
+        k = rox_mod(cnt, sz);
         e = {31'd0, x, 32'd0} >> (32 - w) | {32'd0, bm};
         if (op == ALU_ROXL) e = (e << k) | (e >> (7'(w + 1) - 7'(k)));
         else                e = (e >> k) | (e << (7'(w + 1) - 7'(k)));
@@ -1168,14 +1181,25 @@ module m68k_core
     return (s == SZ_B) ? 3'd1 : (s == SZ_W) ? 3'd2 : 3'd4;
   endfunction
   // (with the MMU on, two logical addresses may be one physical: only the
-  // offset in the page is compared, so any alias waits)
+  // offset in the page is compared, so any alias waits). By longs, with
+  // equalities only: two accesses within a long each overlap when they are
+  // in the same long and share a byte; one across a long overlaps another
+  // that touches either of its longs (more than needed, never less; across
+  // the end of a page the offset wraps to the page's first long)
+  function automatic logic [3:0] bmask(input logic [1:0] o, input size_e s);
+    return ((s == SZ_B) ? 4'b1000 : (s == SZ_W) ? 4'b1100 : 4'b1111) >> o;
+  endfunction
   function automatic logic ovl(input logic [31:0] a1, input size_e s1, input logic [31:0] a2, input size_e s2);
-    logic [31:0] b1, b2;
-    b1 = tc_e ? {20'd0, a1[11:0]} : a1;
-    b2 = tc_e ? {20'd0, a2[11:0]} : a2;
-    return (b1 < b2 + {29'd0, nbytes(s2)} && b2 < b1 + {29'd0, nbytes(s1)}) ||
-           (tc_e && (b1 + {29'd0, nbytes(s1)} > 32'h1000 || b2 + {29'd0, nbytes(s2)} > 32'h1000) &&
-            (b1[11:4] == 8'hFF || b2[11:4] == 8'hFF));   // across the end of a page
+    logic [29:0] f1, l1, f2, l2;
+    logic        x1, x2;
+    x1 = {1'b0, a1[1:0]} + nbytes(s1) > 3'd4;
+    x2 = {1'b0, a2[1:0]} + nbytes(s2) > 3'd4;
+    f1 = tc_e ? {20'd0, a1[11:2]} : a1[31:2];
+    f2 = tc_e ? {20'd0, a2[11:2]} : a2[31:2];
+    l1 = tc_e ? {20'd0, a1[11:2] + 10'(x1)} : a1[31:2] + 30'(x1);
+    l2 = tc_e ? {20'd0, a2[11:2] + 10'(x2)} : a2[31:2] + 30'(x2);
+    if (!x1 && !x2) return f1 == f2 && (bmask(a1[1:0], s1) & bmask(a2[1:0], s2)) != 4'd0;
+    return f1 == f2 || f1 == l2 || l1 == f2 || l1 == l2;
   endfunction
   // A load of s bytes at a and the older stores to the same bytes: the
   // youngest of them in WB or the store buffer, at the same address and of
@@ -1228,7 +1252,9 @@ module m68k_core
                    !(is_io(of_ea) && (ex_v || wb_v || sb_v[0]));
   assign of_fwd = of_want && of_sc[32] && !of_need_ind;
   assign ld_req = of_want && !of_fwd && d_free && !ws_req && !sb_first;
-  assign ag_want = ag_fire && ag_u.load && !ag_u.ind && !ag_sc[33] &&
+  // (AG_LOAD 0: a load goes from OF only, which looks at the stores then:
+  // nothing is forwarded at AG, so AG's address stays off these paths)
+  assign ag_want = AG_LOAD && ag_fire && ag_u.load && !ag_u.ind && !ag_sc[33] &&
                    !is_io(ag_ea);
   assign ag_fwd = ag_want && ag_sc[32];
   assign ag_ld_req = AG_LOAD && ag_want && !ag_fwd && d_free && !ld_req && !ws_req && !sb_first;
@@ -1349,7 +1375,12 @@ module m68k_core
                      (sb_v[0] || (!wbx && ((ex_v && ex_u.store) || (wb_v && wb_u.store && !wb_exc))));
   assign sel_wbx = wbx;
   assign sel_cd = !wbx && cd_xl;
-  assign sel_fi = !wbx && !cd_xl && tc_e && fi_req;
+  // (MMU_REG: a fetch whose page is the fetches' registered entry goes to
+  // the port by itself, mmu_fhit, off the data side's lookup; the MMU is
+  // for the others)
+  logic        mmu_fhit;
+  logic [31:0] mmu_fpa;
+  assign sel_fi = !wbx && !cd_xl && tc_e && fi_req && !mmu_fhit;
   assign mmu_act = sel_wbx || sel_cd || sel_fi;
   assign mmu_la = sel_wbx ? wb_ea : sel_cd ? cd_addr : fi_addr;
   assign mmu_wr_i = sel_wbx || (sel_cd && cd_we);
@@ -1372,7 +1403,8 @@ module m68k_core
     .ptest_wr(MC68060 ? !ex_u.opcode[6] : !ex_u.opcode[5]),     // (PLPAW, PTESTW)
     .ptest_done(mmu_ptest_done), .mmusr(mmu_mmusr), .ptest_why(mmu_ptwhy),
     .pflush(mmu_pflush_i), .pflush_all(ex_u.opcode[3]), .pflush_page(!ex_u.opcode[4]),
-    .pflush_addr(ex_av), .pflush_s(dfc[2]), .idle_o(mmu_idle)
+    .pflush_addr(ex_av), .pflush_s(dfc[2]), .idle_o(mmu_idle),
+    .f_laddr(fi_addr), .f_super(fetch_s), .f_hit(mmu_fhit), .f_paddr(mmu_fpa)
   );
 
   // the data and instruction ports
@@ -1389,7 +1421,9 @@ module m68k_core
       cd_gnt = (d_gnt && sel_cd && xl_ok) || (sel_cd && !mmu_stall && mmu_quiet);
     end
     i_req = fi_req; i_addr = fi_addr; fi_gnt = i_gnt; i_fc = {fetch_s, 2'b10};
-    if (tc_e) begin
+    if (tc_e && mmu_fhit) begin
+      i_addr = {mmu_fpa[31:2], 2'b00};
+    end else if (tc_e) begin
       i_req = fi_req && sel_fi && xl_ok;
       i_addr = {mmu_pa[31:2], 2'b00};
       // a faulting one answers after the fetches in flight
@@ -1462,13 +1496,26 @@ module m68k_core
   assign of_ready = !of_v || of_fire;
   assign ag_fire  = ag_v && !ag_stall && of_ready && !flush && !take_any;
   assign ag_ready = !ag_v || ag_fire;
-  assign dec_fire = running && src_valid && ag_ready && !flush && !take_any && !sys_inflight &&
-                    !stopped && !stop_now;
+  logic dec_go, dec_cross, dec_at_mark;
+  assign dec_go = running && src_valid && ag_ready && !flush && !take_any && !sys_inflight &&
+                  !stopped && !stop_now;
+  // the fetch's mark within the instruction: its words after it are the
+  // target's, not its own (refetched); at its end: checked below
+  assign dec_cross = !inj_active && dec_valid && mk_v && mk_pos < {1'b0, dec_len};
+  assign dec_at_mark = mk_v && mk_pos == {1'b0, dec_len};
+  assign dec_fire = dec_go && !dec_cross;
 
   always_comb begin
+    logic [31:0] lw;                    // the instruction's last word
     f_redirect = 1'b0;
     f_redirect_pc = 32'd0;
     f_consume = 4'd0;
+    lw = q_pc + {27'd0, dec_len, 1'b0} - 32'd2;
+    bt_wr = 1'b0;
+    bt_kill = 1'b0;
+    bt_key = lw[31:2];
+    bt_hi = !lw[1];
+    bt_target = dec_up.br_target;
     if (rs_state == RS_PC && d_rvalid) begin
       f_redirect = 1'b1;
       f_redirect_pc = d_rdata;
@@ -1480,11 +1527,26 @@ module m68k_core
     end else if (flush) begin
       f_redirect = 1'b1;
       f_redirect_pc = ex_npc;
+    end else if (dec_go && dec_cross) begin
+      // the fetch followed a jump that is not there: from the instruction on
+      f_redirect = 1'b1;
+      f_redirect_pc = q_pc;
+      bt_kill = 1'b1;
+      lw = q_pc + {26'd0, mk_pos, 1'b0} - 32'd2;
+      bt_key = lw[31:2];
     end else if (dec_fire && !inj_active && dec_up.last) begin
       f_consume = dec_len;
       if (dec_up.br_pred) begin
+        // a jump the fetch already followed goes on; else it learns it
+        if (!(dec_at_mark && mk_pc == dec_up.br_target)) begin
+          f_redirect = 1'b1;
+          f_redirect_pc = dec_up.br_target;
+          bt_wr = 1'b1;
+        end
+      end else if (dec_at_mark) begin
         f_redirect = 1'b1;
-        f_redirect_pc = dec_up.br_target;
+        f_redirect_pc = q_pc + {27'd0, dec_len, 1'b0};
+        bt_kill = 1'b1;
       end
     end
   end
@@ -2092,7 +2154,7 @@ module m68k_core
   assign dbg_npc    = wb_npc;
   assign dbg_unimpl = wb_v && wb_u.unimpl;
   assign dbg_sr     = {sr_hi, 3'd0, ccr_arch};
-  assign dbg_fwr      = ce && fpu_req && cd_gnt && fpu_bus_wr && !(cd_xl && mmu_quiet) && cd_addr < SYNC_LO;
+  assign dbg_fwr      = ce && fpu_req && cd_gnt && fpu_bus_wr && !(cd_xl && mmu_quiet);
   assign dbg_mwr      = ce && mmu_walk_req && d_gnt && mmu_bwr;
   assign dbg_mwr_addr = mmu_baddr;
   assign dbg_mwr_data = mmu_bwd;

@@ -377,14 +377,31 @@ amiga_clk amiga_clk (
   .locked       (pll_locked       )  // pll locked output
 );
 
+// MINIMIG_M68K_ACCEL: the m68k core on a clock of its own, as a CPU card's
+// (clk_cpu), and the second SDRAM's controller on clk_sd2: both from the
+// second SDRAM's PLL, so the line port between them is between related
+// clocks; TG68K.vhd's bus and the chipset stay on clk_114
+wire           clk_cpu;
+wire           clk_sd2;
 `ifdef MINIMIG_DUAL_SDRAM
+`ifdef MINIMIG_M68K_ACCEL
+// (the core's clocks: fixed, a CPU card's; PAL/NTSC stays the chipset's)
+m68k_cpu_pll m68k_cpu_pll (
+  .areset       (pll_rst          ),
+  .inclk0       (clk_27mhz        ),
+  .c0           (SDRAM2_CLK       ), // 114.75 MHz, -1600 ps
+  .c1           (clk_sd2          ), // 114.75 MHz
+  .c2           (clk_cpu          ), // 32.786 MHz
+  .locked       (                 )
+);
+`else
 amiga_clk amiga_clk2 (
   .rst          (pll_rst          ), // async reset input
   .ntsc         (clock_ntsc       ), // pal/ntsc clock select
   .clk_in       (clk_27mhz        ), // input clock     ( 27.000000MHz)
-  .clk_114      (                 ), // output clock c0 (114.750000MHz)
+  .clk_114      (clk_sd2          ), // output clock c0 (114.750000MHz)
   .clk_sdram    (SDRAM2_CLK       ), // output clock c2 (114.750000MHz, -146.25 deg)
-  .clk_28       (                 ), // output clock c1 ( 28.687500MHz)
+  .clk_28       (clk_cpu          ), // output clock c1 ( 28.687500MHz)
   .clk7_en      (                 ), // output clock 7 enable (on 28MHz clock domain)
   .clk7n_en     (                 ), // 7MHz negedge output clock enable (on 28MHz clock domain)
   .c1           (                 ), // clk28m clock domain signal synchronous with clk signal
@@ -393,6 +410,7 @@ amiga_clk amiga_clk2 (
   .eclk         (                 ), // 0.709379 MHz clock enable output (clk domain pulse)
   .locked       (                 )  // pll locked output
 );
+`endif
 `endif
 
 //// TG68K main CPU ////
@@ -434,15 +452,32 @@ localparam m68060="true";
 localparam m68060="false";
 `endif
 
+`ifdef MINIMIG_M68K_ACCEL
+localparam accel="true";
+`else
+localparam accel="false";
+`endif
+
+`ifdef MINIMIG_A4000
+localparam a4000="true";
+`else
+localparam a4000="false";
+`endif
+
 TG68K #(
   .dualsdram(dualsdram),
   .lineport(lineport),
   .m68060(m68060),
+  .accel(accel),
+  .a4000(a4000),
   .useprofiler(useprofiler),
   .haveaudio(auxaudio),
   .havecart(havecart)
 ) tg68k (
   .clk          (clk_114          ),
+`ifdef MINIMIG_M68K_ACCEL
+  .clk_cpu      (clk_cpu          ),
+`endif
   .reset        (tg68_rst         ),
   .clkena_in    (tg68_ena28       ),
   .IPL          (tg68_IPL         ),
@@ -513,7 +548,16 @@ TG68K #(
   .lp_rdata(m68k_lp_rdata)
 );
 
-`ifdef MINIMIG_M68K_LINEPORT
+`ifdef MINIMIG_M68K_SDRAM2
+// the line port to m68k_sdram_minimig, the second SDRAM's controller (below):
+// the CPU port is TG68K's, as without the line port
+assign sd_cad = tg68_cad;
+assign sd_cpustate = tg68_cpustate;
+assign sd_cuds = tg68_cuds;
+assign sd_clds = tg68_clds;
+assign sd_cin = tg68_cin;
+assign tg68_cpuena = sd_cpuena;
+`elsif MINIMIG_M68K_LINEPORT
 `ifdef MINIMIG_DUAL_SDRAM
 localparam lp_dual = 1'b1;
 `else
@@ -732,6 +776,53 @@ sdram_ctrl #(.addr_prefix_bits(1), .addr_prefix(0), .fast_write(1)) sdram (
 wire [ 16-1:0] fastram_cout;
 wire           fastram_ready;
 
+`ifdef MINIMIG_M68K_SDRAM2
+// the second SDRAM, the Zorro III Fast RAM, the m68k core's own: its line
+// port in bursts, and TG68K's accesses to it word by word
+wire sdram2_cs_n;
+assign sdram2_cs = {3'b111, sdram2_cs_n};
+
+m68k_sdram_minimig sdram2 (
+`ifdef MINIMIG_M68K_ACCEL
+  .clk          (clk_sd2          ),
+`else
+  .clk          (clk_114          ),
+`endif
+  .sd_rst_n     (sdctl_rst        ),
+  .reset_n      (tg68_rst         ),
+  .z3ram_ena    (board_configured[1]),
+  .init_done    (                 ),
+  .lp_en        (m68k_lp_en       ),
+  .lp_req       (m68k_lp_req      ),
+  .lp_we        (m68k_lp_we       ),
+  .lp_addr      (m68k_lp_addr     ),
+  .lp_be        (m68k_lp_be       ),
+  .lp_wdata     (m68k_lp_wdata    ),
+  .lp_done      (m68k_lp_done     ),
+  .lp_rdata     (m68k_lp_rdata    ),
+  .tg_cad       (sd_cad[26:1]     ),
+`ifdef MINIMIG_M68K_ACCEL
+  // (the core sends everything in its window through the line port: TG68K's
+  // bus never reaches this SDRAM, which is on another clock)
+  .tg_cpustate  (4'b0101          ),
+`else
+  .tg_cpustate  (sd_cpustate      ),
+`endif
+  .tg_cuds      (sd_cuds          ),
+  .tg_clds      (sd_clds          ),
+  .tg_cin       (sd_cin           ),
+  .tg_cpuena    (fastram_ready    ),
+  .tg_cout      (fastram_cout     ),
+  .sd_dq        (SDRAM2_DQ        ),
+  .sd_a         (SDRAM2_A[12:0]   ),
+  .sd_ba        (sdram2_ba        ),
+  .sd_dqm       (sdram2_dqm       ),
+  .sd_cs_n      (sdram2_cs_n      ),
+  .sd_ras_n     (SDRAM2_nRAS      ),
+  .sd_cas_n     (SDRAM2_nCAS      ),
+  .sd_we_n      (SDRAM2_nWE       )
+);
+`else
 sdram_ctrl #(.shortcut(1'b1), .addr_prefix_bits(1), .addr_prefix(1), .fast_write(1) ) sdram2 (
   .sysclk       (clk_114          ),
   .reset_in     (sdctl_rst        ),
@@ -791,6 +882,7 @@ sdram_ctrl #(.shortcut(1'b1), .addr_prefix_bits(1), .addr_prefix(1), .fast_write
   .ena7RDreg    (                 ),
   .ena7WRreg    (                 )
 );
+`endif
 
 `endif
 
