@@ -28,6 +28,7 @@ module m68k_cpu
   parameter bit MMU_REG = 1'b1,         // (m68k_core's): registered translations
   parameter bit FETCH_REG = 1'b1,       // (m68k_core's): fetch requests from registers
   parameter bit AG_LOAD = 1'b0,         // (m68k_core's): loads from OF only
+  parameter bit MC68060 = 1'b0,         // (m68k_core's): the 68060, else the 68040
   // the line port (m68k_lpu): a window of memory served in 16-byte lines
   parameter bit LINE_PORT = 1'b0,
   parameter logic [31:0] LP_LO = 32'h40000000,
@@ -141,7 +142,7 @@ module m68k_cpu
 
   m68k_core #(.IO_LO(IO_LO), .IO_HI(IO_HI), .SYNC_LO(SYNC_LO), .FPU_FAST(FPU_FAST),
               .MMU_REG(MMU_REG), .FETCH_REG(FETCH_REG),
-              .AG_LOAD(AG_LOAD)) core (
+              .AG_LOAD(AG_LOAD), .MC68060(MC68060)) core (
     .clk, .rst, .ce(clkena_in), .ipl(~ipl_r),
     .i_req, .i_addr, .i_fc, .i_gnt, .i_rvalid, .i_err, .i_rdata,
     .d_req, .d_we, .d_addr, .d_size, .d_wdata, .d_fc, .d_gnt, .d_rvalid, .d_err, .d_rdata,

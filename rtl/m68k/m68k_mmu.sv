@@ -31,10 +31,20 @@
 // off the address path: a page change holds the core one cycle (stall)
 // while the entry is loaded from the ATC.
 //
+// MC68060 (not in TG68K_MMU.vhd): why a translation faults, for the
+// 68060's fault status long word (UM 8.4.4.3): why, with fault, and
+// ptest_why, with ptest_done, are {PTA, PTB, IL, PF, SP, WP}; and an invalid
+// translation is not kept in the cache (UM 11.1.2.2.3: it is dropped as its
+// fault is reported, so a handler that fixes the tables needs no PFLUSH);
+// hold_walk keeps a table search from starting while older writes (a
+// descriptor a handler fixed) are on their way.
+// With MC68060 0 the unit is the VHDL's.
+//
 // Copyright (c) 2026 Ramon Martinez. LGPL-3.0-or-later, as TG68K.C.
 
 module m68k_mmu #(
-  parameter bit REG_XLATE = 1'b0
+  parameter bit REG_XLATE = 1'b0,
+  parameter bit MC68060 = 1'b0
 ) (
   input  logic        clk,
   input  logic        reset,
@@ -52,6 +62,8 @@ module m68k_mmu #(
   output logic        stall,
   output logic        quiet,          // no bus cycle for this access (faulted)
   output logic        fault,          // pulse
+  output logic [5:0]  why,            // with fault: {PTA, PTB, IL, PF, SP, WP}
+  input  logic        hold_walk,      // (MC68060) older writes pending: no table search starts
   // table search bus cycles
   output logic        bus_act,
   output logic [31:0] bus_addr,
@@ -65,6 +77,7 @@ module m68k_mmu #(
   input  logic        ptest_wr,
   output logic        ptest_done,
   output logic [31:0] mmusr,
+  output logic [5:0]  ptest_why,      // with ptest_done, as why (SP, WP as for an access)
   input  logic        pflush,
   input  logic        pflush_all,
   input  logic        pflush_page,
@@ -84,6 +97,7 @@ module m68k_mmu #(
   logic [19:0]  e_lp [N];
   logic [19:0]  e_pp [N];
   logic [2:0]   victim = 3'd0;
+  logic [3:0]   e_why [N];            // an invalid one: {PTA, PTB, IL, PF}
 
   typedef enum logic [2:0] {W_IDLE, W_RD_H, W_RD_L, W_CHECK, W_UPD, W_FILL, W_DONE} wstate_e;
   wstate_e ws = W_IDLE;
@@ -98,6 +112,8 @@ module m68k_mmu #(
   logic [15:0] upd_data;
   logic        fault_r = 1'b0, done_r = 1'b0;
   logic [31:0] mmusr_r = '0;
+  logic [5:0]  why_r = '0, ptwhy_r = '0;
+  logic        il;                    // the walk met a second indirect descriptor
 
   // lookup results
   logic        tt_hit, atc_hit, atc_need_m, atc_fault, need_walk;
@@ -107,6 +123,7 @@ module m68k_mmu #(
   // REG_XLATE: the entries the bus uses, 0 data, 1 fetches
   logic [1:0]  u_v = '0, u_super = '0, u_w = '0, u_m = '0, u_s = '0, u_inv = '0;
   logic [19:0] u_lp [2];
+  logic [3:0]  u_why [2];
   logic [19:0] u_pp [2];
   logic        u_sel;
   logic        u_hit, u_fault, u_need_m, u_miss, u_walk;
@@ -187,6 +204,8 @@ module m68k_mmu #(
     else                          paddr = {hit_pp, laddr[11:0]};
 
   assign fault = fault_r;
+  assign why = why_r;
+  assign ptest_why = ptwhy_r;
   assign ptest_done = done_r;
   assign mmusr = mmusr_r;
   assign idle_o = ws == W_IDLE;
@@ -218,8 +237,25 @@ module m68k_mmu #(
       // an access that hits a faulting entry
       if (act && tc_e && ws == W_IDLE &&
           ((REG_XLATE && u_hit && u_fault) ||
-           (!REG_XLATE && !tt_hit && atc_hit && atc_fault)))
+           (!REG_XLATE && !tt_hit && atc_hit && atc_fault))) begin
         fault_r <= 1'b1;
+        if (MC68060) begin
+          logic inv, s_, w_;
+          logic [3:0] wy;
+          inv = REG_XLATE ? u_inv[u_sel] : e_inv[hit_idx];
+          wy = REG_XLATE ? u_why[u_sel] : e_why[hit_idx];
+          s_ = (REG_XLATE ? u_s[u_sel] : e_s[hit_idx]) && !fc[2];
+          w_ = wr && (REG_XLATE ? u_w[u_sel] : e_w[hit_idx]);
+          why_r <= inv ? {wy, 2'b00} : {4'd0, s_, w_ && !s_};
+          // (the 68060 keeps no invalid translation)
+          if (inv) begin
+            if (REG_XLATE) u_v[u_sel] <= 1'b0;
+            for (int i = 0; i < N; i++)
+              if (e_valid[i] && e_super[i] == fc[2] && e_lp[i] == page_of(laddr, tc_p))
+                e_valid[i] <= 1'b0;
+          end
+        end
+      end
       // REG_XLATE: load the registered entry from the ATC; drop both
       // when the ATC changes or translation is off
       if (REG_XLATE) begin
@@ -232,6 +268,7 @@ module m68k_mmu #(
           u_m[u_sel] <= 1'b1;
           u_s[u_sel] <= 1'b0;
           u_inv[u_sel] <= 1'b0;
+          u_why[u_sel] <= 4'd0;
         end else if (u_miss && atc_hit && ws == W_IDLE) begin
           u_v[u_sel] <= 1'b1;
           u_super[u_sel] <= fc[2];
@@ -241,6 +278,7 @@ module m68k_mmu #(
           u_m[u_sel] <= e_m[hit_idx];
           u_s[u_sel] <= e_s[hit_idx];
           u_inv[u_sel] <= e_inv[hit_idx];
+          u_why[u_sel] <= e_why[hit_idx];
         end
         u_regs <= {tc_p, itt0, itt1, dtt0, dtt1};
         if (pflush || ws == W_FILL || !tc_e || u_regs != {tc_p, itt0, itt1, dtt0, dtt1})
@@ -259,14 +297,14 @@ module m68k_mmu #(
             end else begin
               d = ptest_fc[2] ? srp : urp;
               w_addr <= {d[31:9], ptest_addr[31:25], 2'b00};
-              lvl <= 2'd0; wp <= 1'b0; invalid <= 1'b0; sviol <= 1'b0;
+              lvl <= 2'd0; wp <= 1'b0; invalid <= 1'b0; sviol <= 1'b0; il <= 1'b0;
               ws <= W_RD_H;
             end
-          end else if (need_walk) begin
+          end else if (need_walk && !(MC68060 && hold_walk)) begin
             w_la <= laddr; w_super <= fc[2]; w_wr <= wr; w_test <= 1'b0;
             d = fc[2] ? srp : urp;
             w_addr <= {d[31:9], laddr[31:25], 2'b00};
-            lvl <= 2'd0; wp <= 1'b0; invalid <= 1'b0; sviol <= 1'b0;
+            lvl <= 2'd0; wp <= 1'b0; invalid <= 1'b0; sviol <= 1'b0; il <= 1'b0;
             ws <= W_RD_H;
           end
         W_RD_H: begin
@@ -313,6 +351,7 @@ module m68k_mmu #(
               ws <= W_RD_H;
             end else if (d[1:0] == 2'b10) begin
               invalid <= 1'b1;                      // indirect to indirect
+              il <= 1'b1;
               ws <= W_FILL;
             end else begin
               wrp = wp | d[2];
@@ -356,6 +395,12 @@ module m68k_mmu #(
           e_s[victim] <= d[7];
           e_g[victim] <= d[10];
           e_inv[victim] <= invalid;
+          // why it is invalid: the level of the descriptor
+          e_why[victim] <= !invalid ? 4'd0 : il ? 4'b0010 :
+                           (lvl == 2'd0) ? 4'b1000 : (lvl == 2'd1) ? 4'b0100 : 4'b0001;
+          if (w_test)
+            ptwhy_r <= invalid ? {(lvl == 2'd0), (lvl == 2'd1), il, !il && lvl[1], 2'b00}
+                               : {4'd0, sviol, w_wr && wp && !sviol};
           victim <= (victim == 3'(N - 1)) ? 3'd0 : victim + 3'd1;
           if (w_test) begin
             if (invalid)

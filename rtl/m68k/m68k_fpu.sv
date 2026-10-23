@@ -62,6 +62,19 @@
 // predicate is used (vector 48), with an E1 busy frame (Linux's skeleton
 // clears E1 for it).
 //
+// MC68060 (not in TG68K_FPU.vhd; with FPSP 0, the unit completing what the
+// M68060SP would emulate of the operations the 68060 has): the 68060's FPU
+// as software sees it (MC68060 UM section 6). FSAVE writes and FRESTORE
+// reads the frame of three longs: $00 null, $60 idle, $E0 an exception
+// pending, with its vector (V2-V0, the xvec numbering) and its operand;
+// FRESTORE of another one sets ferr (format error), its (An)+ then not
+// made. FINT and FINTRZ are done here (on the unit's FMOVE of the source).
+// What the 68060 leaves to the M68060SP (the transcendental functions,
+// FGETEXP, FGETMAN, FMOD, FREM, FSCALE, FMOVECR, FScc, FDBcc, FTRAPcc;
+// packed decimal) is not run: FPIAR is set, ea_out is the operand address
+// with no (An)+ or -(An) made (the package makes them), and unimp (vector
+// 11) or unsupp (55, packed) comes with done; the core stacks format $2.
+//
 // Copyright (c) 2026 Ramon Martinez. LGPL-3.0-or-later, as TG68K.C.
 
 module m68k_fpu #(
@@ -74,7 +87,8 @@ module m68k_fpu #(
   parameter int FPSP = 1,
   // 1: m68k_fpu_alu_fast, the same results in fewer cycles (0: the
   // arithmetic unit of TG68K.C cycle for cycle, as the equivalence tests need)
-  parameter bit FAST_ALU = 1'b0
+  parameter bit FAST_ALU = 1'b0,
+  parameter bit MC68060 = 1'b0
 ) (
   input  logic        clk,
   input  logic        reset,
@@ -91,6 +105,7 @@ module m68k_fpu #(
   output logic        unimp,          // with done: unimplemented, take vector 11
   output logic        unsupp,         // with done: unsupported data type, vector 55
   output logic        upost,          // with unsupp: post-instruction (format $3)
+  output logic        ferr,           // (MC68060) with done: FRESTORE of no 68060 frame
   output logic [31:0] ea_out,         // the operand address, for that frame
   output logic        ftrap,          // with done: FTRAPcc traps
   output logic        br_take,        // with done: FDBcc branches
@@ -225,6 +240,10 @@ module m68k_fpu #(
                                       // exception by the FMOVE out of its register
   logic        xe3 = 1'b0;            // the pending exception is an E3 one
   logic        rfun = 1'b0;           // the operation comes from FRESTORE (res_func)
+  // (MC68060) the instruction the M68060SP emulates (11: unimp, 55: packed);
+  // FINT/FINTRZ on the unit's result; the pending exception's operand
+  logic        u60 = 1'b0, p60 = 1'b0, fint_r = 1'b0, fint_z = 1'b0, ferr_r = 1'b0;
+  logic [79:0] xop = '0;
   /* verilator lint_on PROCASSINIT */
   logic signed [17:0] ires_e, rres_e;
   logic [67:0] ires_m, rres_m;
@@ -370,6 +389,49 @@ module m68k_fpu #(
     endcase
   endfunction
 
+  // (MC68060) what the 68060 does not run: {unimplemented, packed decimal}
+  function automatic logic [1:0] m060_of(input logic [15:0] o, input logic [15:0] c);
+    logic gen;
+    logic [4:0] op;
+    op = op_of(c[6:0]);
+    gen = o[8:6] == 3'b000 && (c[15:13] == 3'b000 || c[15:13] == 3'b010);
+    if (o[8:6] == 3'b001) return 2'b10;                               // FScc, FDBcc, FTRAPcc
+    if (gen && c[15:10] == 6'b010111) return 2'b10;                   // FMOVECR
+    if (o[8:6] == 3'b000 && ((c[15:13] == 3'b010 && c[12:10] == 3'b011) ||
+                             (c[15:13] == 3'b011 && (c[12:10] == 3'b011 || c[12:10] == 3'b111))))
+      return 2'b01;                                                   // packed decimal
+    if (gen && !op[4] && c[6:0] != 7'b0000001 && c[6:0] != 7'b0000011)
+      return 2'b10;                                                   // not FINT, FINTRZ
+    return 2'b00;
+  endfunction
+
+  // (MC68060) FINT: x to an integer in rounding mode rm, {inexact, result}
+  function automatic logic [80:0] fint_of(input logic [79:0] x, input logic [1:0] rm);
+    logic        sg, half, rest, up;
+    logic [14:0] e;
+    logic [63:0] m, ip, fr;
+    logic [64:0] r;
+    int          sh, p;
+    sg = x[79]; e = x[78:64]; m = x[63:0];
+    if (e == 15'h7FFF || m == 64'd0) return {1'b0, x};       // NaN, infinity, zero
+    sh = 16446 - int'(e);                                     // fraction bits
+    if (sh <= 0) return {1'b0, x};                            // an integer already
+    if (sh > 64) begin ip = 64'd0; half = 1'b0; rest = 1'b1; fr = 64'd1; end
+    else if (sh == 64) begin ip = 64'd0; fr = m; half = m[63]; rest = m[62:0] != 63'd0; end
+    else begin ip = m >> sh; fr = m << (64 - sh); half = fr[63]; rest = fr[62:0] != 63'd0; end
+    case (rm)
+      2'b00:   up = half && (rest || ip[0]);                  // to nearest, even
+      2'b01:   up = 1'b0;                                     // to zero
+      2'b10:   up = sg && fr != 64'd0;                        // to minus infinity
+      default: up = !sg && fr != 64'd0;                       // to plus infinity
+    endcase
+    r = {1'b0, ip} + {64'd0, up};
+    if (r == 65'd0) return {fr != 64'd0, sg, 79'd0};
+    p = 0;
+    for (int i = 0; i < 64; i++) if (r[i]) p = i;
+    return {fr != 64'd0, sg, 15'(16383 + p), r[63:0] << (63 - p)};
+  endfunction
+
   // the vector of the highest priority exception in m (snan operr ovfl unfl
   // dz inex), INEX when none
   function automatic logic [2:0] xvec_of(input logic [5:0] m);
@@ -425,6 +487,7 @@ module m68k_fpu #(
   assign unimp = unimp_r;
   assign unsupp = unsupp_r;
   assign upost = upost_r;
+  assign ferr = ferr_r;
   assign ea_out = (xpost_r && mode == 3'b000) ? 32'd0 : addr;
   assign xexc = xnow;
   assign xvec = xvec_r;
@@ -534,6 +597,7 @@ module m68k_fpu #(
     logic [79:0] ix;
     logic        e3;
     logic        lneg;
+    logic [79:0] ar;
 
     if (reset) begin
       done_r <= 1'b0;
@@ -552,10 +616,12 @@ module m68k_fpu #(
       xpend <= 1'b0;
       xraw <= 1'b0;
       xnow <= 1'b0;
+      ferr_r <= 1'b0;
     end else if (clkena) begin
       done_r <= 1'b0;
       unimp_r <= 1'b0;
       unsupp_r <= 1'b0;
+      ferr_r <= 1'b0;
       xnow <= 1'b0;
       alu_start <= 1'b0;
       wr_en <= 1'b0;
@@ -621,6 +687,9 @@ module m68k_fpu #(
               store <= 1'b0;
               pk <= 1'b0;
               upost_r <= 1'b0;
+              fint_r <= 1'b0;
+              {u60, p60} <= MC68060 ? m060_of(opcode, cmd) : 2'b00;
+              if (MC68060) addr <= 32'd0;  // (no operand address: 0 in the frame)
               state <= ST_REG;
               if (opcode[8:6] == 3'b000 && cmd[15:13] == 3'b000)
                 state <= ST_SRC;          // FPm,FPn: no effective address
@@ -637,6 +706,8 @@ module m68k_fpu #(
               nb = 8'd100;                            // FSAVE, busy frame
             else if (opc[8:6] == 3'b100 && unimp_pend)
               nb = 8'd52;                             // FSAVE, unimplemented frame
+            else if (MC68060 && (opc[8:6] == 3'b100 || opc[8:6] == 3'b101))
+              nb = 8'd12;                             // the 68060's frame
             else if (opc[8:6] == 3'b100 || opc[8:6] == 3'b101)
               nb = 8'd4;                              // FSAVE, FRESTORE header
             else if (opc[8:6] == 3'b001)
@@ -683,13 +754,24 @@ module m68k_fpu #(
               end
               default: addr <= ea;
             endcase
+            // (MC68060) the M68060SP makes (An)+ and -(An) of what it
+            // emulates; FRESTORE makes its (An)+ once the frame is known
+            if (MC68060 && (u60 || p60 || opc[8:6] == 3'b101)) wr_en <= 1'b0;
+            if (MC68060 && (mode == 3'b000 || mode == 3'b001)) addr <= 32'd0;
             state <= ST_SRC;
           end
 
           // dispatch on the instruction
           ST_SRC: begin
             null_state <= 1'b0;
-            if (opc[8:6] == 3'b001) begin
+            if (MC68060 && (u60 || p60)) begin
+              // (MC68060) left to the M68060SP: FPIAR, and the exception
+              null_state <= null_state;
+              fpiar <= iaddr;
+              unimp_r <= u60;
+              unsupp_r <= p60;
+              done_r <= 1'b1; state <= ST_FINISH;
+            end else if (opc[8:6] == 3'b001) begin
               // FScc and FDBcc: the predicate is in the extension word; a
               // signaling predicate on a NaN sets BSUN (and AEXC IOP)
               null_state <= null_state;
@@ -739,6 +821,20 @@ module m68k_fpu #(
                 xa <= addr; xi <= 7'd0; xn <= 7'd1; xwr <= 1'b1;
                 state <= ST_XFER; ret_state <= ST_FINISH;
               end
+            end else if (MC68060 && opc[8:6] == 3'b100) begin
+              // the 68060's FSAVE (UM 6.7): three longs, the pending
+              // exception with its operand, then cleared
+              null_state <= null_state;
+              buf_[0] <= xpend ? xop[79:72] : 8'h00; buf_[1] <= xpend ? xop[71:64] : 8'h00;
+              buf_[2] <= null_state ? 8'h00 : xpend ? 8'hE0 : 8'h60;
+              buf_[3] <= xpend ? {5'd0, xvec_r} : 8'h00;
+              for (int i = 0; i < 8; i++) buf_[4 + i] <= xpend ? xop[63 - 8 * i -: 8] : 8'h00;
+              xpend <= 1'b0;
+              xa <= addr; xi <= 7'd0; xn <= 7'd12; xwr <= 1'b1;
+              state <= ST_XFER; ret_state <= ST_FINISH;
+            end else if (MC68060 && opc[8:6] == 3'b101) begin
+              xa <= addr; xi <= 7'd0; xn <= 7'd12; xwr <= 1'b0;
+              state <= ST_XFER; ret_state <= ST_RESTORE;
             end else if (opc[8:6] == 3'b100) begin
               // FSAVE: a null frame until a non-conditional instruction ran,
               // an idle frame after (68040 UM 9.8)
@@ -779,6 +875,11 @@ module m68k_fpu #(
                 7'b0111010:                         alu_op <= 4'h9;   // FTST
                 7'b0100100:                         alu_op <= 4'hB;   // FSGLDIV
                 7'b0100111:                         alu_op <= 4'hC;   // FSGLMUL
+                7'b0000001, 7'b0000011:                               // FINT, FINTRZ (68060):
+                  if (MC68060) begin                                  // a move, then to an integer
+                    alu_op <= 4'h0; fint_r <= 1'b1; fint_z <= opm[1];
+                  end else
+                    ok = 1'b0;
                 default:                            ok = 1'b0;
               endcase
               // an operation the 68040 leaves to the FPSP: the source is
@@ -1078,6 +1179,13 @@ module m68k_fpu #(
           ST_ALU_WAIT:
             if (alu_done) begin
               e = alu_exc;
+              ar = alu_res;
+              if (MC68060 && fint_r) begin
+                // FINT, FINTRZ: the moved source to an integer (no UNFL, OVFL)
+                {lneg, ar} = fint_of(alu_res, fint_z ? 2'b01 : fpcr[5:4]);
+                e[0] = e[0] | lneg;
+                e[3] = 1'b0; e[2] = 1'b0;
+              end
               // FMOVE to an integer of the largest negative integer: an
               // operand error on the 68040 (the "erroneous MC68040
               // condition" of UM 9.7.3.2), which the FPSP corrects
@@ -1103,7 +1211,7 @@ module m68k_fpu #(
               if (lneg) e[4] = 1'b1;
               if (set_cc) begin
                 // condition codes N Z I NAN of the result
-                x = alu_res;
+                x = ar;
                 fpsr[27] <= x[79];
                 fpsr[26] <= 1'b0; fpsr[25] <= 1'b0; fpsr[24] <= 1'b0;
                 if (x[78:64] == 15'h7FFF) begin
@@ -1123,7 +1231,7 @@ module m68k_fpu #(
                 if (store && alu_op == 4'hA) hit = hit | e[5] | e[4];
               end
               if (wr_fp && (!hit || !(e[4] | e[3] | e[2] | e[1])))
-                fpr[cw[9:7]] <= alu_res;
+                fpr[cw[9:7]] <= ar;
               if (hit) begin
                 // the vector the 68040 takes: OVFL and UNFL always, SNAN and
                 // OPERR always for FMOVE out (UM 9.7.2.2, 9.7.3.2)
@@ -1220,6 +1328,9 @@ module m68k_fpu #(
                 end
                 xf <= f;
                 xpend <= 1'b1;
+                // (MC68060) the operand of the EXCP frame: the source, the
+                // intermediate result for OVFL and UNFL (UM 6.7)
+                xop <= (e[3] || e[2]) ? ix : alu_src;
               end
               if (store) state <= ST_STORE;
               else       state <= ST_FINISH;     // done was given by alu_early
@@ -1311,7 +1422,27 @@ module m68k_fpu #(
             state <= ST_FINISH;
           end
 
-          ST_RESTORE: begin
+          ST_RESTORE: if (MC68060) begin
+            // the 68060's frame (UM 6.7): null, idle, or an exception
+            // pending again; any other is a format error, nothing done
+            if (buf_[2] == 8'h00 || buf_[2] == 8'h60 || buf_[2] == 8'hE0) begin
+              if (mode == 3'b011) begin
+                wr_en <= 1'b1; wr_idx <= {1'b1, reg_}; wr_size <= 2'b10; wr_data <= areg + 32'd12;
+              end
+              xpend <= buf_[2] == 8'hE0;
+              xvec_r <= buf_[3][2:0];
+              xop <= {buf_[0], buf_[1], buf_long(buf_, 4), buf_long(buf_, 8)};
+              xe3 <= 1'b0;
+              null_state <= buf_[2] == 8'h00;
+              if (buf_[2] == 8'h00) begin
+                for (int i = 0; i < 8; i++) fpr[i] <= FP_NAN;
+                fpcr <= '0; fpsr <= '0; fpiar <= '0;
+              end
+            end else
+              ferr_r <= 1'b1;
+            done_r <= 1'b1;
+            state <= ST_FINISH;
+          end else begin
             // FRESTORE: a null frame resets the FPU; a busy frame is read
             // (ST_RESTORE_B); other frames are skipped
             if (mode == 3'b011 && buf_[1] != 8'h00) begin

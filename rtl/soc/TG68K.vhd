@@ -41,7 +41,9 @@ generic
 		cpu68040 : boolean := true;
 		-- the m68k core's line port (rtl/m68k: m68k_lpu, m68k_lp_minimig) for
 		-- the first Zorro III block, served by minimig_mist_top
-		lineport : boolean := false
+		lineport : boolean := false;
+		-- the m68k core built as a 68060 (rtl/m68k, its MC68060), else a 68040
+		m68060 : boolean := false
 	);
 port(
 	clk           : in      std_logic;
@@ -224,6 +226,7 @@ component TG68KdotC_Kernel
 		D_Cache_Bit : integer := 0;
 		FPU_FPSP : integer := 1;
 		MMU_REG_XLATE : integer := 0;
+		MC68060 : integer := 0;
 		LINE_PORT : integer := 0;
 		LP_LO : integer := 16#40000000#;
 		LP_HI : integer := 16#48000000#
@@ -503,6 +506,7 @@ pf68K_Kernel_inst: TG68KdotC_Kernel
     DIV_Mode        => 2, -- 0=>16Bit,  1=>32Bit,         2=>switchable with CPU(1),  3=>no DIV,
     BitField        => 2, -- 0=>no,     1=>yes,           2=>switchable with CPU(1)
 	MUL_Hardware    => 1, -- 0=>no,     1=>yes
+    MC68060         => b2i(m68060),
     LINE_PORT       => b2i(lineport),
     LP_HI           => lp_hi_f(dualsdram)
   )

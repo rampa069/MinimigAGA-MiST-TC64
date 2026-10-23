@@ -7,6 +7,11 @@
 
 module m68k_decode
   import m68k_pkg::*;
+#(
+  // the 68060 (else the 68040): what it does not implement traps
+  // (unimplemented integer, vector 61), its control registers, PTEST gone
+  parameter bit MC68060 = 1'b0
+)
 (
   input  logic [15:0] q [16],
   input  logic [1:0]  qf [16],        // the word's fetch faulted {fault, by the MMU}
@@ -258,6 +263,8 @@ module m68k_decode
     logic  bad;               // not implemented yet: stop at WB
     logic  ill;               // illegal instruction (vector 4)
     logic  priv;              // privileged: violation in user mode
+    logic  unimp;             // 68060: unimplemented integer instruction (vector 61)
+    logic  uea;               // 68060: unimplemented effective address (vector 60)
     logic [4:0] nsteps;       // uops of the instruction
     logic [3:0] nv;           // extension words that must be in the queue
     logic [3:0] n;            // extension words
@@ -267,6 +274,8 @@ module m68k_decode
     bad = 1'b0;
     ill = 1'b0;
     priv = 1'b0;
+    unimp = 1'b0;
+    uea = 1'b0;
     nsteps = 5'd1;
     n = 4'd0;
     sz = sz2(op[7:6]);
@@ -336,6 +345,7 @@ module m68k_decode
         // CMP2, CHK2 <ea>,Rn: the bounds into T0 and MDHI, then the compare
         logic [15:0] x1;
         logic [2:0]  nb;
+        unimp = MC68060;
         x1 = w[1];
         sz = (op[10:9] == 2'b00) ? SZ_B : (op[10:9] == 2'b01) ? SZ_W : SZ_L;
         nb = (sz == SZ_B) ? 3'd1 : (sz == SZ_W) ? 3'd2 : 3'd4;
@@ -387,6 +397,9 @@ module m68k_decode
               u.a_sel = OP_EA;
               u.size = SZ_L;
               u.dst_en = 1'b1; u.dst = R_T2;
+              if (MC68060) begin                                 // misaligned: vector 61
+                u.exc = EXC_MISAL; u.exc_vec = 8'd61; u.msize = sz;
+              end
             end
             5'd1: begin                                          // the operand into T0
               u.ea_en = 1'b1; u.base_en = 1'b1; u.base = R_T2;
@@ -415,6 +428,7 @@ module m68k_decode
             end
           endcase
         end else begin                                           // CAS2
+          unimp = MC68060;
           n = 4'd2;
           bad = sz == SZ_B;
           nsteps = 5'd8;
@@ -455,6 +469,7 @@ module m68k_decode
         // MOVEP: alternate bytes from d16(Ay), one uop a byte
         logic [4:0] nb;
         logic [4:0] pos;
+        unimp = MC68060;
         nb = op[6] ? 5'd4 : 5'd2;
         pos = nb - 5'd1 - step;
         n = 4'd1;
@@ -495,6 +510,37 @@ module m68k_decode
         u.alu = (op[7:6] == 2'b00) ? ALU_BTST : (op[7:6] == 2'b01) ? ALU_BCHG :
                 (op[7:6] == 2'b10) ? ALU_BCLR : ALU_BSET;
         u.cc = CC_Z;
+      end else if (op[11:8] == 4'b1110 && op[7:6] != 2'b11 && MC68060) begin
+        // MOVES (the 68060's): a load or store of Rn in the space of SFC
+        // or DFC (moves); memory alterable modes only. Into An a byte or
+        // word is sign-extended; no condition codes
+        logic [4:0] rn;
+        rn = {1'b0, w[1][15], w[1][14:12]};
+        s = ea_dec(op[5:3], op[2:0], sz, 4'd2, w, q_pc);
+        n = 4'd1 + s.nw;
+        priv = 1'b1;
+        ill = op[5:4] == 2'b00 || (op[5:3] == 3'b111 && op[2:1] != 2'b00);
+        bad = s.bad;
+        u.moves = 1'b1;
+        if (!w[1][11]) begin                           // <ea> to Rn
+          u = use_ea(u, s);
+          u.load = 1'b1;
+          u.msize = sz;
+          u.dst_en = 1'b1; u.dst = rn;
+          if (w[1][15]) begin
+            u.b_sel = OP_MEM;
+            u.alu = (sz == SZ_B) ? ALU_EXTBL : (sz == SZ_W) ? ALU_EXTL : ALU_MOVE;
+            u.a_sel = OP_MEM;
+          end else begin
+            u.a_sel = OP_MEM;
+            u.size = sz;
+            if (sz != SZ_L) begin u.b_sel = OP_REG; u.b_reg = rn; end
+          end
+        end else begin                                 // Rn to <ea>
+          u.a_sel = OP_REG; u.a_reg = rn;
+          u = dst_w(u, s, sz);
+          u.size = sz;
+        end
       end else if (op[11:8] == 4'b1110 && op[7:6] != 2'b11) begin
         // MOVES: TG68K.C does not implement it; a memory alterable mode is
         // a privilege violation in user mode and illegal in supervisor
@@ -632,7 +678,11 @@ module m68k_decode
           n = 4'd1;
           bad = 1'b0;
           priv = 1'b1;
-          ill = !(c[11:3] == 9'd0 || c == 12'h800 || c == 12'h801 || (c >= 12'h803 && c <= 12'h807));
+          if (MC68060)                                           // no MSP, ISP, MMUSR; BUSCR, PCR
+            ill = !(c[11:3] == 9'd0 || c == 12'h008 || c == 12'h800 || c == 12'h801 ||
+                    c == 12'h806 || c == 12'h807 || c == 12'h808);
+          else
+            ill = !(c[11:3] == 9'd0 || c == 12'h800 || c == 12'h801 || (c >= 12'h803 && c <= 12'h807));
           if (!op[0]) begin                                      // Rc to Rn
             u.a_sel = OP_REG;
             case (c)
@@ -786,6 +836,7 @@ module m68k_decode
           s = ea_dec(op[5:3], op[2:0], SZ_L, 4'd2, w, q_pc);
           n = 4'd1 + s.nw;
           bad = s.bad || s.kind == K_AREG || w[1][15] || w[1][9:3] != 7'd0;
+          unimp = MC68060 && l64;
           // DIVx.L 64: Dr into MDHI first; a remainder or a high long into Dr/Dh
           sd = (isdiv && l64) ? 5'd1 : 5'd0;
           nsteps = sd + 5'd1 + ((l64 || (isdiv && rh != rl)) ? 5'd1 : 5'd0);
@@ -1318,6 +1369,19 @@ module m68k_decode
           if (c[15:13] == 3'b001) unimpl = 1'b1;
         end
         if (cond && c[15:5] != 11'd0) unimpl = 1'b1;
+        if (MC68060 && gen && !cond) begin
+          // FMOVECR with no <ea> goes to the FPU, which leaves it to the
+          // M68060SP (vector 11, format $2); with one it stays Line-F
+          if (c[15:10] == 6'b010111 && m == 3'b000 && r == 3'b000) unimpl = 1'b0;
+          // the unimplemented effective addresses (UM 6.5.3): an extended
+          // or packed immediate, FMOVEM.L #imm of more than one control
+          // register, FMOVEM.X with a dynamic list
+          uea = !unimpl &&
+                ((c[15:13] == 3'b010 && (c[12:10] == 3'b010 || c[12:10] == 3'b011) && m == 3'b111 && r == 3'b100) ||
+                 (c[15:13] == 3'b100 && m == 3'b111 && r == 3'b100 &&
+                  (c[12:10] == 3'b011 || c[12:10] == 3'b101 || c[12:10] == 3'b110 || c[12:10] == 3'b111)) ||
+                 ((c[15:13] == 3'b110 || c[15:13] == 3'b111) && c[11]));
+        end
         // extension bytes (TG68K.C's fpu_ext)
         full = 5'd2;
         if (w[2][8]) begin                // the index word after the command word
@@ -1396,8 +1460,18 @@ module m68k_decode
           u.mmuop = 2'd3;
           u.sys = 1'b1;
           u.redir = 1'b1;
+        end else if (MC68060 && op[11:8] == 4'h5 && (op[7:3] == 5'b10001 || op[7:3] == 5'b11001)) begin
+          // PLPAW / PLPAR (An) (68060): An becomes its physical address, the
+          // tables searched with DFC as for a write or a read
+          priv = 1'b1;
+          u.mmuop = 2'd1;
+          u.a_sel = OP_REG; u.a_reg = {2'b01, op[2:0]};
+          u.dst_en = 1'b1; u.dst = {2'b01, op[2:0]};
+          u.sys = 1'b1;
         end else if (op[11:8] == 4'h5 && (op[7:5] == 3'b000 || op[7:3] == 5'b01001 || op[7:3] == 5'b01101)) begin
           // PFLUSH (An) / PFLUSHN / PFLUSHA / PFLUSHAN, PTESTW / PTESTR (An)
+          // (the 68060 has no PTEST: Line-F)
+          ill = MC68060 && op[6];
           priv = 1'b1;
           u.mmuop = op[6] ? 2'd1 : 2'd2;
           u.a_sel = OP_REG; u.a_reg = {2'b01, op[2:0]};
@@ -1483,6 +1557,14 @@ module m68k_decode
       nsteps = 5'd1;
     end else if (ill) begin
       u = exc_u(op[15:12] == 4'hF ? 8'd11 : 8'd4, 1'b0, 1'b0);
+      n = 4'd0;
+      nsteps = 5'd1;
+    end else if (uea) begin
+      u = exc_u(8'd60, 1'b0, 1'b0);
+      n = 4'd0;
+      nsteps = 5'd1;
+    end else if (unimp) begin
+      u = exc_u(8'd61, 1'b0, 1'b0);
       n = 4'd0;
       nsteps = 5'd1;
     end else if (priv && !sup && step == 5'd0) begin   // (the later uops of RTE run in the new mode)

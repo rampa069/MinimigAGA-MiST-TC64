@@ -427,9 +427,17 @@ localparam lineport="true";
 localparam lineport="false";
 `endif
 
+// the m68k core as a 68060 (MINIMIG_M68K_060), else a 68040
+`ifdef MINIMIG_M68K_060
+localparam m68060="true";
+`else
+localparam m68060="false";
+`endif
+
 TG68K #(
   .dualsdram(dualsdram),
   .lineport(lineport),
+  .m68060(m68060),
   .useprofiler(useprofiler),
   .haveaudio(auxaudio),
   .havecart(havecart)

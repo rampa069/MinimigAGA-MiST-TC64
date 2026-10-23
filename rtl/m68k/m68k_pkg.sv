@@ -111,7 +111,8 @@ package m68k_pkg;
     EXC_FMT,    // RTE: when the format word in a is not a 68040 frame
     EXC_CHK,    // CHK: when b < 0 or b > a, signed at the size
     EXC_DIVZ,   // DIVx: a zero divisor
-    EXC_CHK2    // CHK2: Rn out of bounds (C of the result)
+    EXC_CHK2,   // CHK2: Rn out of bounds (C of the result)
+    EXC_MISAL   // CAS on the 68060: the operand at the EA (msize) misaligned
   } exc_e;
 
   typedef enum logic [1:0] {
@@ -191,6 +192,7 @@ package m68k_pkg;
     logic        ifault;    // the fetch of the instruction faulted: imm the address,
                             // cond[0] by the MMU (else a bus error)
     logic        al16;      // the EA base aligned to 16 bytes (MOVE16's lines)
+    logic        moves;     // (MC68060) MOVES: the access in the space of SFC (load) or DFC (store)
   } uop_t;
 
   function automatic logic [31:0] sext8(input logic [7:0] v);

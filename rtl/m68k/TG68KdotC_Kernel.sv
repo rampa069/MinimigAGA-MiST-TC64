@@ -3,7 +3,8 @@
 // of TG68KdotC_Kernel, so a wrapper made for TG68K.C (MinimigAGA's TG68K.vhd)
 // takes the core with no change but a component declaration, and its SDC
 // still finds the instance (pf68K_Kernel_inst). The generics are taken and
-// ignored (the core is always the 68040), and so are CPU and
+// ignored (the core is the 68040, or the 68060 with MC68060 = 1, a choice
+// made when it is built), and so are CPU and
 // IPL_autovector (interrupts are autovectored); regin_out is 0. LINE_PORT,
 // LP_LO and LP_HI, and the lp_ ports after TG68K.C's, are m68k_cpu's line
 // port (m68k_lpu): a wrapper that does not use it leaves them unconnected
@@ -22,6 +23,7 @@ module TG68KdotC_Kernel #(
   parameter int D_Cache_Bit = 0,
   parameter int FPU_FPSP = 1,
   parameter int MMU_REG_XLATE = 0,
+  parameter int MC68060 = 0,
   parameter int LINE_PORT = 0,
   parameter int LP_LO = 32'h40000000,
   parameter int LP_HI = 32'h48000000
@@ -68,7 +70,7 @@ module TG68KdotC_Kernel #(
 );
 
   /* verilator lint_off PINCONNECTEMPTY */   // (the testbench's outputs, not used here)
-  m68k_cpu #(.LINE_PORT(LINE_PORT != 0), .LP_LO(LP_LO), .LP_HI(LP_HI)) core68k (
+  m68k_cpu #(.MC68060(MC68060 != 0), .LINE_PORT(LINE_PORT != 0), .LP_LO(LP_LO), .LP_HI(LP_HI)) core68k (
     .clk, .nReset, .clkena_in, .data_in, .IPL, .berr,
     .addr_out, .data_write, .nWr, .nUDS, .nLDS, .busstate, .longword, .newpc,
     .long_req, .long_ack, .data_in_lo, .data_write_lo,
