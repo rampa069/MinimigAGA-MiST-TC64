@@ -456,6 +456,8 @@ set_global_assignment -name VERILOG_MACRO "MINIMIG_M68K_SDRAM2=1"
 set_global_assignment -name VERILOG_MACRO "MINIMIG_M68K_060=1"
 # the m68k core on a clock of its own (CPU card style: rtl/m68k m68k_cpu ASYNC)
 set_global_assignment -name VERILOG_MACRO "MINIMIG_M68K_ACCEL=1"
+# an A4000's board: IDE at $DD2000, Ramsey/Fat Gary at $DE0000 (the A4000 Kickstart)
+set_global_assignment -name VERILOG_MACRO "MINIMIG_A4000=1"
 
 set_global_assignment -name FORCE_SYNCH_CLEAR OFF
 set_global_assignment -name PRE_MAPPING_RESYNTHESIS ON

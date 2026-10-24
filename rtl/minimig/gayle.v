@@ -145,6 +145,33 @@ localparam A4K = 1'b0;
 wire sel_a4kirq = A4K && sel_ide && address_in[15:1]==15'h1810;           // $DD3020
 reg  a4kirq_rd;
 
+// (A4000) the board's resources at $DE0000-$DEFFFF, bytes as WinUAE's
+// mbres: with address & 3 = 3, Ramsey's revision ($0F) at $DE0043, its
+// configuration at $DE0003, $FF elsewhere; 0, 1, 2: Fat Gary's timeout,
+// timeout enable and cold boot flags in bit 7, $7F below. A cold reset
+// sets cold boot; writes below $DE8000 set them.
+wire        sel_mbres = A4K && sel_gayle;
+reg   [7:0] ramsey_cfg;
+reg         gary_timeout, gary_toenb, gary_coldboot;
+wire  [7:0] mbres_lo = address_in[1] ? (address_in[7:6]==2'd1 ? 8'h0F : address_in[7:6]==2'd0 ? ramsey_cfg : 8'hFF)
+                                     : {gary_toenb, 7'h7F};
+wire  [7:0] mbres_hi = address_in[1] ? {gary_coldboot, 7'h7F} : {gary_timeout, 7'h7F};
+always @(posedge clk)
+	if (clk7_en) begin
+		if (reset) begin
+			ramsey_cfg <= 8'd0; gary_timeout <= 1'b0; gary_toenb <= 1'b0; gary_coldboot <= 1'b1;
+		end else if (sel_mbres && !address_in[15]) begin
+			if (hwr) begin
+				if (address_in[1]) gary_coldboot <= data_in[15];
+				else               gary_timeout <= data_in[15];
+			end
+			if (lwr) begin
+				if (!address_in[1])               gary_toenb <= data_in[7];
+				else if (address_in[7:6]==2'd0)   ramsey_cfg <= data_in[7:0];
+			end
+		end
+	end
+
 // address decoding
 assign sel_gayleid = !A4K && sel_gayle && address_in[15:12]==4'b0001 ? VCC : GND;	  // GAYLEID, $DE1xxx
 assign sel_tfr = A4K ? (sel_ide && address_in[15:13]==3'b001 && address_in[5] && !sel_a4kirq &&
@@ -217,7 +244,8 @@ assign data_out = ide_out
          | (sel_intena  && rd  ? {intena,      15'b000_0000_0000_0000}            : 16'h00_00)
          | (sel_gayleid && rd  ? {gayleid,     15'b000_0000_0000_0000}            : 16'h00_00)
          | (sel_cfg     && rd  ? {cfg,         12'b0000_0000_0000}                : 16'h00_00)
-         | (sel_a4kirq  && rd  ? {|intreq,     15'b000_0000_0000_0000}            : 16'h00_00);
+         | (sel_a4kirq  && rd  ? {|intreq,     15'b000_0000_0000_0000}            : 16'h00_00)
+         | (sel_mbres   && rd  ? {mbres_hi,    mbres_lo}                          : 16'h00_00);
 
 
 //===============================================================================================//
