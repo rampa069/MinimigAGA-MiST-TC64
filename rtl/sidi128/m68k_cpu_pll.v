@@ -3,7 +3,7 @@
 // 27 MHz input, VCO 688.5 MHz:
 //   c0  114.75 MHz, -1600 ps: the second SDRAM's clock (as amiga_clk's c0)
 //   c1  114.75 MHz: its controller (m68k_sdram_minimig)
-//   c2  32.786 MHz (VCO / 21): the core (m68k_cpu's clk_cpu), related to c1
+//   c2  38.25 MHz (VCO / 18): the core (m68k_cpu's clk_cpu), related to c1
 
 module m68k_cpu_pll (
   input  wire areset,
@@ -68,7 +68,7 @@ defparam
   altpll_component.clk1_duty_cycle = 50,
   altpll_component.clk1_multiply_by = 17,
   altpll_component.clk1_phase_shift = "0",
-  altpll_component.clk2_divide_by = 14,
+  altpll_component.clk2_divide_by = 12,
   altpll_component.clk2_duty_cycle = 50,
   altpll_component.clk2_multiply_by = 17,
   altpll_component.clk2_phase_shift = "0",

@@ -31,6 +31,26 @@ module m68k_core
   // from OF only (0: the address calculation is off the paths through the
   // MMU and the data port)
   parameter bit AG_LOAD = 1'b1,
+  // OF's check of a load against the older stores from registers: made as
+  // the uop enters OF (AG's) and again each cycle it waits, used a clock
+  // later (a store it waits for lets it go a clock later)
+  parameter bit OF_SCREG = 1'b0,
+  // a skid buffer of one uop between decode and AG: decode goes on while
+  // the skid is empty, not as AG moves (the pipeline's stalls stay off
+  // decode and the fetch)
+  parameter bit SKID = 1'b0,
+  // a store retires into a full store buffer the clock after its first
+  // entry leaves, not in the same one (the data port's answer off retire)
+  parameter bit SB_REG = 1'b0,
+  // decode's redirects of the fetch (a jump it predicts, an instruction
+  // across the fetch's mark or one at it that does not take it) a clock
+  // later, from registers; decode waits for it (decode off the fetch's
+  // paths, a clock more each)
+  parameter bit DREDIR_REG = 1'b0,
+  // bit field operations and MULx.L in two cycles in EX: from their
+  // operands in registers (the forwarding off the multiplier and the field
+  // extraction)
+  parameter bit EX_SLOW = 1'b0,
   // the 68060 (else the 68040): its control registers (PCR, BUSCR, its
   // CACR and TC bits), one supervisor stack (M kept but not used, cleared by
   // an interrupt), RTE of formats $0 $2 $3 $4, interrupts only after the
@@ -127,6 +147,7 @@ module m68k_core
   } opnd_t;
 
   logic        ag_v;  uop_t ag_u;  logic [2:0] ag_tag;
+  logic        sk_v;  uop_t sk_u;       // SKID: the uop decode gave while AG was full
 
   logic        of_v;  uop_t of_u;  logic [2:0] of_tag;
   logic [31:0] of_ea, of_anv;  logic of_an;
@@ -718,6 +739,8 @@ module m68k_core
   logic [4:0]  ex_dst;
   logic        ex_dst_en;
   logic        ex_wait;                 // a division still running
+  logic        ex_slow, ex_s2;          // EX_SLOW: a two-cycle operation; in its second
+  logic [31:0] ex_aq, ex_bq;            // EX_SLOW: the operands of the last cycle
   logic        ex_isdiv;
   logic        ex_dsgn;                 // signed division
   logic [63:0] ex_dvnd;                 // dividend
@@ -811,7 +834,9 @@ module m68k_core
   assign mmu_pflush_i = ex_v && ex_u.mmuop == 2'd2 && !mmx_done && !wb_v && !sb_v[0] && mmu_idle && mmu_free;
 
   // (FBcc waits for the FPCC of an operation still running)
-  assign ex_wait = (ex_v && ex_isdiv && ex_dvsr != 32'd0 && !dv_done) ||
+  assign ex_slow = EX_SLOW && (ex_u.alu == ALU_BFOP || ex_u.alu == ALU_MULUL || ex_u.alu == ALU_MULSL);
+  assign ex_wait = (ex_v && ex_slow && !ex_s2) ||
+                   (ex_v && ex_isdiv && ex_dvsr != 32'd0 && !dv_done) ||
                    (ex_v && ex_u.fpu && !fx_done && !(MC68060 && pcr[1])) ||
                    (ex_v && MC68060 && pcr[1] && (ex_u.fpu || ex_u.fbcc) && (wb_v || sb_v[0])) ||
                    (ex_v && ex_u.fbcc && fpu_busy) ||
@@ -840,7 +865,7 @@ module m68k_core
     logic        cnd, c, v, z, nflag;
     logic [31:0] pred;
     logic [4:0]  old_sp, new_sp;
-
+    logic [31:0] sav, sbv;              // the operands of the bit fields and MULx.L
 
     cnd = ex_u.fbcc ? fpred(ex_u.opcode[5:0], fpu_fpcc) : cond_true(ex_u.cond, ccr_spec);
     m = szmask(ex_u.size);
@@ -855,7 +880,9 @@ module m68k_core
     // bit field: the field value fv, right-aligned, and the new one fnew;
     // in a register the field wraps around (rotated to the top), in memory
     // it starts bo bits into the first byte of BF_DATA
-    bw = (ex_av[4:0] == 5'd0) ? 6'd32 : {1'b0, ex_av[4:0]};
+    sav = EX_SLOW ? ex_aq : ex_av;
+    sbv = EX_SLOW ? ex_bq : ex_bv;
+    bw = (sav[4:0] == 5'd0) ? 6'd32 : {1'b0, sav[4:0]};
     fmask = (bw == 6'd32) ? 32'hFFFFFFFF : (32'd1 << bw) - 32'd1;
     bo = bf_off[2:0];
     bfo8 = $signed(bf_off) >>> 3;
@@ -876,7 +903,7 @@ module m68k_core
     c2f = {!c_ul, z1 | z2, 1'b0,
            c_ul ? ((c1 ^ c2) & !z1 & !z2) : (c1 | (!c2 & !z2))};
     ro = bf_off[4:0];
-    rot = (ex_bv << ro) | (ex_bv >> (6'd32 - {1'b0, ro}));
+    rot = (sbv << ro) | (sbv >> (6'd32 - {1'b0, ro}));
     x40 = bf_data << bo;
     fv = ex_u.cond[3] ? rot >> (6'd32 - bw) : x40[39:8] >> (6'd32 - bw);
     case (ex_u.cond[2:0])
@@ -898,8 +925,8 @@ module m68k_core
     ex_st_en = (ex_u.alu != ALU_BFST || ex_u.imm[2:0] < bf_nb) && (ex_u.alu != ALU_CASST || cas_eq);
     sh = shifter(ex_u.alu, ex_u.size, ex_av[5:0], ex_bv, xin);
     // 32 x 32 to 64
-    if (ex_u.alu == ALU_MULSL) p64 = {{32{ex_bv[31]}}, ex_bv} * {{32{ex_av[31]}}, ex_av};
-    else                       p64 = {32'd0, ex_bv} * {32'd0, ex_av};
+    if (ex_u.alu == ALU_MULSL) p64 = {{32{sbv[31]}}, sbv} * {{32{sav[31]}}, sav};
+    else                       p64 = {32'd0, sbv} * {32'd0, sav};
     // the signed quotient and remainder, and whether the quotient fits
     // (else V and the destination unchanged)
     dz = ex_dvsr == 32'd0;
@@ -1155,7 +1182,8 @@ module m68k_core
   logic running;
 
   assign running = rs_state == RS_RUN;
-  assign sys_inflight = (ag_v && ag_u.sys) || (of_v && of_u.sys) || (ex_v && ex_u.sys) || (wb_v && wb_u.sys);
+  assign sys_inflight = (ag_v && ag_u.sys) || (of_v && of_u.sys) || (ex_v && ex_u.sys) || (wb_v && wb_u.sys) ||
+                        (SKID && sk_v && sk_u.sys);
 
   // data port arbitration: reset, then the store at WB, then the load at OF
   // The port takes a new access in the cycle the last one answers. A load
@@ -1190,16 +1218,20 @@ module m68k_core
     return ((s == SZ_B) ? 4'b1000 : (s == SZ_W) ? 4'b1100 : 4'b1111) >> o;
   endfunction
   function automatic logic ovl(input logic [31:0] a1, input size_e s1, input logic [31:0] a2, input size_e s2);
-    logic [29:0] f1, l1, f2, l2;
+    // (a1 the load's, a2 the store's: the sums are on the store's address
+    // only, from registers, and the load's is compared with them: f1 + 1 ==
+    // f2 as f1 == f2 - 1)
+    logic [29:0] f1, f2, l2, m2;
     logic        x1, x2;
     x1 = {1'b0, a1[1:0]} + nbytes(s1) > 3'd4;
     x2 = {1'b0, a2[1:0]} + nbytes(s2) > 3'd4;
     f1 = tc_e ? {20'd0, a1[11:2]} : a1[31:2];
     f2 = tc_e ? {20'd0, a2[11:2]} : a2[31:2];
-    l1 = tc_e ? {20'd0, a1[11:2] + 10'(x1)} : a1[31:2] + 30'(x1);
     l2 = tc_e ? {20'd0, a2[11:2] + 10'(x2)} : a2[31:2] + 30'(x2);
+    m2 = tc_e ? {20'd0, a2[11:2] - 10'd1} : a2[31:2] - 30'd1;
     if (!x1 && !x2) return f1 == f2 && (bmask(a1[1:0], s1) & bmask(a2[1:0], s2)) != 4'd0;
-    return f1 == f2 || f1 == l2 || l1 == f2 || l1 == l2;
+    // f1 == f2 || f1 == l2 || l1 == f2 || l1 == l2, with l1 = f1 + x1
+    return f1 == f2 || f1 == l2 || (x1 && f1 == m2);
   endfunction
   // A load of s bytes at a and the older stores to the same bytes: the
   // youngest of them in WB or the store buffer, at the same address and of
@@ -1231,7 +1263,8 @@ module m68k_core
 
   logic ld_req, ag_ld_req, sb_req, of_need_ind, d_free;
   logic of_fwd, ag_fwd;                 // the load takes a store's data instead
-  logic [33:0] of_sc, ag_sc;
+  logic [33:0] of_sc, ag_sc, of_sc_now, of_sc_r;
+  logic        of_sc_ok;                // OF_SCREG: of_sc_r is of the address in of_ea
   logic [1:0] sb_count;
   size_e of_ld_size;
   logic of_want, ag_want;
@@ -1245,10 +1278,17 @@ module m68k_core
   assign d_free = !d_busy || c_rvalid;
   assign of_need_ind = of_u.ind && !of_ind_done;
   assign of_ld_size = of_need_ind ? SZ_L : of_u.msize;
-  assign of_sc = st_check(of_ea, of_ld_size, 1'b0);
-  assign ag_sc = st_check(ag_ea, ag_u.msize, 1'b1);
+  assign of_sc_now = st_check(of_ea, of_ld_size, 1'b0);
+  // (a memory indirect uop's first access is its pointer, a long)
+  assign ag_sc = st_check(ag_ea, ag_u.ind ? SZ_L : ag_u.msize, 1'b1);
+  // (OF_SCREG: no new older store comes while a uop waits in OF, and the
+  // ones there move on with their data, so last cycle's check holds, a
+  // store left behind waited for a clock more; not once the pointer of a
+  // memory indirect uop changed its address)
+  assign of_sc = OF_SCREG ? of_sc_r : of_sc_now;
   assign of_want = of_v && (of_need_ind ? !of_ind_issued : (of_u.load && !of_ld_issued && !of_ld_have)) &&
                    !of_sc[33] && !(of_need_ind && of_sc[32]) &&      // (a pointer is not forwarded: it waits)
+                   (!OF_SCREG || of_sc_ok) &&
                    !(is_io(of_ea) && (ex_v || wb_v || sb_v[0]));
   assign of_fwd = of_want && of_sc[32] && !of_need_ind;
   assign ld_req = of_want && !of_fwd && d_free && !ws_req && !sb_first;
@@ -1262,7 +1302,7 @@ module m68k_core
   // a store to the code just after its instruction (fetched already,
   // maybe decoded) is made from WB too, and the instruction ends with a
   // fresh fetch of the next one (take_smc)
-  assign wb_smc = wb_ea - wb_u.pc < 32'd128;
+  // (wb_smc: found as the uop enters WB, off the store's paths)
   assign wb_sync = (tc_e ? wb_pa : wb_ea) >= SYNC_LO || wb_smc;
   assign ws_req = wb_v && wb_u.store && !wb_exc && (!tc_e || wb_xdone) && !wb_sfault && wb_sync &&
                   !ws_iss && !ws_done && !sb_v[0] && d_free;
@@ -1453,7 +1493,7 @@ module m68k_core
   // (the 68060 holds none: a write's access error restarts the instruction)
   assign st_hold = st_fault && ((wb_u.wdefer && !MC68060) || wb_u.noaf);
   assign retire   = wb_v && !wb_u.unimpl &&
-                    (!wb_u.store || wb_exc || st_fault || (wb_sync ? ws_done : (sb_count < 2'd2 || d_done_sb))) &&
+                    (!wb_u.store || wb_exc || st_fault || (wb_sync ? ws_done : (sb_count < 2'd2 || (!SB_REG && d_done_sb)))) &&
                     (!(tc_e && wb_u.store && !wb_exc) || wb_xdone || wb_sfault);
   logic wb_exc_now;                      // the uop's exception, found at WB too
   assign wb_exc_now = wb_exc || (st_fault && !st_hold);
@@ -1496,19 +1536,27 @@ module m68k_core
   assign of_ready = !of_v || of_fire;
   assign ag_fire  = ag_v && !ag_stall && of_ready && !flush && !take_any;
   assign ag_ready = !ag_v || ag_fire;
-  logic dec_go, dec_cross, dec_at_mark;
-  assign dec_go = running && src_valid && ag_ready && !flush && !take_any && !sys_inflight &&
-                  !stopped && !stop_now;
+  logic dec_go, dec_cross, dec_at_mark, dec_take;
+  logic dr_v, dr_set;                   // DREDIR_REG: decode's redirect, to make now; to make next
+  logic [31:0] dr_pc, dr_set_pc;
+  // (SKID: a flush or an exception drops what decode gives in that cycle,
+  // dec_take, and redirects the fetch, which then takes no words; STOP
+  // serialises, so stop_now needs no look)
+  assign dec_go = running && src_valid && !sys_inflight && !stopped && !(DREDIR_REG && dr_v) &&
+                  (SKID ? !sk_v : (ag_ready && !flush && !take_any && !stop_now));
   // the fetch's mark within the instruction: its words after it are the
   // target's, not its own (refetched); at its end: checked below
   assign dec_cross = !inj_active && dec_valid && mk_v && mk_pos < {1'b0, dec_len};
   assign dec_at_mark = mk_v && mk_pos == {1'b0, dec_len};
   assign dec_fire = dec_go && !dec_cross;
+  assign dec_take = dec_fire && (!SKID || !(flush || take_any));
 
   always_comb begin
     logic [31:0] lw;                    // the instruction's last word
     f_redirect = 1'b0;
     f_redirect_pc = 32'd0;
+    dr_set = 1'b0;
+    dr_set_pc = 32'd0;
     f_consume = 4'd0;
     lw = q_pc + {27'd0, dec_len, 1'b0} - 32'd2;
     bt_wr = 1'b0;
@@ -1527,28 +1575,37 @@ module m68k_core
     end else if (flush) begin
       f_redirect = 1'b1;
       f_redirect_pc = ex_npc;
+    end else if (DREDIR_REG && dr_v) begin
+      f_redirect = 1'b1;
+      f_redirect_pc = dr_pc;
     end else if (dec_go && dec_cross) begin
       // the fetch followed a jump that is not there: from the instruction on
-      f_redirect = 1'b1;
-      f_redirect_pc = q_pc;
+      dr_set = 1'b1;
+      dr_set_pc = q_pc;
       bt_kill = 1'b1;
       lw = q_pc + {26'd0, mk_pos, 1'b0} - 32'd2;
       bt_key = lw[31:2];
     end else if (dec_fire && !inj_active && dec_up.last) begin
-      f_consume = dec_len;
+      if (!SKID) f_consume = dec_len;
       if (dec_up.br_pred) begin
         // a jump the fetch already followed goes on; else it learns it
         if (!(dec_at_mark && mk_pc == dec_up.br_target)) begin
-          f_redirect = 1'b1;
-          f_redirect_pc = dec_up.br_target;
+          dr_set = 1'b1;
+          dr_set_pc = dec_up.br_target;
           bt_wr = 1'b1;
         end
       end else if (dec_at_mark) begin
-        f_redirect = 1'b1;
-        f_redirect_pc = q_pc + {27'd0, dec_len, 1'b0};
+        dr_set = 1'b1;
+        dr_set_pc = q_pc + {27'd0, dec_len, 1'b0};
         bt_kill = 1'b1;
       end
     end
+    if (!DREDIR_REG && dr_set) begin
+      f_redirect = 1'b1;
+      f_redirect_pc = dr_set_pc;
+    end
+    // (the fetch takes no words as it is redirected)
+    if (SKID && dec_fire && !inj_active && dec_up.last) f_consume = dec_len;
   end
 
   // ------------------------------------------------------------- registers
@@ -1559,7 +1616,7 @@ module m68k_core
       ccr_arch <= 5'd0;
       ccr_spec <= 5'd0;
       sr_hi    <= 8'h27;
-      ag_v <= 1'b0; of_v <= 1'b0; ex_v <= 1'b0; wb_v <= 1'b0;
+      ag_v <= 1'b0; of_v <= 1'b0; ex_v <= 1'b0; wb_v <= 1'b0; sk_v <= 1'b0; dr_v <= 1'b0;
       d_busy <= 1'b0;
       d_owner <= DO_RST;
       dec_step <= 5'd0;
@@ -1877,6 +1934,7 @@ module m68k_core
         wb_u.dst_en <= ex_dst_en; wb_u.dst <= ex_dst;
         wb_u.store <= ex_u.store && ex_st_en;
         wb_ea <= ex_ea; wb_anv <= ex_anv; wb_an <= ex_an;
+        wb_smc <= ex_ea - ex_u.pc < 32'd128;
         wb_res <= ex_res; wb_ccr <= ex_ccr; wb_npc <= ex_npc;
         wb_exc <= ex_exc;
         wb_cont <= ex_u.alu == ALU_RTEJ && ex_av[15:12] == 4'h1 && !MC68060;
@@ -1984,6 +2042,8 @@ module m68k_core
           default: ;
         endcase
       end
+      ex_aq <= ex_av; ex_bq <= ex_bv;
+      ex_s2 <= ex_v && ex_slow && !(ex_fire || take_any || flush);
       if (ex_fire || take_any || flush || !ex_v) begin
         dv_busy <= 1'b0;
         dv_done <= 1'b0;
@@ -2032,6 +2092,8 @@ module m68k_core
       end
 
       // OF
+      of_sc_r <= ag_fire ? ag_sc : of_sc_now;
+      of_sc_ok <= ag_fire || !(of_need_ind && of_ind_issued && d_done_of);
       if (ag_fire) begin
         of_v <= 1'b1;
         of_u <= ag_u; of_tag <= ag_tag;
@@ -2074,8 +2136,24 @@ module m68k_core
         end
       end
 
-      // AG
-      if (dec_fire) begin
+      // decode's redirect, made a clock later (dropped by any other)
+      dr_v <= DREDIR_REG && dr_set;
+      dr_pc <= dr_set_pc;
+
+      // AG (and the skid)
+      if (SKID) begin
+        if (flush || take_any) begin
+          ag_v <= 1'b0; sk_v <= 1'b0;
+        end else if (ag_ready) begin
+          ag_v <= sk_v || dec_fire;
+          ag_u <= sk_v ? sk_u : src_u;
+          ag_tag <= tag_ctr;
+          if (sk_v || dec_fire) tag_ctr <= tag_ctr + 3'd1;
+          sk_v <= 1'b0;
+        end else if (dec_fire) begin
+          sk_v <= 1'b1; sk_u <= src_u;
+        end
+      end else if (dec_fire) begin
         ag_v <= 1'b1;
         ag_u <= src_u;
         ag_tag <= tag_ctr;
@@ -2104,10 +2182,10 @@ module m68k_core
       end
       if (ipl != 3'd7) lvl7_taken <= 1'b0;
       if (ex_fire && ex_u.alu == ALU_RTEJ && ex_av[15:12] == 4'h1 && !MC68060) rte_cont <= 1'b1;
-      else if (dec_fire && !inj_active && dec_u.first) rte_cont <= 1'b0;
+      else if (dec_take && !inj_active && dec_u.first) rte_cont <= 1'b0;
 
       // return stack (speculative: decode pushes and pops) and jump targets
-      if (dec_fire && !inj_active && dec_u.last) begin
+      if (dec_take && !inj_active && dec_u.last) begin
         if (dec_is_call) begin
           ras[ras_top] <= dec_u.next_pc;
           ras_top <= ras_top + 3'd1;
@@ -2128,8 +2206,8 @@ module m68k_core
 
       // decode step, and the injector's
       if (flush || take_any) dec_step <= 5'd0;
-      else if (dec_fire && !inj_active) dec_step <= dec_u.last ? 5'd0 : dec_step + 5'd1;
-      if (dec_fire && inj_active) begin
+      else if (dec_take && !inj_active) dec_step <= dec_u.last ? 5'd0 : dec_step + 5'd1;
+      if (dec_take && inj_active) begin
         if (inj_step == 5'd6) inj_active <= 1'b0;
         case (inj_step)
           5'd1:    inj_step <= (inj_fmt == 4'h7) ? 5'd11 : (MC68060 && inj_fmt == 4'h4) ? 5'd24 :
@@ -2145,6 +2223,14 @@ module m68k_core
   end
 
   // ---------------------------------------------------------------- debug
+
+`ifdef DEBUG_DREDIR
+  always_ff @(posedge clk)
+    if (!rst && ce && (dec_go || dr_v || dr_set))
+      $display("dec qpc=%h len=%0d fire=%b cross=%b atmk=%b mk=%b/%0d/%h pred=%b tgt=%h set=%b/%h drv=%b/%h last=%b",
+               q_pc, dec_len, dec_fire, dec_cross, dec_at_mark, mk_v, mk_pos, mk_pc, dec_up.br_pred, dec_up.br_target,
+               dr_set, dr_set_pc, dr_v, dr_pc, dec_up.last);
+`endif
 
   assign dbg_retire = retire && ce;
   assign dbg_first  = wb_u.first;

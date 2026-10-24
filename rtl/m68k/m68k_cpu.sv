@@ -51,7 +51,16 @@ module m68k_cpu
   // (m68k_lpu's LP_ALL) nothing in the window to the bus interface
   parameter bit LP_ALL = ASYNC,
   // (m68k_core's FPU_REG) on with ASYNC: the core's clock is to go faster
-  parameter bit FPU_REG = ASYNC
+  parameter bit FPU_REG = ASYNC,
+  // the core's cuts for a clock above 33 MHz (m68k_core's OF_SCREG, SKID,
+  // SB_REG, DREDIR_REG, EX_SLOW), on with
+  // ASYNC
+  parameter bit FAST_CLK = ASYNC,
+  parameter bit OF_SCREG = FAST_CLK,
+  parameter bit SKID = FAST_CLK,
+  parameter bit SB_REG = FAST_CLK,
+  parameter bit DREDIR_REG = 1'b0,          // (not yet: mmu060 hangs with it)
+  parameter bit EX_SLOW = FAST_CLK
 )
 (
   input  logic        clk,
@@ -195,7 +204,7 @@ module m68k_cpu
 
   m68k_core #(.IO_LO(IO_LO), .IO_HI(IO_HI), .SYNC_LO(SYNC_LO), .FPU_FAST(FPU_FAST), .FPU_REG(FPU_REG),
               .MMU_REG(MMU_REG), .FETCH_REG(FETCH_REG),
-              .AG_LOAD(AG_LOAD), .MC68060(MC68060)) core (
+              .AG_LOAD(AG_LOAD), .OF_SCREG(OF_SCREG), .SKID(SKID), .SB_REG(SB_REG), .DREDIR_REG(DREDIR_REG), .EX_SLOW(EX_SLOW), .MC68060(MC68060)) core (
     .clk(cclk), .rst(crst), .ce(cce), .ipl(~ipl_r),
     .i_req, .i_addr, .i_fc, .i_gnt, .i_rvalid, .i_err, .i_rdata,
     .d_req, .d_we, .d_addr, .d_size, .d_wdata, .d_fc, .d_gnt, .d_rvalid, .d_err, .d_rdata,
