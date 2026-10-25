@@ -30,6 +30,21 @@ module neptuno2_top (
 	output        SDRAM_CLK,
 	output        SDRAM_CKE,
 
+`ifdef MINIMIG_DUAL_SDRAM
+	// the second SDRAM (64 Mbytes), on the expansion connector's pins
+	output [12:0] SDRAM2_A,
+	inout  [15:0] SDRAM2_DQ,
+	output        SDRAM2_DQML,
+	output        SDRAM2_DQMH,
+	output        SDRAM2_nWE,
+	output        SDRAM2_nCAS,
+	output        SDRAM2_nRAS,
+	output        SDRAM2_nCS,
+	output  [1:0] SDRAM2_BA,
+	output        SDRAM2_CLK,
+	output        SDRAM2_CKE,
+`endif
+
 	output        AUDIO_L,
 	output        AUDIO_R,
 
@@ -73,6 +88,19 @@ minimig_mist_top guest
  .SDRAM_BA	 (SDRAM_BA),
  .SDRAM_CLK	 (SDRAM_CLK),
  .SDRAM_CKE	 (SDRAM_CKE),
+`ifdef MINIMIG_DUAL_SDRAM
+ .SDRAM2_DQ	 (SDRAM2_DQ),
+ .SDRAM2_A	 (SDRAM2_A),
+ .SDRAM2_DQML (SDRAM2_DQML),
+ .SDRAM2_DQMH (SDRAM2_DQMH),
+ .SDRAM2_nWE (SDRAM2_nWE),
+ .SDRAM2_nCAS (SDRAM2_nCAS),
+ .SDRAM2_nRAS (SDRAM2_nRAS),
+ .SDRAM2_nCS (SDRAM2_nCS),
+ .SDRAM2_BA	 (SDRAM2_BA),
+ .SDRAM2_CLK (SDRAM2_CLK),
+ .SDRAM2_CKE (SDRAM2_CKE),
+`endif
 		 			
  .SPI_DO	 (spi_do_int),
  //.SPI_DO	 (SPI_DO),
