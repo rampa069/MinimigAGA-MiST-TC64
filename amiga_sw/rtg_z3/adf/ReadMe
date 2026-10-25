@@ -1,0 +1,24 @@
+RTGZ3 - the Zorro III RTG board's driver (MiSTer.card 0.3)
+
+One driver for the A4000 Minimig cores: MiST/SiDi/NeptUNO (MinimigAGA)
+and MiSTer (AMIGA4000-MiSTer, Maximig). It finds the board through
+autoconfig (mfr $139C, product $30, 16 MB) and tells the two video
+backends apart by the board's ID register.
+
+On the SiDi: Fast RAM at the most in the OSD (the board replaces the
+Zorro II RAM). xSysInfo's Boards must show $139C/$30, 16M.
+
+From a Shell:
+  Execute RTGZ3:Install     installs it (keeps the old files as .old)
+  Execute RTGZ3:Restore     puts the old files back
+
+Then reboot and make the screen modes in Prefs/Picasso96Mode
+(8 and 16 bits on MiST/SiDi; also 24/32 bits on MiSTer).
+
+Icons: Install, Restore and Test run with C:IconX (double-click).
+Test shows what RTGTest sees (the board, its ID, the driver's counters).
+
+Drawer Picasso96: tools from Aminet's driver/video/Picasso96.lha 2.0
+(Picasso96Mode, FliP96, AttachSettings, Debug/CheckBoards, P96Speed),
+shareware by Tobias Abt and Alexander Kneer, and MiSTer: the Picasso96
+monitor with BOARDTYPE=MiSTer, to drag to DEVS:Monitors if you have none.

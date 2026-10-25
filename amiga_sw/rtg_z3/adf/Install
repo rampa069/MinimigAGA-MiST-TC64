@@ -1,0 +1,34 @@
+; Install the Zorro III RTG driver (MiSTer.card 0.3) on the boot disk.
+; The old files are kept as *.old; Restore puts them back.
+FailAt 21
+IF NOT EXISTS LIBS:Picasso96
+  Echo "There is no LIBS:Picasso96: install Picasso96 first."
+  Quit 5
+ENDIF
+IF EXISTS LIBS:Picasso96/minimig.card
+  IF NOT EXISTS LIBS:Picasso96/minimig.card.old
+    Copy LIBS:Picasso96/minimig.card LIBS:Picasso96/minimig.card.old
+  ENDIF
+ENDIF
+IF EXISTS LIBS:Picasso96/MiSTer.card
+  IF NOT EXISTS LIBS:Picasso96/MiSTer.card.old
+    Copy LIBS:Picasso96/MiSTer.card LIBS:Picasso96/MiSTer.card.old
+  ENDIF
+ENDIF
+; under both names (each built with its own library name), so that the
+; monitor in DEVS:Monitors loads it whether its BOARDTYPE is minimig or MiSTer
+Copy RTGZ3:MiSTer.card LIBS:Picasso96/MiSTer.card
+Copy RTGZ3:minimig.card LIBS:Picasso96/minimig.card
+; the settings stay (without them Picasso96Mode finds no modes); a copy
+; is kept, once
+IF EXISTS DEVS:Picasso96Settings
+  IF NOT EXISTS DEVS:Picasso96Settings.old
+    Copy DEVS:Picasso96Settings DEVS:Picasso96Settings.old
+  ENDIF
+ELSE
+  ; (an older Install renamed it away: back from the copy)
+  IF EXISTS DEVS:Picasso96Settings.old
+    Copy DEVS:Picasso96Settings.old DEVS:Picasso96Settings
+  ENDIF
+ENDIF
+Echo "Installed. Reboot; in Picasso96Mode the 8 and 16-bit modes."

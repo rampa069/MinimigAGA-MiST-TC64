@@ -1,0 +1,21 @@
+; Put back what Install replaced.
+FailAt 21
+IF EXISTS LIBS:Picasso96/minimig.card.old
+  Copy LIBS:Picasso96/minimig.card.old LIBS:Picasso96/minimig.card
+  Delete LIBS:Picasso96/minimig.card.old QUIET
+ELSE
+  Delete LIBS:Picasso96/minimig.card QUIET
+ENDIF
+IF EXISTS LIBS:Picasso96/MiSTer.card.old
+  Copy LIBS:Picasso96/MiSTer.card.old LIBS:Picasso96/MiSTer.card
+  Delete LIBS:Picasso96/MiSTer.card.old QUIET
+ELSE
+  Delete LIBS:Picasso96/MiSTer.card QUIET
+ENDIF
+IF EXISTS DEVS:Picasso96Settings.old
+  IF EXISTS DEVS:Picasso96Settings
+    Delete DEVS:Picasso96Settings QUIET
+  ENDIF
+  Rename DEVS:Picasso96Settings.old DEVS:Picasso96Settings
+ENDIF
+Echo "Restored. Reboot."
