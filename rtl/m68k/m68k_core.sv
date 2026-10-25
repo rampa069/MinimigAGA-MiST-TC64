@@ -437,6 +437,11 @@ module m68k_core
           5'd5, 5'd10: begin inj_u.a_sel = OP_REG; inj_u.a_reg = R_T1; inj_u.msize = SZ_W; inj_u.step = 3'd2; end
           default: begin                // 11-23: the format $7 longs, SP+$38 down to SP+$08; 24-25 $4's
             inj_u.a_sel = OP_IMM; inj_u.msize = SZ_L; inj_u.step = 3'd4;
+            // (the 68060 stacks no format $7: only its $4's, so the frame
+            // registers of the $7 are left out of its build)
+            if (MC68060)
+              inj_u.imm = (inj_step == 5'd24) ? fr_fslw : fr_fa;
+            else
             case (inj_step)
               5'd11:   inj_u.imm = fr_pd3;
               5'd12:   inj_u.imm = fr_pd2;
@@ -594,74 +599,85 @@ module m68k_core
     return (s == SZ_B) ? 32'h000000FF : (s == SZ_W) ? 32'h0000FFFF : 32'hFFFFFFFF;
   endfunction
 
-  // cnt modulo the size + 1 (ROXL, ROXR): constant tables
-  function automatic logic [5:0] rox_mod(input logic [5:0] cnt, input size_e sz);
-    logic [5:0] t9 [64], t17 [64], t33 [64];
+  // ROXL and ROXR: the count modulo the size + 1 as a rotation right
+  // (ROXL by k: by the size + 1 - k), constant tables
+  function automatic logic [5:0] rox_r(input logic [5:0] cnt, input size_e sz, input logic left);
+    logic [5:0] t9 [128], t17 [128], t33 [128];
     for (int i = 0; i < 64; i++) begin
       t9[i] = 6'(i % 9); t17[i] = 6'(i % 17); t33[i] = 6'(i % 33);
+      t9[64 + i] = 6'((9 - i % 9) % 9); t17[64 + i] = 6'((17 - i % 17) % 17); t33[64 + i] = 6'((33 - i % 33) % 33);
     end
-    return (sz == SZ_B) ? t9[cnt] : (sz == SZ_W) ? t17[cnt] : t33[cnt];
+    return (sz == SZ_B) ? t9[{left, cnt}] : (sz == SZ_W) ? t17[{left, cnt}] : t33[{left, cnt}];
   endfunction
 
   // Shifts and rotates of b by cnt (0-63) at size sz, x the X flag in:
   // {X out, C, V, result}. AS and LS: C and X the last bit out, X kept
   // and C clear for a count of 0, V of ASL set when the most significant
   // bit changed at any time; RO: C the last bit out, X kept; ROX: through
-  // X, modulo the size + 1 (M68000 PRM 4).
+  // X, modulo the size + 1 (M68000 PRM 4). One funnel for all: 65 bits
+  // shifted right by 0-31, o[32:1] the result and o[0] the last bit out to
+  // the right, o[w + 1] the one to the left (and ROX's new X): the left
+  // shifts by 31 - cnt from the operand at the top, the rotates and ROX
+  // from the operand repeated (ROXL as ROXR by the size + 1 - cnt).
   function automatic logic [34:0] shifter(input alu_e op, input size_e sz, input logic [5:0] cnt,
                                           input logic [31:0] b, input logic x);
-    int w;
-    logic [31:0] m, bm, res, sx;
-    logic [63:0] e;
-    logic signed [63:0] se;
-    logic signed [127:0] sp;
+    logic [31:0] m, bm, res, sx, rr, vm;
+    logic [64:0] f;
+    logic [32:0] y;
+    logic [33:0] o;
     logic [5:0] k;
-    logic c, v, xn;
-    w = (sz == SZ_B) ? 8 : (sz == SZ_W) ? 16 : 32;
+    logic [4:0] s;
+    logic big, c, v, xn, cw;
     m = (sz == SZ_B) ? 32'hFF : (sz == SZ_W) ? 32'hFFFF : 32'hFFFFFFFF;
     bm = b & m;
     sx = (sz == SZ_B) ? sext8(bm[7:0]) : (sz == SZ_W) ? sext16(bm[15:0]) : bm;
-    c = 1'b0; v = 1'b0; xn = x; res = bm;
+    rr = (sz == SZ_B) ? {4{bm[7:0]}} : (sz == SZ_W) ? {2{bm[15:0]}} : bm;
+    k = rox_r(cnt, sz, op == ALU_ROXL);
+    y = (sz == SZ_B) ? {24'd0, x, bm[7:0]} : (sz == SZ_W) ? {16'd0, x, bm[15:0]} : {x, bm};
+    big = cnt[5];
+    f[64] = 1'b0;
+    case (op)
+      ALU_ASL, ALU_LSL: begin f[63:0] = {bm, 32'd0}; s = ~cnt[4:0]; end
+      ALU_LSR:          begin f[63:0] = {31'd0, bm, 1'b0}; s = cnt[4:0]; end
+      ALU_ASR:          begin f[63:0] = {{31{sx[31]}}, sx, 1'b0}; s = cnt[4:0]; end
+      ALU_ROL:          begin f[63:0] = {rr, rr}; s = ~cnt[4:0]; end
+      ALU_ROR:          begin f[63:0] = {rr[30:0], rr, rr[31]}; s = cnt[4:0]; end
+      default: begin                    // ROX: y repeated, f[i] = y[(i - 1) mod (w + 1)]
+        for (int i = 0; i < 65; i++)
+          f[i] = (sz == SZ_B) ? y[(i + 8) % 9] : (sz == SZ_W) ? y[(i + 16) % 17] : y[(i + 32) % 33];
+        s = k[4:0];
+      end
+    endcase
+    o = 34'(f >> s);
+    res = o[32:1] & m;
+    cw = (sz == SZ_B) ? o[9] : (sz == SZ_W) ? o[17] : o[33];
+    c = 1'b0; v = 1'b0; xn = x;
     case (op)
       ALU_ASL, ALU_LSL: begin
-        e = {32'd0, bm} << cnt;
-        res = e[31:0] & m;
-        c = cnt != 6'd0 && e[w];
+        c = cnt != 6'd0 && cw;
+        if (big) begin res = 32'd0; c = cnt == 6'd32 && sz == SZ_L && bm[0]; end
         if (op == ALU_ASL) begin
-          sp = {{96{sx[31]}}, sx} <<< cnt;
-          sp = sp >>> (w - 1);
-          v = sp != 128'sd0 && sp != -128'sd1;
+          // the bits the most significant one runs through: all equal
+          vm = m & ~((m >> 1) >> cnt);
+          v = (bm & vm) != 32'd0 && ((bm & vm) != vm || (m >> cnt) == 32'd0);
         end
         if (cnt != 6'd0) xn = c;
       end
-      ALU_LSR: begin
-        e = {bm, 32'd0} >> cnt;
-        res = e[63:32];
-        c = cnt != 6'd0 && e[31];
+      ALU_LSR, ALU_ASR: begin
+        c = cnt != 6'd0 && o[0];
+        if (big) begin
+          res = (op == ALU_ASR && sx[31]) ? m : 32'd0;
+          c = op == ALU_ASR ? sx[31] : cnt == 6'd32 && bm[31];
+        end
         if (cnt != 6'd0) xn = c;
       end
-      ALU_ASR: begin
-        se = $signed({sx, 32'd0}) >>> cnt;
-        res = se[63:32] & m;
-        c = cnt != 6'd0 && se[31];
-        if (cnt != 6'd0) xn = c;
-      end
-      ALU_ROL, ALU_ROR: begin
-        k = cnt & 6'(w - 1);
-        if (op == ALU_ROL) res = ((bm << k) | (bm >> (6'(w) - k))) & m;
-        else               res = ((bm >> k) | (bm << (6'(w) - k))) & m;
-        c = cnt != 6'd0 && (op == ALU_ROL ? res[0] : res[w - 1]);
-      end
-      default: begin                    // ROXL, ROXR: w + 1 bits with X on top
-        // the count modulo w + 1 (9, 17 or 33), from a table of the 64
-        // counts for each size (no multiplier or subtraction on the path)
-        k = rox_mod(cnt, sz);
-        e = {31'd0, x, 32'd0} >> (32 - w) | {32'd0, bm};
-        if (op == ALU_ROXL) e = (e << k) | (e >> (7'(w + 1) - 7'(k)));
-        else                e = (e >> k) | (e << (7'(w + 1) - 7'(k)));
-        e = e & ((64'd1 << (w + 1)) - 64'd1);
-        res = e[31:0] & m;
-        xn = e[w];
+      ALU_ROL, ALU_ROR:
+        c = cnt != 6'd0 && (op == ALU_ROL ? res[0] : ((sz == SZ_B) ? res[7] : (sz == SZ_W) ? res[15] : res[31]));
+      default: begin
+        if (k[5]) begin                 // by 32 of 33 bits: one to the left
+          res = {bm[30:0], x}; xn = bm[31];
+        end else
+          xn = cw;
         c = xn;
       end
     endcase
@@ -740,6 +756,11 @@ module m68k_core
   logic        ex_dst_en;
   logic        ex_wait;                 // a division still running
   logic        ex_slow, ex_s2;          // EX_SLOW: a two-cycle operation; in its second
+  // the bit field unit (m68k_bfu): started as a BFOP uop is in EX, which
+  // waits for it
+  logic        bf_go, bf_started, bf_have, bfu_done, bfu_n, bfu_z;
+  logic [31:0] bfu_res;
+  logic [39:0] bfu_newd;
   logic [31:0] ex_aq, ex_bq;            // EX_SLOW: the operands of the last cycle
   logic        ex_isdiv;
   logic        ex_dsgn;                 // signed division
@@ -834,8 +855,15 @@ module m68k_core
   assign mmu_pflush_i = ex_v && ex_u.mmuop == 2'd2 && !mmx_done && !wb_v && !sb_v[0] && mmu_idle && mmu_free;
 
   // (FBcc waits for the FPCC of an operation still running)
-  assign ex_slow = EX_SLOW && (ex_u.alu == ALU_BFOP || ex_u.alu == ALU_MULUL || ex_u.alu == ALU_MULSL);
+  assign ex_slow = EX_SLOW && (ex_u.alu == ALU_MULUL || ex_u.alu == ALU_MULSL);
+  assign bf_go = ex_v && ex_u.alu == ALU_BFOP && !bf_started;
+  m68k_bfu bfu (
+    .clk, .rst, .ena(ce), .start(bf_go), .in_reg(ex_u.cond[3]), .op(ex_u.cond[2:0]), .off(bf_off),
+    .w(ex_av[4:0]), .val(ex_bv), .data(bf_data), .ins(bf_ins),
+    .done(bfu_done), .res(bfu_res), .newd(bfu_newd), .n(bfu_n), .z(bfu_z)
+  );
   assign ex_wait = (ex_v && ex_slow && !ex_s2) ||
+                   (ex_v && ex_u.alu == ALU_BFOP && !bf_have) ||
                    (ex_v && ex_isdiv && ex_dvsr != 32'd0 && !dv_done) ||
                    (ex_v && ex_u.fpu && !fx_done && !(MC68060 && pcr[1])) ||
                    (ex_v && MC68060 && pcr[1] && (ex_u.fpu || ex_u.fbcc) && (wb_v || sb_v[0])) ||
@@ -853,10 +881,7 @@ module m68k_core
     logic [8:0]  bc;
     logic [15:0] pk;
     logic [5:0]  bw;
-    logic [31:0] fmask, fv, fnew, rot, frot, ff, fl;
-    logic [39:0] x40, m40, v40;
     logic [2:0]  bo;
-    logic [4:0]  ro;
     logic signed [31:0] bfo8;           // the byte offset: the bit offset / 8, signed
     logic [31:0] lbm, ubm, lbx, ubx, rnx;
     logic        c_ul, c1, c2, z1, z2;
@@ -865,7 +890,7 @@ module m68k_core
     logic        cnd, c, v, z, nflag;
     logic [31:0] pred;
     logic [4:0]  old_sp, new_sp;
-    logic [31:0] sav, sbv;              // the operands of the bit fields and MULx.L
+    logic [31:0] sav, sbv;              // the operands of MULx.L
 
     cnd = ex_u.fbcc ? fpred(ex_u.opcode[5:0], fpu_fpcc) : cond_true(ex_u.cond, ccr_spec);
     m = szmask(ex_u.size);
@@ -877,13 +902,11 @@ module m68k_core
     bc = 9'd0;
     pk = 16'd0;
 
-    // bit field: the field value fv, right-aligned, and the new one fnew;
-    // in a register the field wraps around (rotated to the top), in memory
-    // it starts bo bits into the first byte of BF_DATA
+    // bit field: the width and the first byte's bit offset, for the bytes
+    // the field covers (the field itself: m68k_bfu)
     sav = EX_SLOW ? ex_aq : ex_av;
     sbv = EX_SLOW ? ex_bq : ex_bv;
-    bw = (sav[4:0] == 5'd0) ? 6'd32 : {1'b0, sav[4:0]};
-    fmask = (bw == 6'd32) ? 32'hFFFFFFFF : (32'd1 << bw) - 32'd1;
+    bw = (ex_av[4:0] == 5'd0) ? 6'd32 : {1'b0, ex_av[4:0]};
     bo = bf_off[2:0];
     bfo8 = $signed(bf_off) >>> 3;
     // CMP2/CHK2: the order of the bounds picks an unsigned compare (UB >= LB)
@@ -902,26 +925,8 @@ module m68k_core
     c2 = rnx < ubx; z2 = rnx == ubx;
     c2f = {!c_ul, z1 | z2, 1'b0,
            c_ul ? ((c1 ^ c2) & !z1 & !z2) : (c1 | (!c2 & !z2))};
-    ro = bf_off[4:0];
-    rot = (sbv << ro) | (sbv >> (6'd32 - {1'b0, ro}));
-    x40 = bf_data << bo;
-    fv = ex_u.cond[3] ? rot >> (6'd32 - bw) : x40[39:8] >> (6'd32 - bw);
-    case (ex_u.cond[2:0])
-      3'b010:  fnew = ~fv & fmask;          // BFCHG
-      3'b100:  fnew = 32'd0;                // BFCLR
-      3'b110:  fnew = fmask;                // BFSET
-      default: fnew = bf_ins & fmask;       // BFINS
-    endcase
-    frot = (rot & ~(fmask << (6'd32 - bw))) | (fnew << (6'd32 - bw));
-    m40 = ({8'd0, fmask} << (6'd40 - bw)) >> bo;
-    v40 = ({8'd0, fnew} << (6'd40 - bw)) >> bo;
-    ex_bfnew = (bf_data & ~m40) | v40;
+    ex_bfnew = bfu_newd;
     ex_bfnb = 3'(({3'd0, bo} + bw + 6'd7) >> 3);
-    // BFFFO: the first 1 from the top of the field, counted on the field
-    // at the top of a long (the leading zeros, or the width if none)
-    fl = (ex_u.cond[3] ? rot : x40[39:8]) & ~(32'hFFFFFFFF >> bw);
-    ff = 32'(clz32(fl));
-    if (ff > 32'(bw)) ff = 32'(bw);
     ex_st_en = (ex_u.alu != ALU_BFST || ex_u.imm[2:0] < bf_nb) && (ex_u.alu != ALU_CASST || cas_eq);
     sh = shifter(ex_u.alu, ex_u.size, ex_av[5:0], ex_bv, xin);
     // 32 x 32 to 64
@@ -1037,10 +1042,7 @@ module m68k_core
       CC_SHIFT: ex_ccr = {sh[34], nflag, z, sh[32], sh[33]};
       CC_BCD:   ex_ccr = {bc[8], nflag, z & ccr_spec[2], 1'b0, bc[8]};
       CC_CAS2:  ex_ccr = cas_eq1 ? {ccr_spec[4], nflag, z, v, c} : ccr_spec;
-      CC_BF:    if (ex_u.cond[2:0] == 3'b111)
-                  ex_ccr = {ccr_spec[4], fnew[int'(bw) - 1], fnew == 32'd0, 2'b00};
-                else
-                  ex_ccr = {ccr_spec[4], fv[int'(bw) - 1], fv == 32'd0, 2'b00};
+      CC_BF:    ex_ccr = {ccr_spec[4], bfu_n, bfu_z, 2'b00};
       CC_MULL:  ex_ccr = ex_u.md64 ? {ccr_spec[4], p64[63], p64 == 64'd0, 2'b00}
                                    : {ccr_spec[4], p64[31], p64[31:0] == 32'd0,
                                       ex_u.alu == ALU_MULSL ? p64[63:32] != {32{p64[31]}} : p64[63:32] != 32'd0,
@@ -1060,15 +1062,8 @@ module m68k_core
     ex_res = r;
     if (ex_u.dst_en && ex_u.dst < 5'd8 && ex_u.size == SZ_B) ex_res = {ex_bv[31:8], r[7:0]};
     if (ex_u.dst_en && ex_u.dst < 5'd8 && ex_u.size == SZ_W && !ex_isdiv) ex_res = {ex_bv[31:16], r[15:0]};
-    // a bit field operation's result, kept off the flags of the others
-    // (three shifts deep: extract, insert, back in Dn)
-    if (ex_u.alu == ALU_BFOP)
-      case (ex_u.cond[2:0])
-        3'b001:  ex_res = fv;                                        // BFEXTU
-        3'b011:  ex_res = fv | (fv[int'(bw) - 1] ? ~fmask : 32'd0);  // BFEXTS
-        3'b101:  ex_res = bf_off + ff;                               // BFFFO
-        default: ex_res = (frot >> ro) | (frot << (6'd32 - {1'b0, ro}));  // back in Dn
-      endcase
+    // a bit field operation's result (m68k_bfu)
+    if (ex_u.alu == ALU_BFOP) ex_res = bfu_res;
     ex_dst_en = ex_u.dst_en;
     ex_dst = ex_u.dst;
 
@@ -1192,19 +1187,6 @@ module m68k_core
   // store buffer) or whether it runs at all (a branch); else from OF.
   // Loads go before the store buffer, which drains when the port is free.
   // (Non-cacheable pages will need the program order, once there is an MMU.)
-  // leading zeros of a long (32 if none), as a tree of halves
-  function automatic logic [5:0] clz32(input logic [31:0] v);
-    logic [5:0] n;
-    n = 6'd0;
-    if (v[31:16] == 16'd0) begin n = n + 6'd16; v = v << 16; end
-    if (v[31:24] == 8'd0)  begin n = n + 6'd8;  v = v << 8;  end
-    if (v[31:28] == 4'd0)  begin n = n + 6'd4;  v = v << 4;  end
-    if (v[31:30] == 2'd0)  begin n = n + 6'd2;  v = v << 2;  end
-    if (!v[31])            begin n = n + 6'd1;  v = v << 1;  end
-    if (!v[31])            n = n + 6'd1;
-    return n;
-  endfunction
-
   function automatic logic [2:0] nbytes(input size_e s);
     return (s == SZ_B) ? 3'd1 : (s == SZ_W) ? 3'd2 : 3'd4;
   endfunction
@@ -1677,8 +1659,10 @@ module m68k_core
       end else if (c_rvalid)
         d_busy <= 1'b0;
       // a faulting translation: granted, answered with an error next cycle
+      // (a fetch through the MMU only: one on the fetches' own entry is not
+      // what mmu_quiet is about)
       fk_d <= cd_req && cd_gnt && cd_xl && mmu_quiet;
-      fk_i <= fi_req && fi_gnt && tc_e && mmu_quiet;
+      fk_i <= fi_req && fi_gnt && sel_fi && mmu_quiet;
       if (i_req && i_gnt) i_out <= i_out + 2'd1 - 2'(i_rvalid);
       else if (i_rvalid)  i_out <= i_out - 2'd1;
 
@@ -2044,6 +2028,13 @@ module m68k_core
       end
       ex_aq <= ex_av; ex_bq <= ex_bv;
       ex_s2 <= ex_v && ex_slow && !(ex_fire || take_any || flush);
+      // the bit field unit's run for the uop in EX (an answer of a dropped one does not count)
+      if (ex_fire || take_any || flush || !ex_v) begin
+        bf_started <= 1'b0; bf_have <= 1'b0;
+      end else begin
+        if (bf_go) bf_started <= 1'b1;
+        if (bfu_done && bf_started) bf_have <= 1'b1;
+      end
       if (ex_fire || take_any || flush || !ex_v) begin
         dv_busy <= 1'b0;
         dv_done <= 1'b0;

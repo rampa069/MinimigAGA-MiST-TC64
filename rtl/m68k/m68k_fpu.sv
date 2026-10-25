@@ -167,7 +167,22 @@ module m68k_fpu #(
 
   // power-up values, as the VHDL's signal defaults
   /* verilator lint_off PROCASSINIT */
-  logic [79:0] fpr [8] = '{default: FP_NAN};
+  // FP0-FP7: a memory (MLABs on the Cyclone V, read as addressed: three
+  // copies, by the indices the sequencer reads them with), written a clock
+  // after the sequencer gives the write (fpr_we), read through it meanwhile;
+  // and a bit each that the register is a NaN, for the writes of all eight
+  // at once (reset, a null FRESTORE)
+  (* ramstyle = "MLAB, no_rw_check" *) logic [79:0] fpr_m [8];
+  logic [7:0]  fpr_nan = 8'hFF;
+  logic        fpr_we = 1'b0;
+  logic [2:0]  fpr_wa;
+  logic [79:0] fpr_wd;
+  always_ff @(posedge clk)
+    if (fpr_we) fpr_m[fpr_wa] <= fpr_wd;
+  function automatic logic [79:0] fpr_byp(input logic [2:0] i, input logic [79:0] v);
+    return fpr_nan[i] ? FP_NAN : (fpr_we && fpr_wa == i) ? fpr_wd : v;
+  endfunction
+  logic [79:0] fpr_cd, fpr_cs, fpr_cl;  // FP of cw[9:7], cw[12:10], li
   logic [15:0] fpcr = '0;
   logic [31:0] fpsr = '0;
   logic [31:0] fpiar = '0;
@@ -203,7 +218,7 @@ module m68k_fpu #(
   logic        alu_done_u;             // the unit's answer as the sequencer takes it (ALU_REG)
   logic [79:0] alu_res_u;
   logic [5:0]  alu_exc_u;
-  logic [80:0] fint_u;                  // FINT's result: from alu_res_u, or (ALU_REG) a clock later
+  logic [80:0] fint_u;                  // FINT's result (m68k_fpu_fint)
   logic        wr_fp;                 // write the result to FPn
   logic        set_cc;
   logic        store;                 // opclass 011
@@ -211,6 +226,9 @@ module m68k_fpu #(
   // FMOVEM
   logic [7:0]  list;
   logic [3:0]  li;
+  assign fpr_cd = fpr_byp(cw[9:7], fpr_m[cw[9:7]]);
+  assign fpr_cs = fpr_byp(cw[12:10], fpr_m[cw[12:10]]);
+  assign fpr_cl = fpr_byp(li[2:0], fpr_m[li[2:0]]);
   logic [31:0] mptr;
 
   logic        done_r = 1'b0, unimp_r = 1'b0;
@@ -413,32 +431,6 @@ module m68k_fpu #(
     return 2'b00;
   endfunction
 
-  // (MC68060) FINT: x to an integer in rounding mode rm, {inexact, result}
-  function automatic logic [80:0] fint_of(input logic [79:0] x, input logic [1:0] rm);
-    logic        sg, half, rest, up;
-    logic [14:0] e;
-    logic [63:0] m, ip, fr;
-    logic [64:0] r;
-    int          sh, p;
-    sg = x[79]; e = x[78:64]; m = x[63:0];
-    if (e == 15'h7FFF || m == 64'd0) return {1'b0, x};       // NaN, infinity, zero
-    sh = 16446 - int'(e);                                     // fraction bits
-    if (sh <= 0) return {1'b0, x};                            // an integer already
-    if (sh > 64) begin ip = 64'd0; half = 1'b0; rest = 1'b1; fr = 64'd1; end
-    else if (sh == 64) begin ip = 64'd0; fr = m; half = m[63]; rest = m[62:0] != 63'd0; end
-    else begin ip = m >> sh; fr = m << (64 - sh); half = fr[63]; rest = fr[62:0] != 63'd0; end
-    case (rm)
-      2'b00:   up = half && (rest || ip[0]);                  // to nearest, even
-      2'b01:   up = 1'b0;                                     // to zero
-      2'b10:   up = sg && fr != 64'd0;                        // to minus infinity
-      default: up = !sg && fr != 64'd0;                       // to plus infinity
-    endcase
-    r = {1'b0, ip} + {64'd0, up};
-    if (r == 65'd0) return {fr != 64'd0, sg, 79'd0};
-    p = 0;
-    for (int i = 0; i < 64; i++) if (r[i]) p = i;
-    return {fr != 64'd0, sg, 15'(16383 + p), r[63:0] << (63 - p)};
-  endfunction
 
   // the vector of the highest priority exception in m (snan operr ovfl unfl
   // dz inex), INEX when none
@@ -536,31 +528,40 @@ module m68k_fpu #(
     for (int i = 0; i < 8; i++) ufr[o + 44 + i] = etemp[63 - 8 * i -: 8];
   end
   assign alu_early = state == ST_ALU_WAIT && alu_done_u && !store;
+  // (MC68060) FINT and FINTRZ: the unit's answer rounded to an integer by
+  // m68k_fpu_fint, over some cycles, from the answer in registers
+  logic        fint_go, fint_done;
+  logic [79:0] fint_x;
+  m68k_fpu_fint fint (
+    .clk, .reset, .ena(clkena), .start(MC68060 && fint_r && fint_go), .x(fint_x),
+    .rm(fint_z ? 2'b01 : fpcr[5:4]), .done(fint_done), .res(fint_u)
+  );
   generate
   if (ALU_REG) begin : g_alureg
-    // (the 68060's FINT and FINTRZ round the answer to an integer from it
-    // in registers: a clock more)
-    logic        d_q, d2_q;
+    logic        d_q;
     logic [79:0] r_q;
     logic [5:0]  e_q;
-    logic [80:0] fi_q;
     always_ff @(posedge clk)
-      if (reset) begin d_q <= 1'b0; d2_q <= 1'b0; end
+      if (reset) d_q <= 1'b0;
       else if (clkena) begin
         d_q <= alu_done;
-        d2_q <= d_q;
         if (alu_done) begin r_q <= alu_res; e_q <= alu_exc; end
-        fi_q <= fint_of(r_q, fint_z ? 2'b01 : fpcr[5:4]);
       end
-    assign alu_done_u = (MC68060 && fint_r) ? d2_q : d_q;
+    assign fint_go = d_q;
+    assign fint_x = r_q;
+    assign alu_done_u = (MC68060 && fint_r) ? fint_done : d_q;
     assign alu_res_u = r_q;
     assign alu_exc_u = e_q;
-    assign fint_u = fi_q;
   end else begin : g_alunoreg
-    assign alu_done_u = alu_done;
+    // (the answer and its exceptions kept for FINT's cycles)
+    logic [5:0]  e_q;
+    always_ff @(posedge clk)
+      if (clkena && alu_done) e_q <= alu_exc;
+    assign fint_go = alu_done;
+    assign fint_x = alu_res;
+    assign alu_done_u = (MC68060 && fint_r) ? fint_done : alu_done;
     assign alu_res_u = alu_res;
-    assign alu_exc_u = alu_exc;
-    assign fint_u = fint_of(alu_res, fint_z ? 2'b01 : fpcr[5:4]);
+    assign alu_exc_u = (MC68060 && fint_r) ? e_q : alu_exc;
   end
   endgenerate
   assign br_take = br_r;
@@ -639,7 +640,8 @@ module m68k_fpu #(
       alu_start <= 1'b0;
       wr_en <= 1'b0;
       state <= IDLE;
-      for (int i = 0; i < 8; i++) fpr[i] <= FP_NAN;
+      fpr_nan <= 8'hFF;
+      fpr_we <= 1'b0;
       fpcr <= '0;
       fpsr <= '0;
       fpiar <= '0;
@@ -654,6 +656,7 @@ module m68k_fpu #(
       ferr_r <= 1'b0;
     end else if (clkena) begin
       done_r <= 1'b0;
+      fpr_we <= 1'b0;
       unimp_r <= 1'b0;
       unsupp_r <= 1'b0;
       ferr_r <= 1'b0;
@@ -937,12 +940,12 @@ module m68k_fpu #(
                 alu_rm <= fpcr[5:4];
                 alu_tomem <= 1'b0;
                 fpn = cw[9:7];
-                alu_dst <= fpr[fpn];
+                alu_dst <= fpr_cd;
                 if (opm != 7'b0111000 && opm != 7'b0111010) wr_fp <= 1'b1;
                 set_cc <= 1'b1;
                 fpiar <= iaddr;
                 if (cls == 3'b000) begin
-                  alu_src <= fpr[cw[12:10]];
+                  alu_src <= fpr_cs;
                   if (isop && FPSP == 0) begin
                     alu_start <= 1'b1;      // the unit starts now (no ST_ALU)
                     state <= ST_ALU_WAIT;
@@ -967,20 +970,20 @@ module m68k_fpu #(
             end else if (cls == 3'b011) begin
               // FMOVE FPn,<ea>
               fpn = cw[9:7];
-              alu_src <= fpr[fpn];
-              alu_dst <= fpr[fpn];
+              alu_src <= fpr_cd;
+              alu_dst <= fpr_cd;
               alu_rm <= fpcr[5:4];
               alu_tomem <= 1'b1;
               store <= 1'b1;
               fpiar <= iaddr;
-              if (FPSP == 1 && unsup_of(fpr[fpn]) && fmt != 3'b011 && fmt != 3'b111) begin
+              if (FPSP == 1 && unsup_of(fpr_cd) && fmt != 3'b011 && fmt != 3'b111) begin
                 // FMOVE out of a denormalized or unnormalized register: the
                 // post-instruction unsupported data type exception, nothing
                 // written (ETEMP and FPTEMP the register, as WinUAE has it)
-                etemp <= fpr[fpn];
-                stag <= tag_of(fpr[fpn]);
-                fptemp <= fpr[fpn];
-                dtag <= tag_of(fpr[fpn]);
+                etemp <= fpr_cd;
+                stag <= tag_of(fpr_cd);
+                fptemp <= fpr_cd;
+                dtag <= tag_of(fpr_cd);
                 cmd1b <= cw;
                 fe1 <= 1'b0; ft <= 1'b1;
                 busy_pend <= 1'b1; unimp_pend <= 1'b0;
@@ -996,8 +999,8 @@ module m68k_fpu #(
                   3'b011, 3'b111: begin
                     // packed decimal: the post-instruction unsupported data
                     // type exception, the FPSP converts and stores it
-                    etemp <= fpr[fpn];
-                    stag <= tag_of(fpr[fpn]);
+                    etemp <= fpr_cd;
+                    stag <= tag_of(fpr_cd);
                     dtag <= 8'h00;
                     fptemp <= '0;
                     cmd1b <= cw;
@@ -1170,7 +1173,7 @@ module m68k_fpu #(
           end
           ST_UNIMP: begin
             // keep what the FPSP needs and report the exception
-            x = fpr[cw[9:7]];
+            x = fpr_cd;
             dtag <= tag_of(x);
             cmd1b <= cw;
             ft <= 1'b0;
@@ -1198,7 +1201,7 @@ module m68k_fpu #(
             // packed decimal source of an operation the unit has: the
             // pre-instruction unsupported data type exception (UM 9.6.2,
             // table 9-16); FSQRT goes in CMDREG1B as $05 (UM 9.8)
-            x = fpr[cw[9:7]];
+            x = fpr_cd;
             dtag <= tag_of(x);
             stag <= 8'h00;
             etemp <= {16'h0000, buf_long(buf_, 4), buf_long(buf_, 8)};
@@ -1266,7 +1269,7 @@ module m68k_fpu #(
                 if (store && alu_op == 4'hA) hit = hit | e[5] | e[4];
               end
               if (wr_fp && (!hit || !(e[4] | e[3] | e[2] | e[1])))
-                fpr[cw[9:7]] <= ar;
+                begin fpr_we <= 1'b1; fpr_wa <= cw[9:7]; fpr_wd <= ar; fpr_nan[cw[9:7]] <= 1'b0; end
               if (hit) begin
                 // the vector the 68040 takes: OVFL and UNFL always, SNAN and
                 // OPERR always for FMOVE out (UM 9.7.2.2, 9.7.3.2)
@@ -1432,7 +1435,7 @@ module m68k_fpu #(
               state <= ST_FINISH;
             end else begin
               if ((cw[12] && list[3'd7 - li[2:0]]) || (!cw[12] && list[li[2:0]])) begin
-                x = fpr[li[2:0]];
+                x = fpr_cl;
                 buf_[0] <= x[79:72]; buf_[1] <= x[71:64];
                 buf_[2] <= 8'h00; buf_[3] <= 8'h00;
                 for (int i = 0; i < 8; i++) buf_[4 + i] <= x[63 - 8 * i -: 8];
@@ -1445,7 +1448,7 @@ module m68k_fpu #(
             end
           ST_MOVEM_W: begin
             if (!cw[13])
-              fpr[li[2:0]] <= {buf_[0], buf_[1], buf_long(buf_, 4), buf_long(buf_, 8)};
+              begin fpr_we <= 1'b1; fpr_wa <= li[2:0]; fpr_wd <= {buf_[0], buf_[1], buf_long(buf_, 4), buf_long(buf_, 8)}; fpr_nan[li[2:0]] <= 1'b0; end
             li <= li + 4'd1;
             state <= ST_MOVEM;
           end
@@ -1470,7 +1473,7 @@ module m68k_fpu #(
               xe3 <= 1'b0;
               null_state <= buf_[2] == 8'h00;
               if (buf_[2] == 8'h00) begin
-                for (int i = 0; i < 8; i++) fpr[i] <= FP_NAN;
+                fpr_nan <= 8'hFF;
                 fpcr <= '0; fpsr <= '0; fpiar <= '0;
               end
             end else
@@ -1491,7 +1494,7 @@ module m68k_fpu #(
             cusave <= 8'h00; re1 <= 1'b0; re3 <= 1'b0; ru <= 1'b0;
             xf[0] <= buf_[0]; xf[1] <= buf_[1]; xf[2] <= buf_[2]; xf[3] <= buf_[3];
             if (buf_[0] == 8'h00) begin
-              for (int i = 0; i < 8; i++) fpr[i] <= FP_NAN;
+              fpr_nan <= 8'hFF;
               fpcr <= '0;
               fpsr <= '0;
               fpiar <= '0;

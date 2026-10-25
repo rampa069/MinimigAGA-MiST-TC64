@@ -20,7 +20,10 @@
 // instruction that ends at the mark and that it predicts to the same
 // target goes on with no redirect, q_pc becoming the target as it is
 // consumed; anything else redirects as before (and bt_kill drops the
-// entry), so the marks need not be right.
+// entry), so the marks need not be right. With REG_ADDR the requests come
+// from f_addr only and the table is a memory (but its valid bits), read
+// with what f_addr becomes; a kill drops the entry at the key's place
+// whatever its tag.
 
 module m68k_fetch #(
   parameter bit REG_ADDR = 1'b0
@@ -69,6 +72,9 @@ module m68k_fetch #(
   logic [31:6]   bt_tag [BTN];
   logic          bt_h [BTN];
   logic [31:1]   bt_t [BTN];
+  logic [57:0]   bt_m [BTN];             // REG_ADDR: {tag, h, target}
+  logic [57:0]   bt_r;                   // the entry at f_addr
+  logic [31:0]   f_addr_n;               // what f_addr becomes
   // what each request's response is to give: its high word, its low word
   // (a jump's last word was the high one), and a mark after it
   logic [1:0]    rq_n;
@@ -101,9 +107,13 @@ module m68k_fetch #(
   logic [31:1] bt_hit_t;
   assign r_skip = early ? redirect_pc[1] : (rq_skip_next);
   assign bi = i_addr[5:2];
-  assign bt_hit = bt_v[bi] && bt_tag[bi] == i_addr[31:6] && !(bt_h[bi] && r_skip) &&
+  logic        bt_hh;                  // the entry's jump: its last word a high one
+  logic [31:6] bt_ht;
+  assign bt_ht = REG_ADDR ? bt_r[57:32] : bt_tag[bi];
+  assign bt_hh = REG_ADDR ? bt_r[31] : bt_h[bi];
+  assign bt_hit = bt_v[bi] && bt_ht == i_addr[31:6] && !(bt_hh && r_skip) &&
                   32'(mk_out) < MKN;
-  assign bt_hit_t = bt_t[bi];
+  assign bt_hit_t = REG_ADDR ? bt_r[30:0] : bt_t[bi];
 
   logic take, fill;                    // a response for the queue this cycle, marked words
   assign take = i_rvalid && discard == 2'd0;
@@ -180,6 +190,13 @@ module m68k_fetch #(
   // target, or a redirect's, at an odd word)
   logic rq_skip_next;
 
+  always_comb begin
+    f_addr_n = f_addr;
+    if (i_req && i_gnt) f_addr_n = bt_hit ? {bt_hit_t[31:2], 2'b00} : i_addr + 32'd4;
+    if (redirect && !(early && i_req && i_gnt && bt_hit))
+      f_addr_n = {redirect_pc[31:2], 2'b00} + ((early && i_req && i_gnt) ? 32'd4 : 32'd0);
+  end
+
   always_ff @(posedge clk) begin
     if (rst) begin
       running <= 1'b0;
@@ -201,8 +218,8 @@ module m68k_fetch #(
       push = i_req && i_gnt;
       if (i_rvalid && discard != 2'd0)
         discard <= discard - 2'd1;
+      f_addr <= f_addr_n;
       if (push) begin
-        f_addr <= bt_hit ? {bt_hit_t[31:2], 2'b00} : i_addr + 32'd4;
         rq_skip_next <= bt_hit && bt_hit_t[1];
       end
 
@@ -219,7 +236,7 @@ module m68k_fetch #(
           n = n - 2'd1;
         end
         if (push && (!redirect || early)) begin
-          s[n[0]] = r_skip; c[n[0]] = bt_hit && bt_h[bi]; m[n[0]] = bt_hit; t[n[0]] = bt_hit_t;
+          s[n[0]] = r_skip; c[n[0]] = bt_hit && bt_hh; m[n[0]] = bt_hit; t[n[0]] = bt_hit_t;
           n = n + 2'd1;
         end
         rq_n <= n;
@@ -228,8 +245,6 @@ module m68k_fetch #(
 
       if (redirect) begin
         running <= 1'b1;
-        if (!(early && push && bt_hit))
-          f_addr <= {redirect_pc[31:2], 2'b00} + ((early && push) ? 32'd4 : 32'd0);
         // every response still to come from before is stale (one returning
         // now is dropped); the target's, if requested now, is not
         discard <= pend_n - 2'(early && push);
@@ -290,8 +305,13 @@ module m68k_fetch #(
         bt_h[bkey_q[5:2]] <= bh_q;
         bt_t[bkey_q[5:2]] <= bt_q;
       end
-      if (bk_q && bt_tag[bkey_q[5:2]] == bkey_q[31:6]) bt_v[bkey_q[5:2]] <= 1'b0;
+      if (bk_q && (REG_ADDR || bt_tag[bkey_q[5:2]] == bkey_q[31:6])) bt_v[bkey_q[5:2]] <= 1'b0;
     end
+  end
+  // REG_ADDR: the memory (no reset, the valid bits are)
+  always_ff @(posedge clk) begin
+    if (bw_q) bt_m[bkey_q[5:2]] <= {bkey_q[31:6], bh_q, bt_q};
+    if (ce) bt_r <= bt_m[f_addr_n[5:2]];
   end
 
 `ifdef DEBUG_FETCH
