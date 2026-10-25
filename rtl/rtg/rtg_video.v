@@ -6,6 +6,7 @@ module rtg_video (
 	input         reset_n,
 	input         rtg_ena,       // RTG on/off
 	input         rtg_linecompare,
+	input         rtg_z3,        // (A4000) the address is an offset in the RTG board (TG68K.vhd)
 
     input  [10:0] reg_addr,
 	input         reg_wr,        // Write strobe
@@ -202,9 +203,10 @@ VideoStream myvs
 	.q(rtg_dat)
 );
 
-// Replicate the CPU's address mangling.
-assign fetch_addr[25:24]=fetch_addr_raw[25:24];
-assign fetch_addr[23]=fetch_addr_raw[23]^(fetch_addr_raw[22]|fetch_addr_raw[21]);
+// Replicate the CPU's address mangling; (A4000) an offset in the RTG board
+// is the first SDRAM's $800000-$FFFFFF, as TG68K.vhd maps the board
+assign fetch_addr[25:24]=rtg_z3 ? 2'b00 : fetch_addr_raw[25:24];
+assign fetch_addr[23]=rtg_z3 ? 1'b1 : fetch_addr_raw[23]^(fetch_addr_raw[22]|fetch_addr_raw[21]);
 assign fetch_addr[22:0]=fetch_addr_raw[22:0];
 
 

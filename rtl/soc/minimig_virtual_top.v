@@ -293,6 +293,7 @@ rtg_video rtg (
 	.clk_vid(CLK_114),
 	.rtg_ena(rtg_ena),
 	.rtg_linecompare(rtg_linecompare),
+	.rtg_z3(1'b0),
 	.reg_addr(rtg_reg_addr),
 	.reg_wr(rtg_reg_wr),
 	.reg_d(rtg_reg_d),

@@ -15,7 +15,7 @@ localparam z2base='h00;
 localparam z3base='h40;
 localparam z3base2='h80;
 localparam z3base3='hc0;
-localparam ethbase='h100;
+localparam rtgbase='h100;
 localparam sndbase='h140;
 localparam ctrlbase='h180;
 
@@ -27,7 +27,7 @@ begin
 		ram[j] = 4'b1111;
 
 	// Use the upper two bits as an index
-	// so 00 is ZII RAM, 01 is ZIII RAM and 10 is ETH
+	// so 00 is ZII RAM, 01 is ZIII RAM and 100 is the RTG board
 	// with a NULL board at 11 to terminate the chain.
 
 	// Up to 8 meg of 24-bit Fast RAM
@@ -85,19 +85,17 @@ begin
 	ram[z3base3+'h26/2] = 4'b1100;	// Serial no: 3
 
 
-	// Ethernet
-	
-	ram[ethbase+'h0] = 4'b1000;	// Zorro-III card, no link, no ROM
-	ram[ethbase+'h2/2] = 4'b0001;	// Next board not related, size 'h40k
-	ram[ethbase+'h4/2] = 4'b1101;	// ProductID = 0x20 (only setting upper nybble)
-	ram[ethbase+'h8/2] = 4'b1110;	// Not memory, silenceable, normal size, Zorro III
-	ram[ethbase+'ha/2] = 4'b1101;	// logical size 'h40k
-	ram[ethbase+'h10/2] = 4'b1110;	// Manufacturer ID: 0x139c
-	ram[ethbase+'h12/2] = 4'b1100;
-	ram[ethbase+'h14/2] = 4'b0110;
-	ram[ethbase+'h16/2] = 4'b0011;
-	ram[ethbase+'h26/2] = 4'b1100;	// Serial no: 3
-
+	// (A4000) the RTG board: a Zorro III board of 16 meg, the framebuffer in
+	// its first 8 and the registers at $800100 (as Maximig's, mfr $139C,
+	// product $30), in the slot of the Ethernet board, never in the chain
+	ram[rtgbase+'h0] = 4'b1000;	// Zorro-III card, no memory list, no ROM
+	ram[rtgbase+'h2/2] = 4'b0000;	// 16 meg (extended size code 0)
+	ram[rtgbase+'h4/2] = 4'b1100;	// ProductID = 0x30 (only setting upper nybble)
+	ram[rtgbase+'h8/2] = 4'b0000;	// Memory space, not silenceable, extended size, Zorro III
+	ram[rtgbase+'h10/2] = 4'b1110;	// Manufacturer ID: 0x139c
+	ram[rtgbase+'h12/2] = 4'b1100;
+	ram[rtgbase+'h14/2] = 4'b0110;
+	ram[rtgbase+'h16/2] = 4'b0011;
 	// Toccata sound card
 
 	ram[sndbase+'h0] = 4'b1100;    // Zorro-II card, no link, no ROM

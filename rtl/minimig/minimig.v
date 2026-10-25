@@ -167,6 +167,8 @@ module minimig
   input [31:0] cpu_vbr, // m68k VBR
   output wire ovr,      // NMI address decoding override
   output wire gary_toenb, // (A4000) Fat Gary's $DE0001 bit 7, for TG68K.vhd's bus errors
+  output wire rtg_z3_ena,       // (A4000) the RTG board (minimig_autoconfig) is configured
+  output wire [7:0] rtg_z3_base, // at A31-A24
 	//sram pins
 	output	[15:0] ram_data,	//sram data bus
 	input	[15:0] ramdata_in,		//sram data bus in
@@ -1232,7 +1234,13 @@ localparam MMCB = 1'b1;
 localparam MMCB = 1'b0;
 `endif
 
-minimig_autoconfig#(.TOCCATA_SND(MMTOC),.CONTROL_BOARD(MMCB)) autoconfig
+`ifdef MINIMIG_A4000
+localparam MMA4K = 1'b1;
+`else
+localparam MMA4K = 1'b0;
+`endif
+
+minimig_autoconfig#(.TOCCATA_SND(MMTOC),.CONTROL_BOARD(MMCB),.A4000(MMA4K)) autoconfig
 (
 	.clk(clk),
 	.clk7_en(clk7_en),
@@ -1252,7 +1260,9 @@ minimig_autoconfig#(.TOCCATA_SND(MMTOC),.CONTROL_BOARD(MMCB)) autoconfig
 	.board_shutup(),
 	.autoconfig_done(),
 	.toccata_base_addr(toccata_base_addr),
-	.control_base_addr(control_base_addr)
+	.control_base_addr(control_base_addr),
+	.rtg_ena(rtg_z3_ena),
+	.rtg_base(rtg_z3_base)
 );
 
 assign board_configured = board_configured_i;

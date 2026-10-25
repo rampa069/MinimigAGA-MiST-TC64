@@ -212,6 +212,9 @@ wire [  4-1:0] tg68_CACR_out;
 wire [ 32-1:0] tg68_VBR_out;
 wire           tg68_ovr;
 wire           gary_toenb;        // (A4000) Fat Gary's timeout enable, minimig -> TG68K
+wire           rtg_z3_ena;        // (A4000) the RTG board, minimig_autoconfig -> TG68K
+wire     [7:0] rtg_z3_base;
+wire           rtg_z3;            // (A4000) its framebuffer offset, TG68K -> rtg_video
 
 wire tg68_host_req;
 wire tg68_host_ack;
@@ -481,6 +484,9 @@ TG68K #(
 `endif
   .reset        (tg68_rst         ),
   .gary_toenb   (gary_toenb       ),
+  .rtg_z3_ena   (rtg_z3_ena       ),
+  .rtg_z3_base  (rtg_z3_base      ),
+  .rtg_z3       (rtg_z3           ),
   .clkena_in    (tg68_ena28       ),
   .IPL          (tg68_IPL         ),
   .dtack        (tg68_dtack       ),
@@ -995,6 +1001,8 @@ minimig minimig (
   .cpu_vbr      (tg68_VBR_out     ), // M68K VBR
   .ovr          (tg68_ovr         ), // NMI override address decoding
   .gary_toenb   (gary_toenb       ),
+  .rtg_z3_ena   (rtg_z3_ena       ),
+  .rtg_z3_base  (rtg_z3_base      ),
   //sram pins
   .ram_data     (ram_data         ), // SRAM data bus
   .ramdata_in   (ramdata_in       ), // SRAM data bus in
@@ -1138,6 +1146,7 @@ rtg_video rtg (
 	.clk_vid(clk_vid),
 	.rtg_ena(rtg_ena),
 	.rtg_linecompare(rtg_linecompare),
+	.rtg_z3(rtg_z3),
 	.reg_addr(rtg_reg_addr),
 	.reg_wr(rtg_reg_wr),
 	.reg_d(rtg_reg_d),

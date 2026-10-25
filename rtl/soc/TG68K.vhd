@@ -59,6 +59,8 @@ port(
 	dtack         : in      std_logic;
 	freeze        : in      std_logic:='0';
 	gary_toenb    : in      std_logic:='0';    -- (a4000) Fat Gary's $DE0001 bit 7 (gayle.v)
+	rtg_z3_ena    : in      std_logic:='0';    -- (a4000) the RTG board is configured (minimig_autoconfig)
+	rtg_z3_base   : in      std_logic_vector(7 downto 0):=X"00"; -- at A31-A24
 	vpa           : in      std_logic:='1';
 	ein           : in      std_logic:='1';
 	addr          : out     std_logic_vector(31 downto 0);
@@ -110,6 +112,7 @@ port(
 	rtg_reg_addr : out std_logic_vector(10 downto 0);
 	rtg_reg_d    : out std_logic_vector(15 downto 0);
 	rtg_reg_wr   : out std_logic;
+	rtg_z3       : out std_logic;  -- (a4000) the framebuffer address was written through the RTG board
 	-- Audio interface
 	audio_buf : in std_logic;
 	audio_ena : out std_logic;
@@ -193,6 +196,11 @@ SIGNAL sel_32           : std_logic;
 signal sel_undecoded    : std_logic;
 signal sel_undecoded_d  : std_logic;
 signal hole24           : std_logic;
+signal sel_rtgz3        : std_logic;  -- (a4000) the RTG board's 16 meg
+signal sel_rtgfb        : std_logic;  -- its framebuffer, the first 8
+signal sel_rtgreg       : std_logic;  -- its registers and CLUT, at $800000-$8007FF (Akiko's $B80000-$B807FF)
+signal rtg_z3_r         : std_logic;
+signal ramaddr_z        : std_logic_vector(31 downto 0);
 signal gary_berr        : std_logic;
 signal gary_berr_d      : std_logic;
 signal sel_akiko        : std_logic;
@@ -354,7 +362,7 @@ sel_eth<='0';
 			ena_32bit <= cpu(1) and (ziiiram_active or ziiiram2_active or ziiiram3_active); -- Use 32-bit addressing when Zorro III RAM is present, and CPU is 68020
 
 			sel_akiko_d<=sel_akiko;
-			sel_undecoded_d<=(sel_32 and not sel_ram) or (gary_berr and hole24);
+			sel_undecoded_d<=(sel_32 and not sel_ram and not sel_rtgz3) or (gary_berr and hole24);
 			gary_berr_d<=gary_berr;
 		END IF;
 	END PROCESS;
@@ -371,7 +379,7 @@ sel_eth<='0';
 	                    cpuaddr(23 downto 18)="110110" OR
 	                    (cpuaddr(23 downto 16)=X"DD" AND cpuaddr(15 downto 13)/="001")) ELSE '0';
 	gary_berr <= '1' WHEN a4000 AND gary_toenb='1' AND (state="00" OR state="10") AND
-	                      (hole24='1' OR (sel_32='1' AND sel_ram='0' AND cpuaddr(31 downto 24)/=X"07")) ELSE '0';
+	                      (hole24='1' OR (sel_32='1' AND sel_ram='0' AND sel_rtgz3='0' AND cpuaddr(31 downto 24)/=X"07")) ELSE '0';
 
 	datatg68 <= fromram WHEN datatg68_selram='1' else datatg68_c;
 --	chipset_ramsel <= sel_z2ram or sel_chipram or sel_kickram or sel_slowram;
@@ -417,7 +425,10 @@ end generate;
 	                 ((not a4000 and cpuaddr(31 downto 14)=X"00DA"&"00") or (a4000 and cpuaddr(31 downto 13)=X"00DD"&"001"))
 	                 else '0';
 
-	sel_akiko <= '1' when cpuaddr(31 downto 16)=X"00B8" else '0';
+	sel_rtgz3 <= '1' WHEN a4000 AND rtg_z3_ena='1' AND cpuaddr(31 downto 24)=rtg_z3_base ELSE '0';
+	sel_rtgfb <= sel_rtgz3 AND NOT cpuaddr(23);
+	sel_rtgreg <= '1' WHEN sel_rtgz3='1' AND cpuaddr(23 downto 11)="1000000000000" ELSE '0';
+	sel_akiko <= '1' when cpuaddr(31 downto 16)=X"00B8" or sel_rtgreg='1' else '0';
 	sel_32 <= '1' when cpu(1)='1' and cpuaddr(31 downto 24)/=X"00" and cpuaddr(31 downto 24)/=X"ff" else '0'; -- Decode 32-bit space, but exclude interrupt vectors
 	sel_z2ram       <= '1' WHEN (cpuaddr(31 downto 24) = X"00")
 	                         AND ((cpuaddr(23 downto 21) = "001")
@@ -436,9 +447,10 @@ end generate;
 --	sel_undecoded   <= '1' WHEN sel_32='1' and (sel_z3ram and z3ram_ena)='0' and (sel_z3ram2 and z3ram2_ena)='0' and (sel_z3ram3 and z3ram3_ena)='0' else '0';
 	sel_ram         <= '1' WHEN (
          (sel_z2ram='1' and z2ram_ena='1')
-      OR (sel_z3ram='1' and z3ram_ena='1')
-      OR (sel_z3ram2='1' and z3ram2_ena='1')
-      OR (sel_z3ram3='1' and z3ram3_ena='1')
+      OR (sel_z3ram='1' and z3ram_ena='1' and sel_rtgz3='0')
+      OR (sel_z3ram2='1' and z3ram2_ena='1' and sel_rtgz3='0') -- (the board may be at $47000000)
+      OR (sel_z3ram3='1' and z3ram3_ena='1' and sel_rtgz3='0')
+      OR sel_rtgfb='1'
       OR sel_chipram='1'
       OR sel_slowram='1'
       OR sel_kickram='1'
@@ -496,28 +508,32 @@ DUALRAM_ADDR: if dualsdram=true generate
 -- 32 meg from 0x44000000 to 0x45ffffff - bit 30 set, bit 26 set, bit 25 clr  =>  26 clr, 25 set, 24 d/c
 -- 16 meg from 0x46000000 to 0x46ffffff - bit 30 set, bit 26 set, bit 25 set  =>  26 clr, 25 clr, 24 set
 
-  ramaddr(31 downto 27) <= "00000";
-  ramaddr(26) <= sel_z3ram;
-  ramaddr(25) <= cpuaddr(25) xor sel_z3ram2; -- Second block of 32 meg in 1st SDRAM.
-  ramaddr(24) <= cpuaddr(24) xor cpuaddr(25);
-  ramaddr(23)<=(cpuaddr(23) xor (cpuaddr(22) or cpuaddr(21))) and not sel_z3ram3; -- ZII address mangling (disabled for RAM overlaid with trapdoor RAM.)
-  ramaddr(22)<=cpuaddr(21) when sel_z3ram3='1' else cpuaddr(22);
-  ramaddr(21)<=cpuaddr(21) xor sel_z3ram3;
-  ramaddr(20 downto 0) <= cpuaddr(20 downto 0);
+  ramaddr_z(31 downto 27) <= "00000";
+  ramaddr_z(26) <= sel_z3ram;
+  ramaddr_z(25) <= cpuaddr(25) xor sel_z3ram2; -- Second block of 32 meg in 1st SDRAM.
+  ramaddr_z(24) <= cpuaddr(24) xor cpuaddr(25);
+  ramaddr_z(23)<=(cpuaddr(23) xor (cpuaddr(22) or cpuaddr(21))) and not sel_z3ram3; -- ZII address mangling (disabled for RAM overlaid with trapdoor RAM.)
+  ramaddr_z(22)<=cpuaddr(21) when sel_z3ram3='1' else cpuaddr(22);
+  ramaddr_z(21)<=cpuaddr(21) xor sel_z3ram3;
+  ramaddr_z(20 downto 0) <= cpuaddr(20 downto 0);
 
 end generate;
 
 SINGLERAM_ADDR: if dualsdram=false generate
 
-  ramaddr(31 downto 26) <= "000000";
-  ramaddr(25) <= sel_z3ram2; -- Second block of 32 meg
-  ramaddr(24) <= (cpuaddr(24) and sel_z3ram2) or sel_z3ram; -- Remap the first block of Zorro III RAM to 0x1000000
-  ramaddr(23)<=(cpuaddr(23) xor (cpuaddr(22) or cpuaddr(21))) and not sel_z3ram3;
-  ramaddr(22)<=cpuaddr(21) when sel_z3ram3='1' else cpuaddr(22);
-  ramaddr(21)<=cpuaddr(21) xor sel_z3ram3;
-  ramaddr(20 downto 0) <= cpuaddr(20 downto 0);
+  ramaddr_z(31 downto 26) <= "000000";
+  ramaddr_z(25) <= sel_z3ram2; -- Second block of 32 meg
+  ramaddr_z(24) <= (cpuaddr(24) and sel_z3ram2) or sel_z3ram; -- Remap the first block of Zorro III RAM to 0x1000000
+  ramaddr_z(23)<=(cpuaddr(23) xor (cpuaddr(22) or cpuaddr(21))) and not sel_z3ram3;
+  ramaddr_z(22)<=cpuaddr(21) when sel_z3ram3='1' else cpuaddr(22);
+  ramaddr_z(21)<=cpuaddr(21) xor sel_z3ram3;
+  ramaddr_z(20 downto 0) <= cpuaddr(20 downto 0);
 
 end generate;
+
+  -- (a4000) the RTG board's framebuffer: the first SDRAM's $800000-$FFFFFF,
+  -- the Zorro II RAM's place (there is none with the board), not mangled
+  ramaddr <= X"00" & "1" & cpuaddr(22 downto 0) WHEN sel_rtgfb='1' ELSE ramaddr_z;
 
 
   -- 32bit address space for 68020, limit address space to 24bit for 68000/68010/68EC020.
@@ -621,6 +637,20 @@ port map
 
 
 akiko_d <= w_datatg68;
+
+-- (a4000) which way the framebuffer address (Akiko's $100/$102) was last
+-- written: through the RTG board it is an offset in the board, through
+-- $B80100 an address of the CPU's (rtg_video)
+process(clk) begin
+	if rising_edge(clk) then
+		if reset='0' then
+			rtg_z3_r<='0';
+		elsif akiko_req='1' and akiko_wr='1' and cpuaddr(10 downto 2)="001000000" then
+			rtg_z3_r<=sel_rtgreg;
+		end if;
+	end if;
+end process;
+rtg_z3 <= rtg_z3_r;
 process(clk,cpuaddr) begin
 	if rising_edge(clk) then
 		if sel_akiko='0' then

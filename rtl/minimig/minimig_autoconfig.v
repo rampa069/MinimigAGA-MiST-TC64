@@ -2,7 +2,11 @@
 
 module minimig_autoconfig #(
 	parameter TOCCATA_SND = 1'b0, // Toccata sound card enabled?
-	parameter CONTROL_BOARD = 1'b0 // Control board enabled?
+	parameter CONTROL_BOARD = 1'b0, // Control board enabled?
+	// (A4000) with the most Fast RAM: no Zorro II RAM (as an A4000), the
+	// Zorro III RAM and the RTG board (mfr $139C, product $30) after it,
+	// its framebuffer where the Zorro II RAM was
+	parameter A4000 = 1'b0
 ) (
 	input clk,
 	input clk7_en,
@@ -22,8 +26,12 @@ module minimig_autoconfig #(
 	output reg [5:0] board_shutup,
 	output reg [7:0] toccata_base_addr, // Base address for the cards
 	output reg [7:0] control_base_addr, // Base address for the cards
-	output reg autoconfig_done
+	output reg autoconfig_done,
+	output reg rtg_ena,             // (A4000) the RTG board is configured
+	output reg [7:0] rtg_base       // at A31-A24
 );
+
+wire a4k_z3 = A4000 && (&fastram_config) && m68020;
 
 
 reg [2:0] acdevice;
@@ -63,6 +71,8 @@ begin
 		board_shutup<=6'b000000;
 		autoconfig_done<=1'b0;
 		toccata_base_addr<=8'h0;
+		rtg_ena<=1'b0;
+		rtg_base<=8'h0;
 	end
 	
 	if(init)
@@ -78,6 +88,12 @@ begin
 	
 		// Either 1st board (ZII fast RAM) or null board if RAM is disabled
 		acdevice <= |fastram_config ? 3'b000 : (TOCCATA_SND == 1'b1 ? 3'b101 : 3'b111);
+		if (a4k_z3) begin
+			// (A4000) the 1st ZIII RAM first, sized as the ZII board's configuration does
+			roma_wr[8:0] <= 9'h041;
+			ramsize <= ram_64meg[1] ? 4'b0010 : 4'b0000; // 64 meg or 16 meg
+			acdevice <= 3'b001;
+		end
 		init<=1'b0;
 	end
 	else
@@ -137,15 +153,18 @@ begin
 							end
 						3'b011 : begin // ZIII RAM 3 - Use leftover space in the memory map.
 								board_configured[3] <= 1'b1;
-								if (TOCCATA_SND == 1'b1) begin
+								if (a4k_z3) begin
+									acdevice<=3'b100; // (A4000) the RTG board
+								end else if (TOCCATA_SND == 1'b1) begin
 									acdevice<=3'b101; // Toccata sound card
 								end else begin
 									acdevice<=CONTROL_BOARD ? 3'b110 : 3'b111; // Either control board or NULL device to terminate the chain
 								end
 							end
-						3'b100 : begin // ETH
-								board_configured[3] <= 1'b1;
-								acdevice<=3'b111; // NULL device to terminate the chain
+						3'b100 : begin // (A4000) the RTG board: its base
+								rtg_ena <= 1'b1;
+								rtg_base <= data_in[15:8];
+								acdevice<=TOCCATA_SND ? 3'b101 : (CONTROL_BOARD ? 3'b110 : 3'b111);
 							end
 						default:
 							;
@@ -153,6 +172,9 @@ begin
 				end
 				9'h04c : begin // Zorro II / III shut up register
 					case(acdevice)
+						3'b100: begin // Shut up the RTG board
+								acdevice<=TOCCATA_SND ? 3'b101 : (CONTROL_BOARD ? 3'b110 : 3'b111);
+							end
 						3'b101: begin // Shut up Toccata Sound card
 								acdevice<=CONTROL_BOARD ? 3'b110 : 3'b111; // Either control board or NULL device to terminate the chain
 								board_shutup[4] <= 1'b1;
