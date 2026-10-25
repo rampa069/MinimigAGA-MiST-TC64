@@ -211,6 +211,7 @@ wire [128-1:0] m68k_lp_rdata;
 wire [  4-1:0] tg68_CACR_out;
 wire [ 32-1:0] tg68_VBR_out;
 wire           tg68_ovr;
+wire           gary_toenb;        // (A4000) Fat Gary's timeout enable, minimig -> TG68K
 
 wire tg68_host_req;
 wire tg68_host_ack;
@@ -479,6 +480,7 @@ TG68K #(
   .clk_cpu      (clk_cpu          ),
 `endif
   .reset        (tg68_rst         ),
+  .gary_toenb   (gary_toenb       ),
   .clkena_in    (tg68_ena28       ),
   .IPL          (tg68_IPL         ),
   .dtack        (tg68_dtack       ),
@@ -992,6 +994,7 @@ minimig minimig (
   ._cpu_reset_in(tg68_nrst_out    ), // M68K reset out
   .cpu_vbr      (tg68_VBR_out     ), // M68K VBR
   .ovr          (tg68_ovr         ), // NMI override address decoding
+  .gary_toenb   (gary_toenb       ),
   //sram pins
   .ram_data     (ram_data         ), // SRAM data bus
   .ramdata_in   (ramdata_in       ), // SRAM data bus in

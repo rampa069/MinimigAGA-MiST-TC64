@@ -166,6 +166,7 @@ module minimig
   input _cpu_reset_in,    // m68k reset in
   input [31:0] cpu_vbr, // m68k VBR
   output wire ovr,      // NMI address decoding override
+  output wire gary_toenb, // (A4000) Fat Gary's $DE0001 bit 7, for TG68K.vhd's bus errors
 	//sram pins
 	output	[15:0] ram_data,	//sram data bus
 	input	[15:0] ramdata_in,		//sram data bus in
@@ -1172,7 +1173,8 @@ gayle GAYLE1
 	.hdd_data_rd(hdd_data_rd),
 	.hd_fwr(hd_fwr),
 	.hd_frd(hd_frd),
-	.hdd_step(hdd_sound_i)
+	.hdd_step(hdd_sound_i),
+	.gary_toenb_o(gary_toenb)
 );
 
 assign hdd_sound = drivesound_hdd & hdd_sound_i;

@@ -62,7 +62,8 @@ module gayle
 	input	hdd_data_rd,
 	output hd_fwr,
 	output hd_frd,
-	output hdd_step
+	output hdd_step,
+	output gary_toenb_o	// (A4000) Fat Gary's timeout enable: bus errors where nothing answers
 );
 
 localparam VCC = 1'b1;
@@ -153,6 +154,7 @@ reg  a4kirq_rd;
 wire        sel_mbres = A4K && sel_gayle;
 reg   [7:0] ramsey_cfg;
 reg         gary_timeout, gary_toenb, gary_coldboot;
+assign gary_toenb_o = gary_toenb;
 wire  [7:0] mbres_lo = address_in[1] ? (address_in[7:6]==2'd1 ? 8'h0F : address_in[7:6]==2'd0 ? ramsey_cfg : 8'hFF)
                                      : {gary_toenb, 7'h7F};
 wire  [7:0] mbres_hi = address_in[1] ? {gary_coldboot, 7'h7F} : {gary_timeout, 7'h7F};

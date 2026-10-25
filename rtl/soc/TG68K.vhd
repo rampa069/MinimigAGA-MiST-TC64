@@ -58,6 +58,7 @@ port(
 	IPL           : in      std_logic_vector(2 downto 0):="111";
 	dtack         : in      std_logic;
 	freeze        : in      std_logic:='0';
+	gary_toenb    : in      std_logic:='0';    -- (a4000) Fat Gary's $DE0001 bit 7 (gayle.v)
 	vpa           : in      std_logic:='1';
 	ein           : in      std_logic:='1';
 	addr          : out     std_logic_vector(31 downto 0);
@@ -191,6 +192,9 @@ SIGNAL sel_cart         : std_logic;
 SIGNAL sel_32           : std_logic;
 signal sel_undecoded    : std_logic;
 signal sel_undecoded_d  : std_logic;
+signal hole24           : std_logic;
+signal gary_berr        : std_logic;
+signal gary_berr_d      : std_logic;
 signal sel_akiko        : std_logic;
 signal sel_akiko_d      : std_logic;
 signal sel_audio        : std_logic;
@@ -350,9 +354,24 @@ sel_eth<='0';
 			ena_32bit <= cpu(1) and (ziiiram_active or ziiiram2_active or ziiiram3_active); -- Use 32-bit addressing when Zorro III RAM is present, and CPU is 68020
 
 			sel_akiko_d<=sel_akiko;
-			sel_undecoded_d<=sel_32 and not sel_ram;
+			sel_undecoded_d<=(sel_32 and not sel_ram) or (gary_berr and hole24);
+			gary_berr_d<=gary_berr;
 		END IF;
 	END PROCESS;
+
+	-- (a4000) Fat Gary's timeout: with $DE0001 bit 7 set a read or a fetch
+	-- where nothing answers ends with a bus error, as WinUAE's dummy_get with
+	-- gary_nonrange (writes do not, as there without its MMU): the 32-bit
+	-- space not decoded but Ramsey's window ($07000000, a missing bank reads
+	-- all ones; sel_32 leaves out $FFxxxxxx, Buster's Zorro III configuration
+	-- space), and the A4000's holes below ($B90000-$BEFFFF, $D80000-$DBFFFF,
+	-- $DD0000-$DDFFFF but the IDE), which then end as sel_undecoded does.
+	hole24 <= '1' WHEN a4000 AND cpuaddr(31 downto 24)=X"00" AND
+	                   ((cpuaddr(23 downto 16)>=X"B9" AND cpuaddr(23 downto 16)<=X"BE") OR
+	                    cpuaddr(23 downto 18)="110110" OR
+	                    (cpuaddr(23 downto 16)=X"DD" AND cpuaddr(15 downto 13)/="001")) ELSE '0';
+	gary_berr <= '1' WHEN a4000 AND gary_toenb='1' AND (state="00" OR state="10") AND
+	                      (hole24='1' OR (sel_32='1' AND sel_ram='0' AND cpuaddr(31 downto 24)/=X"07")) ELSE '0';
 
 	datatg68 <= fromram WHEN datatg68_selram='1' else datatg68_c;
 --	chipset_ramsel <= sel_z2ram or sel_chipram or sel_kickram or sel_slowram;
@@ -526,6 +545,7 @@ pf68K_Kernel_inst: TG68KdotC_Kernel
     nReset          => reset,         -- : in std_logic:='1';      --low active
     clkena_in       => clkena,        -- : in std_logic:='1';
     data_in         => datatg68,      -- : in std_logic_vector(15 downto 0);
+    berr            => gary_berr_d,   -- (a4000) Fat Gary's timeout, with sel_undecoded_d
     IPL             => cpuIPL,        -- : in std_logic_vector(2 downto 0):="111";
     IPL_autovector  => '1',           -- : in std_logic:='0';
     CPU             => cpu_kernel,
