@@ -81,7 +81,10 @@ module TG68KdotC_Kernel #(
              .PRELEN(ASYNC != 0), .LD_SPEC(ASYNC != 0), .SH_SLOW(ASYNC != 0),
              .EX_PRESEL(ASYNC != 0), .DP_REG(ASYNC != 0), .EARLY_REG(ASYNC != 0),
              .IND_REG(ASYNC != 0), .FLUSH_REG(ASYNC != 0), .EX_FASTCC(ASYNC != 0),
-             .MUL_SLOW(ASYNC != 0), .FXL_REG(ASYNC != 0), .SNOOP_REG(ASYNC != 0)) core68k (
+             .MUL_SLOW(ASYNC != 0), .FXL_REG(ASYNC != 0), .SNOOP_REG(ASYNC != 0),
+             // and caches of 16 Kbytes each (in block RAM; the 68040's 4, the 68060's 8)
+             .IC_LINES_LOG2(ASYNC != 0 ? 10 : 8),
+             .DC_LINES_LOG2(ASYNC != 0 ? 10 : (MC68060 != 0 ? 9 : 8))) core68k (
     .clk, .clk_cpu, .nReset, .clkena_in, .data_in, .IPL, .berr,
     .addr_out, .data_write, .nWr, .nUDS, .nLDS, .busstate, .longword, .newpc,
     .long_req, .long_ack, .data_in_lo, .data_write_lo,

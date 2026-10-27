@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 // Instruction cache between the core's instruction port and the bus
-// interface: 4 Kbytes as the 68040's, direct mapped, 16-byte lines.
+// interface: 4 Kbytes as the 68040's (LINES_LOG2 8; more with a larger
+// LINES_LOG2: the addresses it sees are physical), direct mapped, 16-byte
+// lines.
 //
 // A fetch (an aligned long) is looked up on the enabled edge that takes it
 // and answered on the next one when it hits. A miss fills the line through
@@ -24,7 +26,8 @@ module m68k_icache
   parameter logic [31:0] NC0_LO = 32'h00000000,
   parameter logic [31:0] NC0_HI = 32'h00000000,
   parameter logic [31:0] NC1_LO = 32'h00000000,
-  parameter logic [31:0] NC1_HI = 32'h00000000
+  parameter logic [31:0] NC1_HI = 32'h00000000,
+  parameter int          LINES_LOG2 = 8      // 256 lines of 16 bytes: 4 Kbytes
 )
 (
   input  logic        clk,
@@ -59,10 +62,12 @@ module m68k_icache
   input  logic [31:0] b_rdata
 );
 
-  localparam int LINES = 256;
+  localparam int LINES = 1 << LINES_LOG2;
+  localparam int IB = LINES_LOG2 + 3;   // the index's last address bit
+  localparam int TW = 28 - LINES_LOG2;  // tag bits
 
   logic [31:0] data_ram [LINES * 4];
-  logic [19:0] tag_ram [LINES];
+  logic [TW-1:0] tag_ram [LINES];
   logic        valid [LINES];
 
   /* verilator lint_off UNSIGNED */      // (a window from 0)
@@ -76,9 +81,9 @@ module m68k_icache
   logic [31:0] s1_addr;
   logic [2:0]  s1_fc;
   logic [31:0] q_data;
-  logic [19:0] q_tag;
+  logic [TW-1:0] q_tag;
   logic        s1_hit;
-  assign s1_hit = s1_v && s1_c && valid[s1_addr[11:4]] && q_tag == s1_addr[31:12];
+  assign s1_hit = s1_v && s1_c && valid[s1_addr[IB:4]] && q_tag == s1_addr[31:IB+1];
 
   // a fill or a fetch the cache does not keep
   typedef enum logic [1:0] { ST_IDLE, ST_FILL, ST_BYPASS } st_e;
@@ -110,7 +115,7 @@ module m68k_icache
   // the tags of the core's writes, read on a second port
   logic        sn_v;
   logic [31:0] sn_addr;
-  logic [19:0] sn_tag;
+  logic [TW-1:0] sn_tag;
 
   // a write to the line being filled
   logic sn_fill;
@@ -123,12 +128,12 @@ module m68k_icache
 
   always_ff @(posedge clk) begin
     if (ce) begin
-      q_data <= data_ram[c_addr[11:2]];
-      q_tag <= tag_ram[c_addr[11:4]];
-      sn_tag <= tag_ram[snoop_addr[11:4]];
+      q_data <= data_ram[c_addr[IB:2]];
+      q_tag <= tag_ram[c_addr[IB:4]];
+      sn_tag <= tag_ram[snoop_addr[IB:4]];
     end
-    if (fill_wr) data_ram[{f_addr[11:4], f_got}] <= b_rdata;
-    if (fill_end) tag_ram[f_addr[11:4]] <= f_addr[31:12];
+    if (fill_wr) data_ram[{f_addr[IB:4], f_got}] <= b_rdata;
+    if (fill_end) tag_ram[f_addr[IB:4]] <= f_addr[31:IB+1];
   end
 
   always_ff @(posedge clk) begin
@@ -160,7 +165,7 @@ module m68k_icache
         f_left <= 3'd4;
         f_bad <= 1'b0;
         st <= s1_c ? ST_FILL : ST_BYPASS;
-        if (s1_c) valid[s1_addr[11:4]] <= 1'b0;
+        if (s1_c) valid[s1_addr[IB:4]] <= 1'b0;
       end
 
       f_out <= f_out + 3'(b_req && b_gnt) - 3'(b_rvalid && f_wait);
@@ -180,7 +185,7 @@ module m68k_icache
           if (b_err) f_bad <= 1'b1;
           if (f_left == 3'd0 && f_out == 3'd1) begin
             // the line is in: valid unless an error or a write spoilt it
-            valid[f_addr[11:4]] <= !(f_bad || b_err || sn_fill);
+            valid[f_addr[IB:4]] <= !(f_bad || b_err || sn_fill);
             st <= ST_IDLE;
           end
         end
@@ -189,7 +194,7 @@ module m68k_icache
       // the core's writes: the tag is read on this edge, compared on the next
       sn_v <= snoop;
       sn_addr <= snoop_addr;
-      if (sn_v && sn_tag == sn_addr[31:12]) valid[sn_addr[11:4]] <= 1'b0;
+      if (sn_v && sn_tag == sn_addr[31:IB+1]) valid[sn_addr[IB:4]] <= 1'b0;
       if (sn_fill) f_bad <= 1'b1;
 
       if (inval) begin

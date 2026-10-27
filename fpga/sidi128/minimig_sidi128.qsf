@@ -456,6 +456,11 @@ set_global_assignment -name VERILOG_MACRO "MINIMIG_M68K_SDRAM2=1"
 set_global_assignment -name VERILOG_MACRO "MINIMIG_M68K_060=1"
 # the m68k core on a clock of its own (CPU card style: rtl/m68k m68k_cpu ASYNC)
 set_global_assignment -name VERILOG_MACRO "MINIMIG_M68K_ACCEL=1"
+# the SDRAMs' clocks through DDR output registers (minimig_mist_top.v)
+set_global_assignment -name VERILOG_MACRO "MINIMIG_SDRAM_CLK_DDIO=1"
+# the core's PLL from the 50 MHz oscillator, in PLL_3, beside its pin (CLK5)
+set_global_assignment -name VERILOG_MACRO "MINIMIG_M68K_CPU_PLL_50=1"
+set_location_assignment PLL_3 -to "m68k_cpu_pll:m68k_cpu_pll|altpll:altpll_component|*|pll1"
 # an A4000's board: IDE at $DD2000, Ramsey/Fat Gary at $DE0000 (the A4000 Kickstart)
 set_global_assignment -name VERILOG_MACRO "MINIMIG_A4000=1"
 

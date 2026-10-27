@@ -39,6 +39,7 @@ module m68k_cpu
   parameter bit MC68060 = 1'b0,         // (m68k_core's): the 68060, else the 68040
   parameter bit DC_COPYBACK = 1'b0,     // (m68k_dcache's COPYBACK): the data cache in copyback
   parameter int DC_LINES_LOG2 = MC68060 ? 9 : 8,  // (m68k_dcache's LINES_LOG2): 8 Kbytes as the 68060's, else 4
+  parameter int IC_LINES_LOG2 = 8,                // (m68k_icache's LINES_LOG2): 4 Kbytes
   // the line port (m68k_lpu): a window of memory served in 16-byte lines
   parameter bit LINE_PORT = 1'b0,
   parameter logic [31:0] LP_LO = 32'h40000000,
@@ -247,7 +248,7 @@ module m68k_cpu
     if (crst) sn_r <= 1'b0;
     else if (cce) begin sn_r <= d_req && d_we && d_gnt; sn_ar <= d_addr; end
 
-  m68k_icache #(.NC0_LO(NC0_LO), .NC0_HI(NC0_HI), .NC1_LO(NC1_LO), .NC1_HI(NC1_HI)) icache (
+  m68k_icache #(.NC0_LO(NC0_LO), .NC0_HI(NC0_HI), .NC1_LO(NC1_LO), .NC1_HI(NC1_HI), .LINES_LOG2(IC_LINES_LOG2)) icache (
     .clk(cclk), .rst(crst), .ce(cce), .enable(ctl_cacr[0] || force_cache), .inval(ctl_cinv && ctl_cinv_c[1]),
     .c_req(i_req), .c_addr(i_addr), .c_fc(i_fc), .c_gnt(i_gnt), .c_rvalid(i_rvalid), .c_err(i_err),
     .c_rdata(i_rdata),

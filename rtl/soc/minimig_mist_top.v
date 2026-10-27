@@ -349,9 +349,11 @@ clock27 pll_inst (
 );
 `endif
 
-// reset
+// reset (MINIMIG_M68K_ACCEL: the SDRAMs start once the core's PLL is locked
+// too, so the second one is not set up on a clock still settling)
+wire           cpu_pll_locked;
 assign pll_rst          = 1'b0;
-assign sdctl_rst        = pll_locked;
+assign sdctl_rst        = pll_locked & cpu_pll_locked;
 
 // minimig
 assign _15khz           = ~core_config[0];
@@ -364,13 +366,31 @@ assign force_csync      = ypbpr | (!no_csync & vga_selcsync);
 assign clock_override   = core_status[2:1];
 assign clock_ntsc       = |clock_override ? clock_override[1] : ntsc;
 
+// MINIMIG_SDRAM_CLK_DDIO: each SDRAM's clock leaves through a DDR output
+// register clocked by its controller's clock, inverted (the SDRAM takes the
+// commands half a clock after they leave), so the pin follows the delays of
+// the commands' and data's own output registers; no PLL phase shift
+wire           clk_sdram_pll, clk_sdram2_pll;
+`ifdef MINIMIG_SDRAM_CLK_DDIO
+altddio_out #(
+  .extend_oe_disable("OFF"), .intended_device_family("Cyclone 10 LP"), .invert_output("OFF"),
+  .lpm_hint("UNUSED"), .lpm_type("altddio_out"), .oe_reg("UNREGISTERED"), .power_up_high("OFF"),
+  .width(1)
+) sdramclk_ddr (
+  .datain_h(1'b0), .datain_l(1'b1), .outclock(clk_114), .dataout(SDRAM_CLK),
+  .aclr(1'b0), .aset(1'b0), .oe(1'b1), .outclocken(1'b1), .sclr(1'b0), .sset(1'b0)
+);
+`else
+assign SDRAM_CLK = clk_sdram_pll;
+`endif
+
 //// amiga clocks ////
 amiga_clk amiga_clk (
   .rst          (pll_rst          ), // async reset input
   .ntsc         (clock_ntsc       ), // pal/ntsc clock select
   .clk_in       (clk_27mhz        ), // input clock     ( 27.000000MHz)
   .clk_114      (clk_114          ), // output clock c0 (114.750000MHz)
-  .clk_sdram    (SDRAM_CLK        ), // output clock c2 (114.750000MHz, -146.25 deg)
+  .clk_sdram    (clk_sdram_pll    ), // output clock c2 (114.750000MHz, -146.25 deg)
   .clk_28       (clk_28           ), // output clock c1 ( 28.687500MHz)
   .clk7_en      (clk7_en          ), // output clock 7 enable (on 28MHz clock domain)
   .clk7n_en     (clk7n_en         ), // 7MHz negedge output clock enable (on 28MHz clock domain)
@@ -390,13 +410,19 @@ wire           clk_sd2;
 `ifdef MINIMIG_DUAL_SDRAM
 `ifdef MINIMIG_M68K_ACCEL
 // (the core's clocks: fixed, a CPU card's; PAL/NTSC stays the chipset's)
+// (MINIMIG_M68K_CPU_PLL_50: from the board's 50 MHz oscillator, a source of
+// its own, its pin beside the 27 MHz one, so the PLL can sit by both)
 m68k_cpu_pll m68k_cpu_pll (
   .areset       (pll_rst          ),
+`ifdef MINIMIG_M68K_CPU_PLL_50
+  .inclk0       (CLOCK_50         ),
+`else
   .inclk0       (clk_27mhz        ),
-  .c0           (SDRAM2_CLK       ), // the second SDRAM's clock (m68k_cpu_pll.v has them)
+`endif
+  .c0           (clk_sdram2_pll   ), // the second SDRAM's clock (m68k_cpu_pll.v has them)
   .c1           (clk_sd2          ), // its controller's
   .c2           (clk_cpu          ), // the core's
-  .locked       (                 )
+  .locked       (cpu_pll_locked   )
 );
 `else
 amiga_clk amiga_clk2 (
@@ -404,7 +430,7 @@ amiga_clk amiga_clk2 (
   .ntsc         (clock_ntsc       ), // pal/ntsc clock select
   .clk_in       (clk_27mhz        ), // input clock     ( 27.000000MHz)
   .clk_114      (clk_sd2          ), // output clock c0 (114.750000MHz)
-  .clk_sdram    (SDRAM2_CLK       ), // output clock c2 (114.750000MHz, -146.25 deg)
+  .clk_sdram    (clk_sdram2_pll   ), // output clock c2 (114.750000MHz, -146.25 deg)
   .clk_28       (clk_cpu          ), // output clock c1 ( 28.687500MHz)
   .clk7_en      (                 ), // output clock 7 enable (on 28MHz clock domain)
   .clk7n_en     (                 ), // 7MHz negedge output clock enable (on 28MHz clock domain)
@@ -412,9 +438,23 @@ amiga_clk amiga_clk2 (
   .c3           (                 ), // clk28m clock domain signal synchronous with clk signal delayed by 90 degrees
   .cck          (                 ), // colour clock output (3.54 MHz)
   .eclk         (                 ), // 0.709379 MHz clock enable output (clk domain pulse)
-  .locked       (                 )  // pll locked output
+  .locked       (cpu_pll_locked   )  // pll locked output
 );
 `endif
+`ifdef MINIMIG_SDRAM_CLK_DDIO
+altddio_out #(
+  .extend_oe_disable("OFF"), .intended_device_family("Cyclone 10 LP"), .invert_output("OFF"),
+  .lpm_hint("UNUSED"), .lpm_type("altddio_out"), .oe_reg("UNREGISTERED"), .power_up_high("OFF"),
+  .width(1)
+) sdram2clk_ddr (
+  .datain_h(1'b0), .datain_l(1'b1), .outclock(clk_sd2), .dataout(SDRAM2_CLK),
+  .aclr(1'b0), .aset(1'b0), .oe(1'b1), .outclocken(1'b1), .sclr(1'b0), .sset(1'b0)
+);
+`else
+assign SDRAM2_CLK = clk_sdram2_pll;
+`endif
+`else
+assign cpu_pll_locked = 1'b1;
 `endif
 
 //// TG68K main CPU ////

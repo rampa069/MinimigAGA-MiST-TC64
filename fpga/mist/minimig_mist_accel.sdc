@@ -5,6 +5,8 @@ set_time_format -unit ns -decimal_places 3
 
 #create clocks
 create_clock -name pll_in_clk -period 37.037 [get_ports {CLOCK_27[0]}]
+# (MINIMIG_M68K_CPU_PLL_50) the core's PLL's input
+create_clock -name clk_50 -period 20.000 [get_ports {CLOCK_50}]
 create_clock -name spi_clk -period 41.666 -waveform { 20.8 41.666 } [get_ports {SPI_SCK}]
 
 # pll clocks
@@ -12,6 +14,11 @@ derive_pll_clocks
 
 
 # generated clocks
+# (MINIMIG_SDRAM_CLK_DDIO) the SDRAM's clock: clk_114 inverted, through the
+# DDR output register sdramclk_ddr (minimig_mist_top.v)
+create_generated_clock -name sdram_clk_pin -invert \
+  -source [get_pins -compatibility_mode {*sdramclk_ddr|auto_generated|ddio_outa[0]|muxsel}] \
+  [get_ports {SDRAM_CLK}]
 
 
 # name PLL clocks
@@ -33,13 +40,13 @@ set_clock_groups -exclusive -group [get_clocks {amiga_clk|amiga_clk_i|altpll_com
 derive_clock_uncertainty
 
 
-# input delay
-set_input_delay -clock $clk_sdram -reference_pin [get_ports SDRAM_CLK] -max 6.4 $sdram_inputs
-set_input_delay -clock $clk_sdram -reference_pin [get_ports SDRAM_CLK] -min 3.2 $sdram_inputs
+# input delay (to the clock at the SDRAM's pin)
+set_input_delay -clock sdram_clk_pin -max 6.4 $sdram_inputs
+set_input_delay -clock sdram_clk_pin -min 3.2 $sdram_inputs
 
 #output delay
-set_output_delay -clock $clk_sdram -reference_pin [get_ports SDRAM_CLK] -max  1.5 $sdram_outputs
-set_output_delay -clock $clk_sdram -reference_pin [get_ports SDRAM_CLK] -min -0.8 $sdram_outputs
+set_output_delay -clock sdram_clk_pin -max  1.5 $sdram_outputs
+set_output_delay -clock sdram_clk_pin -min -0.8 $sdram_outputs
 
 set_output_delay -clock $clk_114 -1.5 [get_ports {VGA_R[*]}]
 set_output_delay -clock $clk_114 -1.5 [get_ports {VGA_G[*]}]
@@ -115,7 +122,9 @@ set_multicycle_path -from {TG68K:tg68k|addr[*]} -hold 2
 set_multicycle_path -from [get_clocks $clk_28] -to [get_clocks $clk_114] -setup 4
 set_multicycle_path -from [get_clocks $clk_28] -to [get_clocks $clk_114] -hold 3
 
-set_multicycle_path -from [get_clocks $clk_sdram] -to [get_clocks $clk_114] -setup 2
+# the read data: from the SDRAM's edge half a clock after clk_114's to the
+# clk_114 edge after the next
+set_multicycle_path -from [get_clocks sdram_clk_pin] -to [get_clocks $clk_114] -setup 2
 
 # Neither in nor out of the C2P requires single-cycle speed
 set_multicycle_path -from {TG68K:tg68k|akiko:myakiko|cornerturn:\c2p:myc2p|rdptr[*]} -to {TG68K:tg68k|TG68KdotC_Kernel:pf68K_Kernel_inst|*} -setup -end 2

@@ -1,9 +1,15 @@
 // The m68k core's own clocks (MINIMIG_M68K_ACCEL), a CPU card's: fixed, not
 // switched between PAL and NTSC as the chipset's (amiga_clk) are. From the
 // 27 MHz input, VCO 1080 MHz:
-//   c0  108 MHz, -1600 ps: the second SDRAM's clock (as amiga_clk's c0)
+//   c0  108 MHz, -1600 ps: the second SDRAM's clock (as amiga_clk's c0);
+//       unused with MINIMIG_SDRAM_CLK_DDIO (the pin from c1 through a DDR
+//       output register)
 //   c1  108 MHz: its controller (m68k_sdram_minimig), so c2 is half of it
 //   c2  54 MHz (VCO / 20): the core (m68k_cpu's clk_cpu), related to c1
+// MINIMIG_M68K_CPU_51MHZ: VCO 918 MHz, c0 and c1 102 MHz (27 x 34 / 9), c2
+// 51 MHz (the 68040's revision: its core closes there)
+// MINIMIG_M68K_CPU_PLL_50: from the 50 MHz input instead, the same clocks
+// (VCO 1080 MHz, or 1020 MHz for 51 MHz: 50 / 5 x 108 or x 102)
 
 module m68k_cpu_pll (
   input  wire areset,
@@ -58,22 +64,37 @@ altpll altpll_component (
   .vcooverrange (),
   .vcounderrange ()
 );
+`ifdef MINIMIG_M68K_CPU_PLL_50
+localparam IN_PS = 20000;
+`ifdef MINIMIG_M68K_CPU_51MHZ
+localparam SD_MUL = 51, SD_DIV = 25, CPU_MUL = 51, CPU_DIV = 50;
+`else
+localparam SD_MUL = 54, SD_DIV = 25, CPU_MUL = 27, CPU_DIV = 25;
+`endif
+`else
+localparam IN_PS = 37037;
+`ifdef MINIMIG_M68K_CPU_51MHZ
+localparam SD_MUL = 34, SD_DIV = 9, CPU_MUL = 17, CPU_DIV = 9;
+`else
+localparam SD_MUL = 4, SD_DIV = 1, CPU_MUL = 2, CPU_DIV = 1;
+`endif
+`endif
 defparam
   altpll_component.bandwidth_type = "AUTO",
-  altpll_component.clk0_divide_by = 1,
+  altpll_component.clk0_divide_by = SD_DIV,
   altpll_component.clk0_duty_cycle = 50,
-  altpll_component.clk0_multiply_by = 4,
+  altpll_component.clk0_multiply_by = SD_MUL,
   altpll_component.clk0_phase_shift = "-1600",
-  altpll_component.clk1_divide_by = 1,
+  altpll_component.clk1_divide_by = SD_DIV,
   altpll_component.clk1_duty_cycle = 50,
-  altpll_component.clk1_multiply_by = 4,
+  altpll_component.clk1_multiply_by = SD_MUL,
   altpll_component.clk1_phase_shift = "0",
-  altpll_component.clk2_divide_by = 1,
+  altpll_component.clk2_divide_by = CPU_DIV,
   altpll_component.clk2_duty_cycle = 50,
-  altpll_component.clk2_multiply_by = 2,
+  altpll_component.clk2_multiply_by = CPU_MUL,
   altpll_component.clk2_phase_shift = "0",
-  altpll_component.compensate_clock = "CLK0",
-  altpll_component.inclk0_input_frequency = 37037,
+  altpll_component.compensate_clock = "CLK1",
+  altpll_component.inclk0_input_frequency = IN_PS,
   altpll_component.intended_device_family = "Cyclone 10 LP",
   altpll_component.lpm_type = "altpll",
   altpll_component.operation_mode = "NORMAL",
