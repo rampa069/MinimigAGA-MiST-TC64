@@ -20,10 +20,26 @@ module m68k_decode
   input  logic [4:0]  step,
   input  logic        sup,            // SR.S (stable: SR changes serialise)
   input  logic        msp_m,          // SR.M
+  // what an early decode found for this instruction (the core's PRELEN):
+  // the words that must be in the queue, the source's extension words
+  // (where MOVE's destination begins), instead of finding them here
+  input  logic        pre_en,
+  input  logic [3:0]  pre_nv,
+  input  logic [3:0]  pre_snw,
+  input  logic [3:0]  pre_len,        // and the length (the next PC, BSR's and JSR's return)
+  input  logic [15:0] pre_mrem,       // MOVEM: the registers of the list still to move (the core's)
 
   output logic        valid,          // the whole instruction is in the queue
   output uop_t        u,
-  output logic [3:0]  len             // instruction length in words
+  output logic [3:0]  len,            // instruction length in words (pre_len with pre_en)
+  output logic [3:0]  len_own,        // the one found here
+  output logic [3:0]  nwait,          // the extension words that must be in the queue
+  output logic [3:0]  snw,            // the source's extension words (MOVE)
+  // for an early decode: the instruction's uops, and its last uop's jump
+  // (JSR's at its first; for other multi-uop ones none) and prediction
+  output logic [4:0]  nst,
+  output br_e         lbr,
+  output logic        lpred
 );
 
   typedef enum logic [1:0] {K_DREG, K_AREG, K_MEM, K_IMM} kind_e;
@@ -247,6 +263,11 @@ module m68k_decode
     return r;
   endfunction
 
+  function automatic logic [3:0] ctz16(input logic [15:0] m);
+    for (int i = 0; i < 16; i++) if (m[i]) return 4'(i);
+    return 4'd0;
+  endfunction
+
   function automatic logic [4:0] popc16(input logic [15:0] m);
     logic [4:0] c;
     c = 5'd0;
@@ -269,8 +290,10 @@ module m68k_decode
     logic [3:0] nv;           // extension words that must be in the queue
     logic [3:0] n;            // extension words
     logic [31:0] bdisp;
+    logic        jsr_l, jsr_p;        // JSR: its last uop jumps; predicted
 
     u = '0;
+    jsr_l = 1'b0; jsr_p = 1'b0;
     bad = 1'b0;
     ill = 1'b0;
     priv = 1'b0;
@@ -292,7 +315,7 @@ module m68k_decode
       4'h1, 4'h2, 4'h3: begin
         sz = (op[13:12] == 2'b01) ? SZ_B : (op[13:12] == 2'b11) ? SZ_W : SZ_L;
         s = ea_dec(op[5:3], op[2:0], sz, 4'd1, w, q_pc);
-        d = ea_dec(op[8:6], op[11:9], sz, 4'd1 + s.nw, w, q_pc);
+        d = ea_dec(op[8:6], op[11:9], sz, 4'd1 + (pre_en ? pre_snw : s.nw), w, q_pc);
         n = s.nw + d.nw;
         bad = s.bad || d.bad || d.kind == K_IMM;
         if (d.kind == K_AREG) begin                  // MOVEA
@@ -414,18 +437,22 @@ module m68k_decode
               u.alu = ALU_CASCMP;
               u.cc = CC_CMP;
             end
-            5'd3: begin
-              u.a_sel = OP_REG; u.a_reg = R_T0;
-              u.b_sel = OP_REG; u.b_reg = {2'b00, x1[2:0]};
-              u.alu = ALU_CASSEL;
-              u.dst_en = 1'b1; u.dst = {2'b00, x1[2:0]};
-            end
-            default: begin
-              u.ea_en = 1'b1; u.base_en = 1'b1; u.base = R_T2;
-              u.store = 1'b1; u.msize = sz;
-              u.a_sel = OP_REG; u.a_reg = {2'b00, x1[8:6]};
-              u.alu = ALU_CASST;
-            end
+            default:
+              // Dc, then the store; the 68060 stores first: its store is made
+              // when the compare fails too, and a write's access error
+              // restarts the instruction with nothing of it kept
+              if (step == (MC68060 ? 5'd4 : 5'd3)) begin
+                u.a_sel = OP_REG; u.a_reg = R_T0;
+                u.b_sel = OP_REG; u.b_reg = {2'b00, x1[2:0]};
+                u.alu = ALU_CASSEL;
+                u.dst_en = 1'b1; u.dst = {2'b00, x1[2:0]};
+              end else begin                                     // Du, or (the 68060) the
+                u.ea_en = 1'b1; u.base_en = 1'b1; u.base = R_T2; // operand read back
+                u.store = 1'b1; u.msize = sz;
+                u.a_sel = OP_REG; u.a_reg = {2'b00, x1[8:6]};
+                u.b_sel = OP_REG; u.b_reg = R_T0;
+                u.alu = ALU_CASST;
+              end
           endcase
         end else begin                                           // CAS2
           unimp = MC68060;
@@ -781,10 +808,12 @@ module m68k_decode
             u.a_sel = OP_IMM;
             u.b_sel = OP_REG; u.b_reg = R_T0;
             u.br = BR_JMP;
-            if (!s.base_en && !s.idx_en && !s.ind) begin
-              u.br_pred = 1'b1; u.br_target = s.disp;
-            end
+            if (!s.base_en && !s.idx_en && !s.ind) u.br_pred = 1'b1;
           end
+          // (the target in both uops: the core's early decode, PRELEN,
+          // finds it with the first)
+          if (!s.base_en && !s.idx_en && !s.ind) u.br_target = s.disp;
+          jsr_l = 1'b1; jsr_p = !s.base_en && !s.idx_en && !s.ind;
         end else if (op[11:8] == 4'h0 && op[7:6] != 2'b11) begin   // NEGX
           bad = bad || s.kind == K_IMM || s.kind == K_AREG;
           u = rmw_b(u, s, sz);
@@ -873,6 +902,7 @@ module m68k_decode
           logic [3:0]  ri;
           logic [4:0]  r;
           logic [31:0] off, tot;
+          logic        lastr;              // the An update after the list
           sz = op[6] ? SZ_L : SZ_W;
           tomem = !op[10];
           mask = w[1];
@@ -885,18 +915,27 @@ module m68k_decode
           nr = popc16(mask);
           nsteps = (nr == 5'd0) ? 5'd1 : nr + 5'((!tomem && ctl) ? 1 : 0) + 5'((pre || post) ? 1 : 0);
           k = (!tomem && ctl) ? step - 5'd1 : step;
-          ri = kth_bit(mask, k);
-          r = pre ? {1'b0, 4'd15 - ri} : {1'b0, ri};
           off = (sz == SZ_L) ? {25'd0, k, 2'b00} : {26'd0, k, 1'b0};
-          tot = (sz == SZ_L) ? {25'd0, nr, 2'b00} : {26'd0, nr, 1'b0};
+          // (pre_en: the register is the lowest of those left, the list is
+          // done when none is, and then all of it was moved: off)
+          if (pre_en) begin
+            ri = ctz16(pre_mrem);
+            lastr = pre_mrem == 16'd0;
+            tot = off;
+          end else begin
+            ri = kth_bit(mask, k);
+            lastr = k == nr;
+            tot = (sz == SZ_L) ? {25'd0, nr, 2'b00} : {26'd0, nr, 1'b0};
+          end
+          r = pre ? {1'b0, 4'd15 - ri} : {1'b0, ri};
           u.movem = 1'b1;
-          if (nr == 5'd0) begin
+          if (mask == 16'd0) begin
             // nothing moves
           end else if (!tomem && ctl && step == 5'd0) begin
             u = use_ea(u, s);
             u.a_sel = OP_EA;
             u.dst_en = 1'b1; u.dst = R_T2;
-          end else if ((pre || post) && k == nr) begin            // An at last
+          end else if ((pre || post) && lastr) begin             // An at last
             u.a_sel = OP_IMM; u.imm = pre ? 32'd0 - tot : tot;
             u.b_sel = OP_REG; u.b_reg = s.base;
             u.alu = ALU_ADD;
@@ -1437,9 +1476,11 @@ module m68k_decode
           // FSAVE, FRESTORE: privileged in any mode (TG68K.C's decode, 68040
           // mode); in supervisor mode the FPU runs every memory mode, as
           // TG68K.C, and a register or a mode 7 without an address is
-          // Line-F, where TG68K.C uses an undefined address
+          // Line-F, where TG68K.C uses an undefined address. The 68060 takes
+          // that Line-F in user mode too: it comes before the privilege
+          // violation (UM 8.3, exception priorities 2.1 and 2.3)
           priv = fsr;
-          ill = fsr && sup && (m == 3'b000 || m == 3'b001 || (m == 3'b111 && r >= 3'd5));
+          ill = fsr && (sup || MC68060) && (m == 3'b000 || m == 3'b001 || (m == 3'b111 && r >= 3'd5));
           u.fpu = 1'b1;
           u.sys = 1'b1;
           u.imm = {16'd0, c};             // the command or condition word
@@ -1574,10 +1615,11 @@ module m68k_decode
     // error, for the first word it needs
     if (step == 5'd0) begin
       logic       ff;
-      logic [3:0] fi;
+      logic [3:0] fi, nw_;
       ff = 1'b0; fi = 4'd0;
+      nw_ = pre_en ? pre_nv : nv;
       for (int i = 15; i >= 0; i--)
-        if (i <= int'(nv) && qf[i][1]) begin ff = 1'b1; fi = 4'(i); end
+        if (i <= int'(nw_) && qf[i][1]) begin ff = 1'b1; fi = 4'(i); end
       if (ff) begin
         u = '0;
         u.ifault = 1'b1;
@@ -1596,7 +1638,8 @@ module m68k_decode
                  (op[15:11] == 5'b00001 && op[10:9] != 2'b00 && op[8:6] == 3'b011) ||   // CAS, CAS2
                  op[15:12] == 4'hF);                                  // FPU, MOVE16
 
-    len = 4'd1 + n;
+    len_own = 4'd1 + n;
+    len = pre_en ? pre_len : len_own;
     u.pc = q_pc;
     u.opcode = op;
     u.next_pc = q_pc + {27'd0, len, 1'b0};
@@ -1605,6 +1648,11 @@ module m68k_decode
     if (u.br == BR_NONE) u.br_pred = 1'b0;
     if (u.a_sel == OP_IMM && u.store && (u.br != BR_NONE)) u.imm = u.next_pc;  // BSR, JSR
     valid = q_count != 5'd0 && q_count >= {1'b0, 4'd1 + nv};
+    nwait = nv;
+    snw = s.nw;
+    nst = nsteps;
+    lbr = (nsteps == 5'd1) ? u.br : jsr_l ? BR_JMP : BR_NONE;
+    lpred = (nsteps == 5'd1) ? (u.br != BR_NONE && u.br_pred) : (jsr_l && jsr_p);
   end
 
 endmodule

@@ -17,10 +17,10 @@
 // ASYNC: the core, its caches and the line port unit on clk_cpu, every
 // clock, a clock domain of their own; m68k_biu stays on clk with clkena_in,
 // so the bus is the same to the wrapper. m68k_xport carries the caches'
-// requests to it and its answers back; IPL, nReset and lp_en are taken into
-// clk_cpu through flip-flops (IPL once stable), lp_done too (the line
-// port's handshake has four phases), and CACR, VBR, the MMU's state, CINV
-// and RESET into clk.
+// requests to it and its answers back; IPL, nReset, lp_en and the line
+// port's hole are taken into clk_cpu through flip-flops (IPL once stable),
+// lp_done too (the line port's handshake has four phases), and CACR, VBR,
+// the MMU's state, CINV and RESET into clk.
 
 module m68k_cpu
   import m68k_pkg::*;
@@ -60,7 +60,21 @@ module m68k_cpu
   parameter bit SKID = FAST_CLK,
   parameter bit SB_REG = FAST_CLK,
   parameter bit DREDIR_REG = 1'b0,          // (not yet: mmu060 hangs with it)
-  parameter bit EX_SLOW = FAST_CLK
+  parameter bit EX_SLOW = FAST_CLK,
+  parameter bit PRELEN = 1'b0,             // (m68k_core's): the instruction's length from a register
+  parameter bit LD_SPEC = 1'b0,            // (m68k_core's): a load goes before its check against the stores
+  parameter bit SH_SLOW = 1'b0,            // (m68k_core's): shifts and rotates in two cycles
+  parameter bit EX_PRESEL = 1'b0,          // (m68k_core's): EX's other operands chosen in OF
+  parameter bit DP_REG = 1'b0,             // (m68k_core's, m68k_dcache's GNT_REG): an access every other edge
+  parameter bit EARLY_REG = 1'b0,          // (m68k_core's): the early values in registers
+  parameter bit IND_REG = 1'b0,            // (m68k_core's): a memory indirect pointer into a register first
+  parameter bit FLUSH_REG = 1'b0,          // (m68k_core's): a mispredict empties the stages a clock later
+  parameter bit EX_FASTCC = 1'b0,          // (m68k_core's): the adds' Z and N off the result's select
+  parameter bit MUL_SLOW = 1'b0,           // (m68k_core's): MULU.W and MULS.W in two cycles
+  parameter bit FXL_REG = 1'b0,            // (m68k_core's): a fetch by the registered page only
+  // the core's writes into the instruction cache's check a clock later
+  // (the data cache's grant off the instruction cache's valid bits)
+  parameter bit SNOOP_REG = 1'b0
 )
 (
   input  logic        clk,
@@ -97,6 +111,8 @@ module m68k_cpu
   // the line port (with LINE_PORT; see m68k_lpu): changes on enabled edges,
   // lp_done and lp_rdata held by the machine until lp_req falls
   input  logic        lp_en,
+  input  logic        lp_hole_en,    // a hole in the window (m68k_lpu)
+  input  logic [7:0]  lp_hole_base,
   output logic        lp_req,
   output logic        lp_we,
   output logic [31:0] lp_addr,
@@ -170,7 +186,8 @@ module m68k_cpu
   assign cce = ASYNC ? 1'b1 : clkena_in;
   logic [31:0] c_vbr;
   logic        c_tc_e;
-  logic        c_lp_en, c_lp_done;
+  logic        c_lp_en, c_lp_done, c_hole_en;
+  logic [7:0]  c_hole_base;
 
   // the interrupt level, taken on enabled edges: the wrappers' IPL register
   // reaches one flip-flop in a clock, the core sees it from the next edge
@@ -180,17 +197,22 @@ module m68k_cpu
   if (ASYNC) begin : g_csync
     logic [1:0] rs;
     logic [2:0] ip1, ip2, ip3;
-    logic [1:0] le, ld;
+    logic [1:0] le, ld, he;
+    logic [7:0] hb1, hb2;
     always_ff @(posedge clk_cpu) rs <= {rs[0], rst};
     assign crst = rs[1];
     always_ff @(posedge clk_cpu) begin
       ip1 <= IPL; ip2 <= ip1; ip3 <= ip2;
       le <= {le[0], lp_en};
+      he <= {he[0], lp_hole_en};
+      hb1 <= lp_hole_base; hb2 <= hb1;
       ld <= {ld[0], lp_done};
       if (crst) ipl_r <= 3'b111;
       else if (ip2 == ip3) ipl_r <= ip3;
     end
     assign c_lp_en = le[1];
+    assign c_hole_en = he[1];
+    assign c_hole_base = hb2;
     assign c_lp_done = LP_SYNC ? ld[1] : lp_done;
   end else begin : g_nosync
     assign crst = rst;
@@ -198,13 +220,16 @@ module m68k_cpu
       if (rst) ipl_r <= 3'b111;
       else if (clkena_in) ipl_r <= IPL;
     assign c_lp_en = lp_en;
+    assign c_hole_en = lp_hole_en;
+    assign c_hole_base = lp_hole_base;
     assign c_lp_done = lp_done;
   end
   endgenerate
 
   m68k_core #(.IO_LO(IO_LO), .IO_HI(IO_HI), .SYNC_LO(SYNC_LO), .FPU_FAST(FPU_FAST), .FPU_REG(FPU_REG),
               .MMU_REG(MMU_REG), .FETCH_REG(FETCH_REG),
-              .AG_LOAD(AG_LOAD), .OF_SCREG(OF_SCREG), .SKID(SKID), .SB_REG(SB_REG), .DREDIR_REG(DREDIR_REG), .EX_SLOW(EX_SLOW), .MC68060(MC68060)) core (
+              .AG_LOAD(AG_LOAD), .OF_SCREG(OF_SCREG), .SKID(SKID), .SB_REG(SB_REG), .DREDIR_REG(DREDIR_REG), .EX_SLOW(EX_SLOW), .PRELEN(PRELEN), .LD_SPEC(LD_SPEC), .SH_SLOW(SH_SLOW), .EX_PRESEL(EX_PRESEL), .DP_REG(DP_REG), .EARLY_REG(EARLY_REG), .IND_REG(IND_REG), .FLUSH_REG(FLUSH_REG), .EX_FASTCC(EX_FASTCC), .MUL_SLOW(MUL_SLOW), .FXL_REG(FXL_REG),
+              .MC68060(MC68060)) core (
     .clk(cclk), .rst(crst), .ce(cce), .ipl(~ipl_r),
     .i_req, .i_addr, .i_fc, .i_gnt, .i_rvalid, .i_err, .i_rdata,
     .d_req, .d_we, .d_addr, .d_size, .d_wdata, .d_fc, .d_gnt, .d_rvalid, .d_err, .d_rdata,
@@ -215,16 +240,23 @@ module m68k_cpu
     .dbg_mwr, .dbg_mwr_addr, .dbg_mwr_data, .dbg_mwr_fetch, .dbg_mwr_pc
   );
 
+  // SNOOP_REG: the core's write taken, a clock later
+  logic        sn_r;
+  logic [31:0] sn_ar;
+  always_ff @(posedge cclk)
+    if (crst) sn_r <= 1'b0;
+    else if (cce) begin sn_r <= d_req && d_we && d_gnt; sn_ar <= d_addr; end
+
   m68k_icache #(.NC0_LO(NC0_LO), .NC0_HI(NC0_HI), .NC1_LO(NC1_LO), .NC1_HI(NC1_HI)) icache (
     .clk(cclk), .rst(crst), .ce(cce), .enable(ctl_cacr[0] || force_cache), .inval(ctl_cinv && ctl_cinv_c[1]),
     .c_req(i_req), .c_addr(i_addr), .c_fc(i_fc), .c_gnt(i_gnt), .c_rvalid(i_rvalid), .c_err(i_err),
     .c_rdata(i_rdata),
-    .snoop(d_req && d_we && d_gnt), .snoop_addr(d_addr), .wb_empty, .f_want(if_want), .f_line(if_line),
+    .snoop(SNOOP_REG ? sn_r : (d_req && d_we && d_gnt)), .snoop_addr(SNOOP_REG ? sn_ar : d_addr), .wb_empty, .f_want(if_want), .f_line(if_line),
     .b_req(ci_req), .b_addr(ci_addr), .b_fc(ci_fc), .b_gnt(ci_gnt), .b_rvalid(ci_rvalid), .b_err(ci_err),
     .b_rdata(ci_rdata)
   );
 
-  m68k_dcache #(.NC0_LO(NC0_LO), .NC0_HI(NC0_HI), .NC1_LO(NC1_LO), .NC1_HI(NC1_HI), .COPYBACK(DC_COPYBACK), .LINES_LOG2(DC_LINES_LOG2)) dcache (
+  m68k_dcache #(.NC0_LO(NC0_LO), .NC0_HI(NC0_HI), .NC1_LO(NC1_LO), .NC1_HI(NC1_HI), .COPYBACK(DC_COPYBACK), .LINES_LOG2(DC_LINES_LOG2), .GNT_REG(DP_REG)) dcache (
     .clk(cclk), .rst(crst), .ce(cce), .enable(ctl_cacr[1] || force_cache), .inval(ctl_cinv && ctl_cinv_c[0]),
     .c_req(d_req), .c_we(d_we), .c_addr(d_addr), .c_size(d_size), .c_wdata(d_wdata), .c_fc(d_fc),
     .c_gnt(d_gnt), .c_rvalid(d_rvalid), .c_err(d_err), .c_rdata(d_rdata), .wb_empty,
@@ -235,6 +267,7 @@ module m68k_cpu
 
   m68k_lpu #(.LINE_PORT(LINE_PORT), .LP_LO(LP_LO), .LP_HI(LP_HI), .LP_ALL(LP_ALL)) lpu (
     .clk(cclk), .rst(crst), .ce(cce), .lp_en(c_lp_en),
+    .lp_hole_en(c_hole_en), .lp_hole_base(c_hole_base),
     .ci_req, .ci_addr, .ci_fc, .ci_gnt, .ci_rvalid, .ci_err, .ci_rdata,
     .cd_req, .cd_we, .cd_addr, .cd_size, .cd_wdata, .cd_fc, .cd_gnt, .cd_rvalid, .cd_err, .cd_rdata,
     .bi_req, .bi_addr, .bi_fc, .bi_gnt, .bi_rvalid, .bi_err, .bi_rdata,

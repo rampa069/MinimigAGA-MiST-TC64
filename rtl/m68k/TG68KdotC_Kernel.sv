@@ -76,13 +76,18 @@ module TG68KdotC_Kernel #(
 
   /* verilator lint_off PINCONNECTEMPTY */   // (the testbench's outputs, not used here)
   m68k_cpu #(.MC68060(MC68060 != 0), .LINE_PORT(LINE_PORT != 0), .LP_LO(LP_LO), .LP_HI(LP_HI),
-             .ASYNC(ASYNC != 0), .LP_SYNC(1'b0)) core68k (
+             .ASYNC(ASYNC != 0), .LP_SYNC(1'b0),
+             // with ASYNC, the core's clock at 51 MHz: m68k_core's registered paths
+             .PRELEN(ASYNC != 0), .LD_SPEC(ASYNC != 0), .SH_SLOW(ASYNC != 0),
+             .EX_PRESEL(ASYNC != 0), .DP_REG(ASYNC != 0), .EARLY_REG(ASYNC != 0),
+             .IND_REG(ASYNC != 0), .FLUSH_REG(ASYNC != 0), .EX_FASTCC(ASYNC != 0),
+             .MUL_SLOW(ASYNC != 0), .FXL_REG(ASYNC != 0), .SNOOP_REG(ASYNC != 0)) core68k (
     .clk, .clk_cpu, .nReset, .clkena_in, .data_in, .IPL, .berr,
     .addr_out, .data_write, .nWr, .nUDS, .nLDS, .busstate, .longword, .newpc,
     .long_req, .long_ack, .data_in_lo, .data_write_lo,
     .nResetOut, .FC, .clr_berr, .skipFetch, .CACR_out, .D_CACHE_out, .VBR_out, .MMU_on_out,
     .force_cache(1'b0),
-    .lp_en, .lp_req, .lp_we, .lp_addr, .lp_be, .lp_wdata, .lp_done, .lp_rdata,
+    .lp_en, .lp_hole_en(1'b0), .lp_hole_base(8'd0), .lp_req, .lp_we, .lp_addr, .lp_be, .lp_wdata, .lp_done, .lp_rdata,
     .dbg_retire(), .dbg_first(), .dbg_last(), .dbg_pc(), .dbg_op(), .dbg_npc(), .dbg_unimpl(),
     .dbg_regs(), .dbg_sr(), .dbg_st(), .dbg_st_addr(), .dbg_st_size(), .dbg_st_data(),
     .dbg_fwr(), .dbg_fwr_addr(), .dbg_fwr_size(), .dbg_fwr_data(),

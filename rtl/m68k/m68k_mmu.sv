@@ -37,7 +37,10 @@
 // translation is not kept in the cache (UM 11.1.2.2.3: it is dropped as its
 // fault is reported, so a handler that fixes the tables needs no PFLUSH);
 // hold_walk keeps a table search from starting while older writes (a
-// descriptor a handler fixed) are on their way.
+// descriptor a handler fixed) are on their way; and a data write that a TTR
+// with W set maps faults (WP), with TC E clear too (UM 4.1.3: "The TTRs
+// operate independently of the E-bit in the TCR"), so the core sends the
+// data accesses here whenever a data TTR has W.
 // With MC68060 0 the unit is the VHDL's.
 //
 // Copyright (c) 2026 Ramon Martinez. LGPL-3.0-or-later, as TG68K.C.
@@ -64,6 +67,11 @@ module m68k_mmu #(
   output logic        fault,          // pulse
   output logic [5:0]  why,            // with fault: {PTA, PTB, IL, PF, SP, WP}
   input  logic        hold_walk,      // (MC68060) older writes pending: no table search starts
+  // (MC68060) the core dropped what was in flight: the invalid
+  // translations cached for an access to take its fault are dropped, and
+  // a search under way caches none (what asked for it is gone; an access
+  // still there searches again)
+  input  logic        drop_inv,
   // table search bus cycles
   output logic        bus_act,
   output logic [31:0] bus_addr,
@@ -108,6 +116,7 @@ module m68k_mmu #(
   logic [3:0]   e_why [N];            // an invalid one: {PTA, PTB, IL, PF}
 
   typedef enum logic [2:0] {W_IDLE, W_RD_H, W_RD_L, W_CHECK, W_UPD, W_FILL, W_DONE} wstate_e;
+  logic        w_orph;                  // (MC68060) the search's access was dropped
   wstate_e ws = W_IDLE;
   logic [1:0]  lvl;                   // 0 root, 1 pointer, 2 page, 3 indirect page
   logic [31:0] w_addr;                // descriptor address
@@ -181,6 +190,17 @@ module m68k_mmu #(
     atc_fault = e_inv[idx] || (wr && e_w[idx]) || (e_s[idx] && !fc[2]);
   end
 
+  // (MC68060) a data write a TTR maps with W set (TT0's bits when both
+  // match, UM 4.4); with REG_XLATE and E set the registered entry holds
+  // the W of the TTR it was loaded from, so only the others fault on it
+  logic tt_w, tt_wpf;
+  always_comb begin
+    logic m0;
+    m0 = tt_match(dtt0, laddr, fc[2]);
+    tt_w = m0 ? dtt0[2] : (tt_match(dtt1, laddr, fc[2]) && dtt1[2]);
+  end
+  assign tt_wpf = MC68060 && act && wr && fc[1:0] != 2'b10 && tt_w && !(REG_XLATE && tc_e);
+
   // REG_XLATE: the fetches' entry for f_laddr, apart from the shared lookup
   logic [19:0] f_pg;
   assign f_pg = page_of(f_laddr, tc_p);
@@ -206,9 +226,9 @@ module m68k_mmu #(
                                : (act && tc_e && !tt_hit && (!atc_hit || (atc_need_m && !atc_fault)));
   assign stall = (REG_XLATE && (u_miss || u_walk)) || (!REG_XLATE && need_walk) ||
                  (ws != W_IDLE && !w_test);
-  assign quiet = act && tc_e &&
-                 ((REG_XLATE && u_hit && u_fault) ||
-                  (!REG_XLATE && !tt_hit && atc_hit && atc_fault));
+  assign quiet = (act && tc_e &&
+                  ((REG_XLATE && u_hit && u_fault) ||
+                   (!REG_XLATE && !tt_hit && atc_hit && atc_fault))) || tt_wpf;
 
   always_comb
     if (!tc_e)                    paddr = laddr;
@@ -271,6 +291,19 @@ module m68k_mmu #(
           end
         end
       end
+      // a write a write-protected TTR maps (with the access, as above)
+      if (tt_wpf && !stall) begin
+        fault_r <= 1'b1;
+        why_r <= 6'b000001;
+      end
+      if (MC68060 && drop_inv) begin
+        for (int i = 0; i < N; i++)
+          if (e_inv[i]) e_valid[i] <= 1'b0;
+        if (REG_XLATE)
+          for (int i = 0; i < 2; i++)
+            if (u_inv[i]) u_v[i] <= 1'b0;
+      end
+      if (MC68060 && drop_inv && ws != W_IDLE) w_orph <= 1'b1;
       // REG_XLATE: load the registered entry from the ATC; drop both
       // when the ATC changes or translation is off
       if (REG_XLATE) begin
@@ -279,7 +312,7 @@ module m68k_mmu #(
           u_super[u_sel] <= fc[2];
           u_lp[u_sel] <= u_pg;
           u_pp[u_sel] <= u_pg;
-          u_w[u_sel] <= 1'b0;
+          u_w[u_sel] <= MC68060 && !u_sel && tt_w;
           u_m[u_sel] <= 1'b1;
           u_s[u_sel] <= 1'b0;
           u_inv[u_sel] <= 1'b0;
@@ -316,7 +349,7 @@ module m68k_mmu #(
               ws <= W_RD_H;
             end
           end else if (need_walk && !(MC68060 && hold_walk)) begin
-            w_la <= laddr; w_super <= fc[2]; w_wr <= wr; w_test <= 1'b0;
+            w_la <= laddr; w_super <= fc[2]; w_wr <= wr; w_test <= 1'b0; w_orph <= 1'b0;
             d = fc[2] ? srp : urp;
             w_addr <= {d[31:9], laddr[31:25], 2'b00};
             lvl <= 2'd0; wp <= 1'b0; invalid <= 1'b0; sviol <= 1'b0; il <= 1'b0;
@@ -401,7 +434,7 @@ module m68k_mmu #(
           for (int i = 0; i < N; i++)
             if (e_lp[i] == page_of(w_la, tc_p) && e_super[i] == w_super)
               e_valid[i] <= 1'b0;
-          e_valid[victim] <= 1'b1;
+          e_valid[victim] <= !(MC68060 && invalid && !w_test && (w_orph || drop_inv));
           e_super[victim] <= w_super;
           e_lp[victim] <= page_of(w_la, tc_p);
           e_pp[victim] <= d[31:12];

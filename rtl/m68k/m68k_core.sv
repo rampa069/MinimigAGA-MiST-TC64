@@ -51,6 +51,56 @@ module m68k_core
   // operands in registers (the forwarding off the multiplier and the field
   // extraction)
   parameter bit EX_SLOW = 1'b0,
+  // the instruction's length from a register, an early decode as the
+  // 68060's IED: a second decode finds the length of the instruction after
+  // the one at the queue's head (of the head itself after a redirect), and
+  // decode's valid, the fetch's consume and its marks take it from there
+  // (the length off the queue's shift and the fetch; a clock more after
+  // each redirect)
+  parameter bit PRELEN = 1'b0,
+  // (with OF_SCREG and AG_LOAD 0) a load goes from OF without waiting for
+  // its check against the older stores, which OF makes on its registered
+  // address meanwhile: if a store overlaps it, its data is dropped and it
+  // goes again once checked (the check off AG; a load behind a store to
+  // its bytes a clock more)
+  parameter bit LD_SPEC = 1'b0,
+  // shifts and rotates in two cycles in EX: the shifter's output into a
+  // register first, the result, its select and the flags from there
+  parameter bit SH_SLOW = 1'b0,
+  // MULU.W and MULS.W the same: the product into a register first
+  parameter bit MUL_SLOW = 1'b0,
+  // (with MMU_REG) a fetch goes to the port only by the fetches' registered
+  // page (mmu_fhit): one that misses it is translated by the MMU, which
+  // loads that page, and goes the next clock; one whose translation
+  // faults is answered from a register (the data side's lookup off the
+  // fetch's grant)
+  parameter bit FXL_REG = 1'b0,
+  // EX's operands that are not registers (an immediate, the EA, a control
+  // register, the load's data) chosen as the uop enters EX, into a register:
+  // EX selects only between it, the forwarded register and the CCR
+  parameter bit EX_PRESEL = 1'b0,
+  // the data port taken for a new access only once the last one has been
+  // answered (with m68k_dcache's GNT_REG: the cache's hit off the next
+  // access's choice, its address and the MMU's lookup)
+  parameter bit DP_REG = 1'b0,
+  // the early value of a uop in OF and EX (a MOVE's whose result is known
+  // before EX, given to the address calculation of the next ones) chosen
+  // as it enters the stage, into a register (AG's forwarding off the
+  // stages' operand selects; one waiting for a register takes it a clock
+  // after it comes)
+  parameter bit EARLY_REG = 1'b0,
+  // a memory indirect pointer into a register first, the address from it
+  // a clock later (the data port's answer off the address's add)
+  parameter bit IND_REG = 1'b0,
+  // a mispredict found in EX empties the stages behind it a clock later,
+  // from a register, and drops the uop that entered EX meanwhile (EX's
+  // compare off the enables of OF, AG, decode and the fetch; a mispredict
+  // costs a clock more)
+  parameter bit FLUSH_REG = 1'b0,
+  // Z and N (and V's result bit) of the adds and subtracts from their
+  // operands and the adder, not from the result's select: a + b + c is 0
+  // at the size when (a ^ b) == ((a | b) << 1 | c) there
+  parameter bit EX_FASTCC = 1'b0,
   // the 68060 (else the 68040): its control registers (PCR, BUSCR, its
   // CACR and TC bits), one supervisor stack (M kept but not used, cleared by
   // an interrupt), RTE of formats $0 $2 $3 $4, interrupts only after the
@@ -136,6 +186,10 @@ module m68k_core
   logic [7:0]  pcr;
   logic [3:0]  buscr;
   logic [31:0] itt0, itt1, dtt0, dtt1, mmusr, urp, srp, vbr;
+  // the data accesses go through the MMU: translation on, or (the 68060) a
+  // data TTR that write-protects, which acts with TC E clear too (UM 4.1.3)
+  logic        dxl;
+  assign dxl = tc_e || (MC68060 && ((dtt0[15] && dtt0[2]) || (dtt1[15] && dtt1[2])));
 
   typedef enum logic [1:0] {RS_SSP, RS_PC, RS_RUN} rs_e;
   rs_e rs_state;
@@ -152,9 +206,13 @@ module m68k_core
   logic        of_v;  uop_t of_u;  logic [2:0] of_tag;
   logic [31:0] of_ea, of_anv;  logic of_an;
   opnd_t       of_a, of_b;
+  logic [31:0] of_ev, ex_ev;            // EARLY_REG: the uop's early value; it is there
+  logic        of_evr, ex_evr;
   logic        of_ld_issued, of_ld_have;
   logic [31:0] of_ld_data;
   logic        of_ind_issued, of_ind_done;   // memory indirect: the pointer read
+  logic [31:0] of_ptr;                  // IND_REG: the pointer read; the address comes next
+  logic        of_ptr_v;
   // an access error of the uop's read: by the MMU (atc) or a bus error, at fa
   logic        of_af, of_afatc, ex_af, ex_afatc, wb_af, wb_afatc;
   logic [5:0]  of_afwhy, ex_afwhy, wb_afwhy;   // the 68060's: why the MMU faulted it
@@ -372,10 +430,92 @@ module m68k_core
     .i_req(fi_req), .i_addr(fi_addr), .i_gnt(fi_gnt), .i_rvalid(fi_rvalid), .i_err(fi_err), .i_rdata
   );
 
+  // PRELEN: MOVEM's registers still to move (its list at the first uop;
+  // each uop that moves one drops the lowest)
+  logic [15:0] mv_rem, mv_in;
+  assign mv_in = (dec_step == 5'd0) ? q[1] : mv_rem;
+  logic        dec_valid_c;             // decode's own valid and length
+  logic [3:0]  dec_len_c, dec_nv_c, dec_snw_c, dec_len_x;
+  logic [4:0]  dec_nst_c;               // (decode's own: only checked against the early decode's)
+  br_e         dec_lbr_c;
+  logic        dec_lpred_c;
+  logic [3:0]  pl_nv, pl_snw, pl_cnv, pl_csnw;  // PRELEN: the head's, found by the second decode
+  logic [4:0]  pl_nst, pl_cnst;         // its uops
+  logic        pl_bhit;                 // the BTB's entry for the head's PC, looked up a clock before
+  logic [31:0] pl_btgt;
+  br_e         pl_ilbr;                 // m68k_ilen's jump, target, prediction
+  logic [31:0] pl_itgt;
+  logic        pl_ilpred;
+  br_e         pl_lbr, pl_clbr;         // its last uop's jump, and prediction
+  logic        pl_lpred, pl_clpred;
   m68k_decode #(.MC68060(MC68060)) decode (
     .q, .qf, .q_count, .q_pc, .step(dec_step), .sup(sr_hi[5]), .msp_m(sr_hi[4]),
-    .valid(dec_valid), .u(dec_u), .len(dec_len)
+    .pre_en(PRELEN), .pre_nv(pl_nv), .pre_snw(pl_snw), .pre_len(pl_len), .pre_mrem(mv_in),
+    .valid(dec_valid_c), .u(dec_u), .len(dec_len_x), .len_own(dec_len_c), .nwait(dec_nv_c), .snw(dec_snw_c),
+    .nst(dec_nst_c), .lbr(dec_lbr_c), .lpred(dec_lpred_c)
   );
+
+  // PRELEN: the length of the head's instruction in pl_len (pl_v), and the
+  // second decode on the words after it (on the head's while pl_v is clear)
+  logic        pl_v, pl_cv, pl_dv;
+  logic [3:0]  pl_dlen, pl_dlen_own;    // (the second decode's own: not used)
+  logic [3:0]  pl_len, pl_clen, pl_off;
+  logic [1:0]  pl_sm;                   // the S and M it was found with (privileged ones: one word)
+  logic [15:0] pq [16];
+  logic [1:0]  pqf [16];
+  uop_t        pl_u;                    // (only its length and jump target are used)
+  logic [31:0] pl_pc, pl_tgt;           // the second decode's PC; the head's jump target
+  logic [4:0]  pq_count;
+  logic        pl_ok;                   // pl_v, with the S and M of now
+  // (S and M matter at an instruction's first uop: RTE's later ones run in
+  // the new mode, as decode makes them)
+  assign pl_ok = pl_v && (pl_sm == sr_hi[5:4] || dec_step != 5'd0);
+  // (from pl_v alone: the S and M check is off the second decode's path; a
+  // length found with the old ones is dropped below and found again)
+  assign pl_off = pl_v ? pl_len : 4'd0;
+  always_comb begin
+    for (int i = 0; i < 16; i++) begin
+      pq[i] = (i + int'(pl_off) < 16) ? q[i + int'(pl_off)] : 16'd0;
+      pqf[i] = (i + int'(pl_off) < 16) ? qf[i + int'(pl_off)] : 2'd0;
+    end
+    pq_count = (q_count > {1'b0, pl_off}) ? q_count - {1'b0, pl_off} : 5'd0;
+    // (from the fetch's mark on, the words are its target's)
+    pl_pc = (pl_v && mk_v && mk_pos == {1'b0, pl_off}) ? mk_pc : q_pc + {27'd0, pl_off, 1'b0};
+  end
+  generate if (PRELEN) begin : g_prelen
+    m68k_decode #(.MC68060(MC68060)) pdecode (
+      .q(pq), .qf(pqf), .q_count(pq_count), .q_pc(pl_pc), .step(5'd0), .sup(sr_hi[5]), .msp_m(sr_hi[4]),
+      .pre_en(1'b0), .pre_nv(4'd0), .pre_snw(4'd0), .pre_len(4'd0), .pre_mrem(16'd0),
+      .valid(pl_dv), .u(pl_u), .len(pl_dlen), .len_own(pl_dlen_own), .nwait(pl_cnv), .snw(pl_csnw),
+      .nst(pl_cnst), .lbr(pl_clbr), .lpred(pl_clpred)
+    );
+    // the length, and so the next one's place, from m68k_ilen: flat, off
+    // the second decode (which gives the rest, into registers too)
+    logic [3:0] il_len;
+    m68k_ilen #(.MC68060(MC68060)) ilen (.w(pq), .pc(pl_pc), .len(il_len), .lbr(pl_ilbr), .tgt(pl_itgt),
+                                         .lpred(pl_ilpred));
+    assign pl_clen = il_len;
+    assign pl_cv = pq_count != 5'd0 && pq_count >= {1'b0, il_len};
+    assign dec_valid = pl_ok;
+    assign dec_len = pl_len;
+  end else begin : g_len
+    assign pl_cv = 1'b0;
+    assign pl_clen = 4'd0;
+    assign pl_dv = 1'b0;
+    assign pl_dlen = 4'd0;
+    assign pl_dlen_own = 4'd0;
+    assign pl_ilbr = BR_NONE;
+    assign pl_itgt = 32'd0;
+    assign pl_ilpred = 1'b0;
+    assign pl_u = '0;
+    assign pl_cnv = 4'd0;
+    assign pl_csnw = 4'd0;
+    assign pl_cnst = 5'd0;
+    assign pl_clbr = BR_NONE;
+    assign pl_clpred = 1'b0;
+    assign dec_valid = dec_valid_c;
+    assign dec_len = dec_len_c;
+  end endgenerate
 
   // The exception entry sequence: save SR in T1, enter supervisor mode,
   // stack the format $2 address, the format/vector word, the PC and SR,
@@ -478,18 +618,28 @@ module m68k_core
   uop_t        dec_up;                  // dec_u with the prediction
   always_comb begin
     logic [3:0] bi;
+    logic       dyn;                    // a jump whose target decode does not know
     dec_up = dec_u;
+    // (PRELEN: the prediction from the early decode's registers, the uop's
+    // jump itself from decode)
+    if (PRELEN) begin
+      dec_up.br_target = pl_tgt;
+      dec_up.last = dec_step == pl_nst - 5'd1;
+      dec_up.br_pred = dec_up.last && pl_lpred;
+      dyn = dec_up.last && pl_lbr == BR_JMP && !pl_lpred;
+    end else
+      dyn = dec_u.br == BR_JMP && !dec_u.br_pred;
     if (rte_cont) dec_up.first = 1'b0;
     dec_is_rts = dec_u.opcode == 16'h4E75;
-    dec_is_call = dec_u.last && (dec_u.opcode[15:8] == 8'h61 || dec_u.opcode[15:6] == 10'b0100111010);
+    dec_is_call = dec_up.last && (dec_u.opcode[15:8] == 8'h61 || dec_u.opcode[15:6] == 10'b0100111010);
     bi = dec_u.pc[4:1];
-    if (dec_u.br == BR_JMP && !dec_u.br_pred) begin
+    if (dyn) begin
       if (dec_is_rts && ras_n != 4'd0) begin
         dec_up.br_pred = 1'b1;
         dec_up.br_target = ras[ras_top - 3'd1];
-      end else if (!dec_is_rts && btb_v[bi] && btb_pc[bi] == dec_u.pc) begin
+      end else if (!dec_is_rts && (PRELEN ? pl_bhit : (btb_v[bi] && btb_pc[bi] == dec_u.pc))) begin
         dec_up.br_pred = 1'b1;
-        dec_up.br_target = btb_t[bi];
+        dec_up.br_target = PRELEN ? pl_btgt : btb_t[bi];
       end
     end
   end
@@ -525,7 +675,9 @@ module m68k_core
     if (ex_v && ex_an && ex_u.base == r) begin o.v = ex_anv; o.rdy = 1'b1; end
     if (ex_v && ex_u.dst_en && ex_u.dst == r) begin
       o.rdy = 1'b0; o.tag = ex_tag;
-      if (early(ex_u)) begin
+      if (EARLY_REG) begin
+        if (ex_evr) begin o.v = ex_ev; o.rdy = 1'b1; end
+      end else if (early(ex_u)) begin
         ea_ = snoop(ex_a);
         case (ex_u.a_sel)
           OP_EA:  begin o.v = ex_ea; o.rdy = 1'b1; end
@@ -539,7 +691,9 @@ module m68k_core
     if (of_v && of_an && of_u.base == r) begin o.v = of_anv; o.rdy = 1'b1; end
     if (of_v && of_u.dst_en && of_u.dst == r) begin
       o.rdy = 1'b0; o.tag = of_tag;
-      if (early(of_u)) begin
+      if (EARLY_REG) begin
+        if (of_evr) begin o.v = of_ev; o.rdy = 1'b1; end
+      end else if (early(of_u)) begin
         ea_ = snoop(of_a);
         case (of_u.a_sel)
           OP_EA:  if (!of_need_ind) begin o.v = of_ea; o.rdy = 1'b1; end
@@ -559,6 +713,9 @@ module m68k_core
     if (!o.rdy && wb_v && wb_tag == o.tag) begin n.v = wb_res; n.rdy = 1'b1; end
     return n;
   endfunction
+  opnd_t       of_as, ex_as;            // (EARLY_REG) of_a and ex_a snooped
+  assign of_as = snoop(of_a);
+  assign ex_as = snoop(ex_a);
 
   opnd_t       ag_base, ag_idx, ag_a, ag_b;
   logic        ag_stall;
@@ -772,11 +929,38 @@ module m68k_core
   logic [2:0]  ex_bfnb;
   logic        ex_st_en;                // BFST: the field covers the byte
 
+  // EX_PRESEL: the operands that are not registers, chosen in OF
+  logic [31:0] ex_ap, ex_bp;
+  function automatic logic [31:0] presel(input opsel_e sel, input uop_t u, input logic [31:0] ea,
+                                         input logic [31:0] mem, input logic a);
+    case (sel)
+      OP_IMM:  return u.imm;
+      OP_MEM:  return mem;
+      OP_EA:   return ea;
+      OP_CTRL: return a ? ctrl_rd(u.imm[11:0]) : 32'd0;
+      default: return 32'd0;
+    endcase
+  endfunction
+
   // the operands of the uop in EX
   always_comb begin
     opnd_t fa, fb;
     fa = snoop(ex_a);
     fb = snoop(ex_b);
+    if (EX_PRESEL) begin
+      case (ex_u.a_sel)
+        OP_REG:  ex_av = fa.v;
+        OP_SR:   ex_av = {16'd0, sr_hi, 3'd0, ccr_spec};
+        OP_CCR:  ex_av = {27'd0, ccr_spec};
+        default: ex_av = ex_ap;
+      endcase
+      if (ex_u.a_sext_w) ex_av = sext16(ex_av[15:0]);
+      case (ex_u.b_sel)
+        OP_REG:  ex_bv = fb.v;
+        OP_SR:   ex_bv = {16'd0, sr_hi, 3'd0, ccr_spec};
+        default: ex_bv = ex_bp;
+      endcase
+    end else begin
     case (ex_u.a_sel)
       OP_REG:  ex_av = fa.v;
       OP_IMM:  ex_av = ex_u.imm;
@@ -796,6 +980,7 @@ module m68k_core
       OP_SR:   ex_bv = {16'd0, sr_hi, 3'd0, ccr_spec};
       default: ex_bv = 32'd0;
     endcase
+    end
   end
 
   // PCR DFP (68060): the operand address of the floating-point instruction
@@ -855,7 +1040,13 @@ module m68k_core
   assign mmu_pflush_i = ex_v && ex_u.mmuop == 2'd2 && !mmx_done && !wb_v && !sb_v[0] && mmu_idle && mmu_free;
 
   // (FBcc waits for the FPCC of an operation still running)
-  assign ex_slow = EX_SLOW && (ex_u.alu == ALU_MULUL || ex_u.alu == ALU_MULSL);
+  logic        ex_shop;                 // a shift or rotate (SH_SLOW: two cycles)
+  logic [34:0] ex_shq;                  // SH_SLOW: the shifter's output of the first
+  logic [31:0] ex_mq;                   // MUL_SLOW: the word product of the first
+  assign ex_shop = ex_u.alu == ALU_ASL || ex_u.alu == ALU_ASR || ex_u.alu == ALU_LSL || ex_u.alu == ALU_LSR ||
+                   ex_u.alu == ALU_ROL || ex_u.alu == ALU_ROR || ex_u.alu == ALU_ROXL || ex_u.alu == ALU_ROXR;
+  assign ex_slow = (EX_SLOW && (ex_u.alu == ALU_MULUL || ex_u.alu == ALU_MULSL)) || (SH_SLOW && ex_shop) ||
+                   (MUL_SLOW && (ex_u.alu == ALU_MULU || ex_u.alu == ALU_MULS));
   assign bf_go = ex_v && ex_u.alu == ALU_BFOP && !bf_started;
   m68k_bfu bfu (
     .clk, .rst, .ena(ce), .start(bf_go), .in_reg(ex_u.cond[3]), .op(ex_u.cond[2:0]), .off(bf_off),
@@ -888,6 +1079,7 @@ module m68k_core
     logic [3:0]  c2f;                   // CMP2/CHK2: N Z V C as TG68K.C
     logic [32:0] t;
     logic        cnd, c, v, z, nflag;
+    logic        ex_far;                // EX_FASTCC: an add or subtract, its flags from the adder
     logic [31:0] pred;
     logic [4:0]  old_sp, new_sp;
     logic [31:0] sav, sbv;              // the operands of MULx.L
@@ -927,8 +1119,11 @@ module m68k_core
            c_ul ? ((c1 ^ c2) & !z1 & !z2) : (c1 | (!c2 & !z2))};
     ex_bfnew = bfu_newd;
     ex_bfnb = 3'(({3'd0, bo} + bw + 6'd7) >> 3);
-    ex_st_en = (ex_u.alu != ALU_BFST || ex_u.imm[2:0] < bf_nb) && (ex_u.alu != ALU_CASST || cas_eq);
-    sh = shifter(ex_u.alu, ex_u.size, ex_av[5:0], ex_bv, xin);
+    // (a CAS whose compare fails writes the operand back on the 68060, UM
+    // 7.7.5: "For the CAS instruction, the value read from memory is written
+    // back"; CAS2 is left to the M68060SP there)
+    ex_st_en = (ex_u.alu != ALU_BFST || ex_u.imm[2:0] < bf_nb) && (ex_u.alu != ALU_CASST || cas_eq || MC68060);
+    sh = SH_SLOW ? ex_shq : shifter(ex_u.alu, ex_u.size, ex_av[5:0], ex_bv, xin);
     // 32 x 32 to 64
     if (ex_u.alu == ALU_MULSL) p64 = {{32{sbv[31]}}, sbv} * {{32{sav[31]}}, sav};
     else                       p64 = {32'd0, sbv} * {32'd0, sav};
@@ -952,8 +1147,9 @@ module m68k_core
     endcase
     case (ex_u.alu)
       ALU_MOVE:  r = ex_av;
-      ALU_ADD:   begin t = {1'b0, ex_bv & m} + {1'b0, ex_av & m}; r = ex_bv + ex_av; end
-      ALU_SUB:   begin t = {1'b0, ex_bv & m} - {1'b0, ex_av & m}; r = ex_bv - ex_av; end
+      // (EX_FASTCC: the adds and subtracts below the case, off its select)
+      ALU_ADD:   begin t = EX_FASTCC ? 33'd0 : {1'b0, ex_bv & m} + {1'b0, ex_av & m}; r = EX_FASTCC ? 32'd0 : ex_bv + ex_av; end
+      ALU_SUB:   begin t = EX_FASTCC ? 33'd0 : {1'b0, ex_bv & m} - {1'b0, ex_av & m}; r = EX_FASTCC ? 32'd0 : ex_bv - ex_av; end
       ALU_AND:   r = ex_bv & ex_av;
       ALU_OR:    r = ex_bv | ex_av;
       ALU_EOR:   r = ex_bv ^ ex_av;
@@ -980,14 +1176,14 @@ module m68k_core
       ALU_ASL, ALU_ASR, ALU_LSL, ALU_LSR,
       ALU_ROL, ALU_ROR, ALU_ROXL, ALU_ROXR:
                  r = sh[31:0];
-      ALU_ADDX:  begin t = {1'b0, ex_bv & m} + {1'b0, ex_av & m} + {32'd0, xin}; r = ex_bv + ex_av + {31'd0, xin}; end
-      ALU_SUBX:  begin t = {1'b0, ex_bv & m} - {1'b0, ex_av & m} - {32'd0, xin}; r = ex_bv - ex_av - {31'd0, xin}; end
-      ALU_NEGX:  begin t = 33'd0 - {1'b0, ex_bv & m} - {32'd0, xin}; r = 32'd0 - ex_bv - {31'd0, xin};
+      ALU_ADDX:  begin t = EX_FASTCC ? 33'd0 : {1'b0, ex_bv & m} + {1'b0, ex_av & m} + {32'd0, xin}; r = EX_FASTCC ? 32'd0 : ex_bv + ex_av + {31'd0, xin}; end
+      ALU_SUBX:  begin t = EX_FASTCC ? 33'd0 : {1'b0, ex_bv & m} - {1'b0, ex_av & m} - {32'd0, xin}; r = EX_FASTCC ? 32'd0 : ex_bv - ex_av - {31'd0, xin}; end
+      ALU_NEGX:  begin t = EX_FASTCC ? 33'd0 : 33'd0 - {1'b0, ex_bv & m} - {32'd0, xin}; r = EX_FASTCC ? 32'd0 : 32'd0 - ex_bv - {31'd0, xin};
                        s = ex_bv; dd = 32'd0; end
       ALU_TAS:   r = ex_bv | 32'h80;
       ALU_CHK:   r = ex_bv;
-      ALU_MULU:  r = {16'd0, ex_bv[15:0]} * {16'd0, ex_av[15:0]};
-      ALU_MULS:  r = sext16(ex_bv[15:0]) * sext16(ex_av[15:0]);
+      ALU_MULU:  r = MUL_SLOW ? ex_mq : {16'd0, ex_bv[15:0]} * {16'd0, ex_av[15:0]};
+      ALU_MULS:  r = MUL_SLOW ? ex_mq : sext16(ex_bv[15:0]) * sext16(ex_av[15:0]);
       ALU_MULUL, ALU_MULSL: r = p64[31:0];
       ALU_DIVU, ALU_DIVS: r = mov ? ex_bv : {rs[15:0], qs[15:0]};
       ALU_DIVUL, ALU_DIVSL: r = mov ? ex_bv : qs[31:0];
@@ -1007,9 +1203,9 @@ module m68k_core
       ALU_BFADDR: r = ex_av + bfo8;
       ALU_BFOP:  r = 32'd0;              // (the result comes in last, below: its flags are CC_BF's)
       ALU_BFST:  r = {24'd0, bf_new[39 - 8 * int'(ex_u.imm[2:0]) -: 8]};
-      ALU_CASCMP: begin t = {1'b0, ex_bv & m} - {1'b0, ex_av & m}; r = ex_bv - ex_av; end
+      ALU_CASCMP: begin t = EX_FASTCC ? 33'd0 : {1'b0, ex_bv & m} - {1'b0, ex_av & m}; r = EX_FASTCC ? 32'd0 : ex_bv - ex_av; end
       ALU_CASSEL: r = cas_eq ? ex_bv : ex_av;
-      ALU_CASST:  r = ex_av;
+      ALU_CASST:  r = (MC68060 && !cas_eq) ? ex_bv : ex_av;
       ALU_CHK2:   r = {27'd0, ccr_spec[4], c2f};
       default:   r = ex_av;
     endcase
@@ -1019,18 +1215,47 @@ module m68k_core
       r = (!tc_e || mmusr[1]) ? ex_av : tc_p ? {mmusr[31:13], ex_av[12:0]} : {mmusr[31:12], ex_av[11:0]};
 
     // condition codes (TAS: of the operand before the bit is set)
+    // (EX_FASTCC: r has no add here; the flags of the others are of it)
     fsrc = (ex_u.alu == ALU_TAS) ? ex_bv : r;
     nflag = msb(ex_u.size, fsrc);
     z = (fsrc & m) == 32'd0;
+    if (EX_FASTCC)
+      case (ex_u.alu)
+        ALU_ADD:             begin t = {1'b0, ex_bv & m} + {1'b0, ex_av & m}; r = ex_bv + ex_av; end
+        ALU_SUB, ALU_CASCMP: begin t = {1'b0, ex_bv & m} - {1'b0, ex_av & m}; r = ex_bv - ex_av; end
+        ALU_ADDX:            begin t = {1'b0, ex_bv & m} + {1'b0, ex_av & m} + {32'd0, xin}; r = ex_bv + ex_av + {31'd0, xin}; end
+        ALU_SUBX:            begin t = {1'b0, ex_bv & m} - {1'b0, ex_av & m} - {32'd0, xin}; r = ex_bv - ex_av - {31'd0, xin}; end
+        ALU_NEGX:            begin t = 33'd0 - {1'b0, ex_bv & m} - {32'd0, xin}; r = 32'd0 - ex_bv - {31'd0, xin}; end
+        default: ;
+      endcase
+    // (EX_FASTCC: each add or subtract as b + a' + c)
+    begin
+      logic [31:0] fa_, fb_;
+      logic        fc_, far;
+      far = 1'b1; fa_ = ex_av; fb_ = ex_bv; fc_ = 1'b0;
+      case (ex_u.alu)
+        ALU_ADD:             ;
+        ALU_SUB, ALU_CASCMP: begin fa_ = ~ex_av; fc_ = 1'b1; end
+        ALU_ADDX:            fc_ = xin;
+        ALU_SUBX:            begin fa_ = ~ex_av; fc_ = !xin; end
+        ALU_NEGX:            begin fa_ = ~ex_bv; fb_ = 32'd0; fc_ = !xin; end
+        default:             far = 1'b0;
+      endcase
+      if (EX_FASTCC && far) begin
+        z = ((fa_ ^ fb_) & m) == ((((fa_ | fb_) << 1) | {31'd0, fc_}) & m);
+        nflag = msb(ex_u.size, t[31:0]);
+      end
+      ex_far = EX_FASTCC && far;
+    end
     case (ex_u.size)
       SZ_B:    c = t[8];
       SZ_W:    c = t[16];
       default: c = t[32];
     endcase
     if (ex_u.alu == ALU_ADD || ex_u.alu == ALU_ADDX)
-      v = (msb(ex_u.size, s) == msb(ex_u.size, dd)) && (msb(ex_u.size, r) != msb(ex_u.size, dd));
+      v = (msb(ex_u.size, s) == msb(ex_u.size, dd)) && (msb(ex_u.size, ex_far ? t[31:0] : r) != msb(ex_u.size, dd));
     else
-      v = (msb(ex_u.size, s) != msb(ex_u.size, dd)) && (msb(ex_u.size, r) != msb(ex_u.size, dd));
+      v = (msb(ex_u.size, s) != msb(ex_u.size, dd)) && (msb(ex_u.size, ex_far ? t[31:0] : r) != msb(ex_u.size, dd));
     case (ex_u.cc)
       CC_LOGIC: ex_ccr = {ccr_spec[4], nflag, z, 1'b0, 1'b0};
       CC_ADD,
@@ -1247,17 +1472,19 @@ module m68k_core
   logic of_fwd, ag_fwd;                 // the load takes a store's data instead
   logic [33:0] of_sc, ag_sc, of_sc_now, of_sc_r;
   logic        of_sc_ok;                // OF_SCREG: of_sc_r is of the address in of_ea
+  logic        of_spec, of_ld_pend, of_ld_bad, ld_bad;  // LD_SPEC: not tried yet; its check comes; bad
   logic [1:0] sb_count;
   size_e of_ld_size;
   logic of_want, ag_want;
   // the responses as the core sees them: the port's, or one the MMU gives a
   // translation that faults (no access is made)
   logic fk_d, fk_i;                      // a faulting translation answers now
+  logic fx_flt;                          // FXL_REG: the fetch's translation faulted: it answers
   logic c_rvalid, c_err, c_atc;
   assign c_rvalid = d_rvalid || fk_d;
   assign c_err = (d_rvalid && d_err) || fk_d;
   assign c_atc = fk_d;
-  assign d_free = !d_busy || c_rvalid;
+  assign d_free = !d_busy || (!DP_REG && c_rvalid);
   assign of_need_ind = of_u.ind && !of_ind_done;
   assign of_ld_size = of_need_ind ? SZ_L : of_u.msize;
   assign of_sc_now = st_check(of_ea, of_ld_size, 1'b0);
@@ -1268,11 +1495,15 @@ module m68k_core
   // store left behind waited for a clock more; not once the pointer of a
   // memory indirect uop changed its address)
   assign of_sc = OF_SCREG ? of_sc_r : of_sc_now;
+  // (LD_SPEC: the check of the cycle a load went is of_sc_r the next; a
+  // store only moves on towards the cache, so it is kept)
+  assign ld_bad = LD_SPEC && (of_ld_pend ? (of_sc_r[33] || of_sc_r[32]) : of_ld_bad);
   assign of_want = of_v && (of_need_ind ? !of_ind_issued : (of_u.load && !of_ld_issued && !of_ld_have)) &&
-                   !of_sc[33] && !(of_need_ind && of_sc[32]) &&      // (a pointer is not forwarded: it waits)
-                   (!OF_SCREG || of_sc_ok) &&
+                   ((LD_SPEC && of_spec && !of_need_ind) ||
+                    (!of_sc[33] && !(of_need_ind && of_sc[32]) &&     // (a pointer is not forwarded: it waits)
+                     (!OF_SCREG || of_sc_ok))) &&
                    !(is_io(of_ea) && (ex_v || wb_v || sb_v[0]));
-  assign of_fwd = of_want && of_sc[32] && !of_need_ind;
+  assign of_fwd = of_want && of_sc[32] && !of_need_ind && !(LD_SPEC && of_spec);
   assign ld_req = of_want && !of_fwd && d_free && !ws_req && !sb_first;
   // (AG_LOAD 0: a load goes from OF only, which looks at the stores then:
   // nothing is forwarded at AG, so AG's address stays off these paths)
@@ -1285,8 +1516,8 @@ module m68k_core
   // maybe decoded) is made from WB too, and the instruction ends with a
   // fresh fetch of the next one (take_smc)
   // (wb_smc: found as the uop enters WB, off the store's paths)
-  assign wb_sync = (tc_e ? wb_pa : wb_ea) >= SYNC_LO || wb_smc;
-  assign ws_req = wb_v && wb_u.store && !wb_exc && (!tc_e || wb_xdone) && !wb_sfault && wb_sync &&
+  assign wb_sync = (dxl ? wb_pa : wb_ea) >= SYNC_LO || wb_smc;
+  assign ws_req = wb_v && wb_u.store && !wb_exc && (!dxl || wb_xdone) && !wb_sfault && wb_sync &&
                   !ws_iss && !ws_done && !sb_v[0] && d_free;
   // (a table search held for the store buffer: the buffer goes first, the
   // loads wait)
@@ -1320,7 +1551,7 @@ module m68k_core
       cd_req = 1'b1; cd_we = 1'b1; cd_addr = sb_pa[0]; cd_size = sb_sz[0]; cd_wdata = sb_d[0];
       cd_phys = 1'b1; cd_fc = {sb_s[0], 2'b01};
     end else if (ws_req) begin
-      cd_req = 1'b1; cd_we = 1'b1; cd_addr = tc_e ? wb_pa : wb_ea; cd_size = wb_u.msize; cd_wdata = wb_res;
+      cd_req = 1'b1; cd_we = 1'b1; cd_addr = dxl ? wb_pa : wb_ea; cd_size = wb_u.msize; cd_wdata = wb_res;
       cd_phys = 1'b1;
     end else if (fpu_req) begin
       // a word, or one byte: the high one at the even address, the low at the odd
@@ -1391,8 +1622,8 @@ module m68k_core
   // (a fetch while a uop that writes SR is in EX is on a path its redirect
   // drops: only WB's new S counts, which keeps EX off this path)
   assign fetch_s = (wb_v && wb_u.setsr) ? wb_sr[13] : sr_hi[5];
-  assign wbx = tc_e && wb_v && wb_u.store && !wb_exc && !wb_xdone && !wb_sfault;
-  assign cd_xl = tc_e && cd_req && !cd_phys;
+  assign wbx = dxl && wb_v && wb_u.store && !wb_exc && !wb_xdone && !wb_sfault;
+  assign cd_xl = dxl && cd_req && !cd_phys;
   assign walk_hold = MC68060 && tc_e &&
                      (sb_v[0] || (!wbx && ((ex_v && ex_u.store) || (wb_v && wb_u.store && !wb_exc))));
   assign sel_wbx = wbx;
@@ -1418,7 +1649,7 @@ module m68k_core
   m68k_mmu #(.REG_XLATE(MMU_REG), .MC68060(MC68060)) mmu (
     .clk, .reset(rst), .clkena(mmu_ce), .tc_e, .tc_p, .urp, .srp, .itt0, .itt1, .dtt0, .dtt1,
     .act(mmu_act), .laddr(mmu_la), .wr(mmu_wr_i), .fc(mmu_fc_i), .paddr(mmu_pa),
-    .stall(mmu_stall), .quiet(mmu_quiet), .fault(mmu_fault), .why(mmu_why), .hold_walk(walk_hold),
+    .stall(mmu_stall), .quiet(mmu_quiet), .fault(mmu_fault), .why(mmu_why), .hold_walk(walk_hold), .drop_inv(flush || take_any),
     .bus_act(mmu_bact), .bus_addr(mmu_baddr), .bus_wr(mmu_bwr), .bus_wdata(mmu_bwd),
     .data_in(d_rdata[15:0]),
     .ptest(mmu_ptest_i), .ptest_addr(ex_av), .ptest_fc(dfc),
@@ -1445,6 +1676,9 @@ module m68k_core
     i_req = fi_req; i_addr = fi_addr; fi_gnt = i_gnt; i_fc = {fetch_s, 2'b10};
     if (tc_e && mmu_fhit) begin
       i_addr = {mmu_fpa[31:2], 2'b00};
+    end else if (tc_e && FXL_REG) begin
+      i_req = 1'b0;
+      fi_gnt = fx_flt && fi_req;
     end else if (tc_e) begin
       i_req = fi_req && sel_fi && xl_ok;
       i_addr = {mmu_pa[31:2], 2'b00};
@@ -1476,7 +1710,7 @@ module m68k_core
   assign st_hold = st_fault && ((wb_u.wdefer && !MC68060) || wb_u.noaf);
   assign retire   = wb_v && !wb_u.unimpl &&
                     (!wb_u.store || wb_exc || st_fault || (wb_sync ? ws_done : (sb_count < 2'd2 || (!SB_REG && d_done_sb)))) &&
-                    (!(tc_e && wb_u.store && !wb_exc) || wb_xdone || wb_sfault);
+                    (!(dxl && wb_u.store && !wb_exc) || wb_xdone || wb_sfault);
   logic wb_exc_now;                      // the uop's exception, found at WB too
   assign wb_exc_now = wb_exc || (st_fault && !st_hold);
   // an access error: the instruction restarts, nothing of it is kept
@@ -1510,10 +1744,13 @@ module m68k_core
   assign stop_now = retire && !wb_exc && wb_u.stop && !take_int && !take_trc;
   assign take_any = take_exc || take_int || take_int_stop || take_acc || take_smc || take_trc;
   assign wb_ready = !wb_v || retire;
-  assign ex_fire  = ex_v && wb_ready && !take_any && !ex_wait;
+  logic        flush_now, fl_q;          // FLUSH_REG: the mispredict found now; the one to make
+  logic [31:0] fl_pc;
+  assign ex_fire  = ex_v && wb_ready && !take_any && !ex_wait && !(FLUSH_REG && fl_q);
   assign ex_ready = !ex_v || ex_fire;
-  assign of_done  = (!of_need_ind || of_af) && (!of_u.load || of_ld_have || (of_ld_issued && d_done_of));
-  assign flush    = ex_fire && ex_mispredict;
+  assign of_done  = (!of_need_ind || of_af) && (!of_u.load || of_ld_have || (of_ld_issued && d_done_of && !ld_bad));
+  assign flush_now = ex_fire && ex_mispredict;
+  assign flush    = FLUSH_REG ? fl_q : flush_now;
   assign of_fire  = of_v && of_done && ex_ready && !flush && !take_any;
   assign of_ready = !of_v || of_fire;
   assign ag_fire  = ag_v && !ag_stall && of_ready && !flush && !take_any;
@@ -1556,7 +1793,7 @@ module m68k_core
       f_redirect_pc = take_int_stop ? stop_npc : (take_int || take_smc || take_trc) ? wb_npc : wb_xpc;
     end else if (flush) begin
       f_redirect = 1'b1;
-      f_redirect_pc = ex_npc;
+      f_redirect_pc = FLUSH_REG ? fl_pc : ex_npc;
     end else if (DREDIR_REG && dr_v) begin
       f_redirect = 1'b1;
       f_redirect_pc = dr_pc;
@@ -1598,13 +1835,17 @@ module m68k_core
       ccr_arch <= 5'd0;
       ccr_spec <= 5'd0;
       sr_hi    <= 8'h27;
-      ag_v <= 1'b0; of_v <= 1'b0; ex_v <= 1'b0; wb_v <= 1'b0; sk_v <= 1'b0; dr_v <= 1'b0;
+      ag_v <= 1'b0; of_v <= 1'b0; ex_v <= 1'b0; wb_v <= 1'b0; sk_v <= 1'b0; dr_v <= 1'b0; pl_v <= 1'b0; fl_q <= 1'b0;
       d_busy <= 1'b0;
       d_owner <= DO_RST;
       dec_step <= 5'd0;
       tag_ctr <= 3'd0;
       of_ld_issued <= 1'b0;
       of_ld_have <= 1'b0;
+      of_ptr_v <= 1'b0;
+      of_spec <= 1'b0;
+      of_ld_pend <= 1'b0;
+      of_ld_bad <= 1'b0;
       of_ind_issued <= 1'b0;
       of_ind_done <= 1'b0;
       inj_active <= 1'b0;
@@ -1621,7 +1862,7 @@ module m68k_core
       wb_af <= 1'b0; ex_af <= 1'b0; of_af <= 1'b0;
       wb_sfault <= 1'b0; ws_iss <= 1'b0; ws_done <= 1'b0; ws_err <= 1'b0;
       acc_pend <= 1'b0; inj_rec <= 1'b0;
-      fk_d <= 1'b0; fk_i <= 1'b0; i_out <= 2'd0;
+      fk_d <= 1'b0; fk_i <= 1'b0; i_out <= 2'd0; fx_flt <= 1'b0;
       fx_af <= 1'b0;
       ul_v[0] <= 1'b0; ul_v[1] <= 1'b0;
       walk_blk <= 1'b0;
@@ -1662,7 +1903,11 @@ module m68k_core
       // (a fetch through the MMU only: one on the fetches' own entry is not
       // what mmu_quiet is about)
       fk_d <= cd_req && cd_gnt && cd_xl && mmu_quiet;
-      fk_i <= fi_req && fi_gnt && sel_fi && mmu_quiet;
+      fk_i <= fi_req && fi_gnt && (FXL_REG ? fx_flt : (sel_fi && mmu_quiet));
+      // (FXL_REG: the fault of the fetch's own lookup, once the fetches in
+      // flight are in; dropped with its fetch)
+      fx_flt <= FXL_REG && tc_e && !f_redirect && !(fi_gnt && fx_flt) &&
+                (fx_flt || (sel_fi && !mmu_stall && mmu_quiet && i_out == 2'd0 && !fk_i));
       if (i_req && i_gnt) i_out <= i_out + 2'd1 - 2'(i_rvalid);
       else if (i_rvalid)  i_out <= i_out - 2'd1;
 
@@ -1681,7 +1926,7 @@ module m68k_core
         for (int i = 0; i < SBN; i++) begin
           nv[i] = sb_v[i]; na[i] = sb_a[i]; nd[i] = sb_d[i]; ns[i] = sb_sz[i]; np[i] = sb_pa[i]; nsu[i] = sb_s[i];
         end
-        pa = tc_e ? wb_pa : wb_ea;
+        pa = dxl ? wb_pa : wb_ea;
         if (sb_req && cd_gnt) sb_issued <= 1'b1;
         if (d_done_sb) begin
           nv[0] = nv[1]; na[0] = na[1]; nd[0] = nd[1]; ns[0] = ns[1]; np[0] = np[1]; nsu[0] = nsu[1];
@@ -1793,8 +2038,9 @@ module m68k_core
           wy = plp ? mmx_why : io ? if_why : wb_af ? wb_afwhy : (wb_u.fpu && fx_af) ? fx_afwhy : mmu_why;
           re = !mmuf && rw;
           we = !mmuf && !rw;
-          // a bus error on an access a TTR maps
-          ttr = !mmuf && (io ? (tt_hit_of(itt0, wb_u.pc, sr_hi[5]) || tt_hit_of(itt1, wb_u.pc, sr_hi[5]))
+          // an access a TTR maps: a bus error, or a write-protected TTR's
+          // fault (the only MMU fault such an access takes)
+          ttr = !plp && (io ? (tt_hit_of(itt0, wb_u.pc, sr_hi[5]) || tt_hit_of(itt1, wb_u.pc, sr_hi[5]))
                              : (tt_hit_of(dtt0, fa, fc[2]) || tt_hit_of(dtt1, fa, fc[2])));
           fr_fslw <= {4'd0, ma, 1'b0, lk, rw6, sz6, wb_u.m16 ? 2'b01 : 2'b00, tm,
                       io, 2'b00, mmuf ? wy : 6'd0, 1'b0, re, we, ttr, 3'd0};
@@ -2027,6 +2273,9 @@ module m68k_core
         endcase
       end
       ex_aq <= ex_av; ex_bq <= ex_bv;
+      ex_shq <= shifter(ex_u.alu, ex_u.size, ex_av[5:0], ex_bv, ccr_spec[4]);
+      ex_mq <= (ex_u.alu == ALU_MULS) ? sext16(ex_bv[15:0]) * sext16(ex_av[15:0])
+                                      : {16'd0, ex_bv[15:0]} * {16'd0, ex_av[15:0]};
       ex_s2 <= ex_v && ex_slow && !(ex_fire || take_any || flush);
       // the bit field unit's run for the uop in EX (an answer of a dropped one does not count)
       if (ex_fire || take_any || flush || !ex_v) begin
@@ -2063,8 +2312,10 @@ module m68k_core
         end
       end
 
-      // EX
-      if (take_any)
+      // EX (FLUSH_REG: what entered it with the mispredict is dropped)
+      fl_q <= FLUSH_REG && flush_now;
+      fl_pc <= ex_npc;
+      if (take_any || (FLUSH_REG && fl_q))
         ex_v <= 1'b0;
       else if (of_fire) begin
         ex_v <= 1'b1;
@@ -2072,6 +2323,19 @@ module m68k_core
         ex_ea <= of_ea; ex_anv <= of_anv; ex_an <= of_an;
         ex_a <= snoop(of_a); ex_b <= snoop(of_b);
         ex_mem <= of_ld_have ? of_ld_data : d_rdata;
+        begin
+          opnd_t fa;
+          fa = snoop(of_a);
+          case (of_u.a_sel)
+            OP_EA:   begin ex_ev <= sext_of(of_u, of_ea); ex_evr <= early(of_u); end
+            OP_IMM:  begin ex_ev <= sext_of(of_u, of_u.imm); ex_evr <= early(of_u); end
+            OP_MEM:  begin ex_ev <= sext_of(of_u, of_ld_have ? of_ld_data : d_rdata); ex_evr <= early(of_u); end
+            OP_REG:  begin ex_ev <= sext_of(of_u, fa.v); ex_evr <= early(of_u) && fa.rdy; end
+            default: ex_evr <= 1'b0;
+          endcase
+        end
+        ex_ap <= presel(of_u.a_sel, of_u, of_ea, of_ld_have ? of_ld_data : d_rdata, 1'b1);
+        ex_bp <= presel(of_u.b_sel, of_u, of_ea, of_ld_have ? of_ld_data : d_rdata, 1'b0);
         ex_af <= of_af || (of_ld_issued && d_done_of && c_err);
         ex_afatc <= of_af ? of_afatc : c_atc;
         ex_afwhy <= of_af ? of_afwhy : mmu_why;
@@ -2080,45 +2344,86 @@ module m68k_core
         ex_v <= 1'b0;
       else begin
         ex_a <= snoop(ex_a); ex_b <= snoop(ex_b);
+        if (!ex_evr && early(ex_u) && ex_u.a_sel == OP_REG && ex_as.rdy) begin
+          ex_ev <= sext_of(ex_u, ex_as.v); ex_evr <= 1'b1;
+        end
       end
 
       // OF
-      of_sc_r <= ag_fire ? ag_sc : of_sc_now;
-      of_sc_ok <= ag_fire || !(of_need_ind && of_ind_issued && d_done_of);
+      of_sc_r <= (ag_fire && !LD_SPEC) ? ag_sc : of_sc_now;
+      of_sc_ok <= (ag_fire && !LD_SPEC) ||
+                  (!ag_fire && !(IND_REG ? of_ptr_v : (of_need_ind && of_ind_issued && d_done_of)));
+      if (of_ld_pend) begin of_ld_pend <= 1'b0; of_ld_bad <= ld_bad; end
       if (ag_fire) begin
         of_v <= 1'b1;
         of_u <= ag_u; of_tag <= ag_tag;
         of_ea <= ag_ea; of_anv <= ag_anv; of_an <= ag_an;
         of_a <= ag_a; of_b <= ag_b;
+        case (ag_u.a_sel)
+          OP_EA:   begin of_ev <= sext_of(ag_u, ag_ea); of_evr <= early(ag_u) && !ag_u.ind; end
+          OP_IMM:  begin of_ev <= sext_of(ag_u, ag_u.imm); of_evr <= early(ag_u); end
+          OP_REG:  begin of_ev <= sext_of(ag_u, ag_a.v); of_evr <= early(ag_u) && ag_a.rdy; end
+          default: of_evr <= 1'b0;
+        endcase
         of_ld_issued <= ag_ld_req && cd_gnt;
         of_af <= 1'b0;
         of_affa <= ag_ea; of_afsz <= ag_u.msize;
         of_ld_have <= ag_fwd;
-        of_ld_data <= ag_sc[31:0];
+        if (AG_LOAD) of_ld_data <= ag_sc[31:0];
+        of_spec <= LD_SPEC;
+        of_ld_pend <= 1'b0;
         of_ind_issued <= 1'b0;
         of_ind_done <= 1'b0;
+        of_ptr_v <= 1'b0;
         of_xv <= ag_xv;
       end else if (of_fire || flush || take_any)
         of_v <= 1'b0;
       else begin
         of_a <= snoop(of_a); of_b <= snoop(of_b);
+        if (!of_evr && early(of_u) && of_u.a_sel == OP_REG && of_as.rdy) begin
+          of_ev <= sext_of(of_u, of_as.v); of_evr <= 1'b1;
+        end
         if (ld_req && cd_gnt) begin
           if (of_need_ind) of_ind_issued <= 1'b1;
-          else             of_ld_issued <= 1'b1;
+          else begin
+            of_ld_issued <= 1'b1;
+            of_spec <= 1'b0;
+            of_ld_pend <= LD_SPEC && of_spec;
+            of_ld_bad <= 1'b0;
+          end
         end
         if (of_fwd) begin
           of_ld_have <= 1'b1;
           of_ld_data <= of_sc[31:0];
         end
-        if (of_need_ind && of_ind_issued && d_done_of) begin
-          of_ea <= d_rdata + of_u.od + (of_u.ind_post ? of_xv : 32'd0);
+        if (IND_REG && of_ptr_v) begin
+          of_ptr_v <= 1'b0;
+          of_ea <= of_ptr + of_u.od + (of_u.ind_post ? of_xv : 32'd0);
           of_ind_done <= 1'b1;
+          if (early(of_u) && of_u.a_sel == OP_EA) begin
+            of_ev <= sext_of(of_u, of_ptr + of_u.od + (of_u.ind_post ? of_xv : 32'd0)); of_evr <= 1'b1;
+          end
+        end
+        if (of_need_ind && of_ind_issued && d_done_of) begin
+          if (IND_REG && !c_err) begin
+            of_ptr <= d_rdata; of_ptr_v <= 1'b1;
+          end else begin
+            // (IND_REG: a pointer that faulted leaves the address, unused:
+            // the instruction starts again)
+            if (!IND_REG) of_ea <= d_rdata + of_u.od + (of_u.ind_post ? of_xv : 32'd0);
+            of_ind_done <= 1'b1;
+          end
+          if (!IND_REG && early(of_u) && of_u.a_sel == OP_EA && !c_err) begin
+            of_ev <= sext_of(of_u, d_rdata + of_u.od + (of_u.ind_post ? of_xv : 32'd0)); of_evr <= 1'b1;
+          end
           if (c_err) begin                // the pointer read faulted: no more
             of_af <= 1'b1; of_afatc <= c_atc; of_affa <= of_ea; of_afsz <= SZ_L; of_afwhy <= mmu_why;
             of_ld_have <= 1'b1;
           end
         end
-        if (of_ld_issued && d_done_of) begin
+        if (of_ld_issued && d_done_of && ld_bad)
+          of_ld_issued <= 1'b0;           // (LD_SPEC: a store overlapped it: again, checked)
+        else if (of_ld_issued && d_done_of) begin
           of_ld_have <= 1'b1;
           of_ld_data <= d_rdata;
           if (c_err) begin
@@ -2126,6 +2431,27 @@ module m68k_core
           end
         end
       end
+
+      // PRELEN: the head's length (a redirect empties the queue)
+      // (or S or M changes: the exception entry's does it with no redirect)
+      if (f_redirect || (pl_v && !pl_ok)) pl_v <= 1'b0;
+      else if (f_consume != 4'd0 || !pl_v) begin
+        pl_v <= pl_cv; pl_len <= pl_clen; pl_sm <= sr_hi[5:4]; pl_tgt <= pl_itgt;
+        pl_nv <= pl_cnv; pl_snw <= pl_csnw; pl_nst <= pl_cnst; pl_lbr <= pl_ilbr; pl_lpred <= pl_ilpred;
+        pl_bhit <= btb_v[pl_pc[4:1]] && btb_pc[pl_pc[4:1]] == pl_pc;
+        pl_btgt <= btb_t[pl_pc[4:1]];
+      end
+`ifndef SYNTHESIS
+      if (PRELEN && dec_fire && !inj_active && dec_u.exc == EXC_NONE && !dec_u.ifault && dec_up.last != dec_u.last)
+        $fatal(1, "PRELEN: pc %h step %0d of %0d, decode's last %b", q_pc, dec_step, pl_nst, dec_u.last);
+      if (PRELEN && dec_fire && !inj_active && dec_up.last && dec_u.exc == EXC_NONE && !dec_u.ifault &&
+          (!dec_valid_c || dec_len_c != pl_len || (dec_step == 5'd0 && dec_nv_c != pl_nv) ||
+           (dec_u.opcode[15:14] == 2'b00 && dec_u.opcode[13:12] != 2'b00 && dec_snw_c != pl_snw) ||
+           (dec_u.br != BR_NONE && dec_u.br_target != pl_tgt) ||
+           (dec_u.br_pred != (pl_lpred && dec_u.br != BR_NONE))))
+        $fatal(1, "PRELEN: pc %h length %0d target %h, decode's %0d %h (valid %b)", q_pc, pl_len, pl_tgt,
+               dec_len_c, dec_u.br_target, dec_valid_c);
+`endif
 
       // decode's redirect, made a clock later (dropped by any other)
       dr_v <= DREDIR_REG && dr_set;
@@ -2176,7 +2502,7 @@ module m68k_core
       else if (dec_take && !inj_active && dec_u.first) rte_cont <= 1'b0;
 
       // return stack (speculative: decode pushes and pops) and jump targets
-      if (dec_take && !inj_active && dec_u.last) begin
+      if (dec_take && !inj_active && dec_up.last) begin
         if (dec_is_call) begin
           ras[ras_top] <= dec_u.next_pc;
           ras_top <= ras_top + 3'd1;
@@ -2197,7 +2523,9 @@ module m68k_core
 
       // decode step, and the injector's
       if (flush || take_any) dec_step <= 5'd0;
-      else if (dec_take && !inj_active) dec_step <= dec_u.last ? 5'd0 : dec_step + 5'd1;
+      else if (dec_take && !inj_active) dec_step <= dec_up.last ? 5'd0 : dec_step + 5'd1;
+      if (dec_take && !inj_active)
+        mv_rem <= (dec_u.movem && (dec_u.load || dec_u.store)) ? mv_in & (mv_in - 16'd1) : mv_in;
       if (dec_take && inj_active) begin
         if (inj_step == 5'd6) inj_active <= 1'b0;
         case (inj_step)
@@ -2249,20 +2577,30 @@ module m68k_core
   // (a write that ends with a bus error was made: the trace shows it, as
   // TG68K.C's; one whose translation faulted was not)
   assign dbg_st      = wb_u.store && !wb_exc && !wb_sfault && !(acc_pend && !wb_u.noaf);
-  assign dbg_st_addr = tc_e ? wb_pa : wb_ea;
+  assign dbg_st_addr = dxl ? wb_pa : wb_ea;
   assign dbg_st_size = wb_u.msize;
   assign dbg_st_data = wb_res;
   always_comb
     for (int i = 0; i < 16; i++) dbg_regs[i] = rf[i];
 
+`ifdef DBG_FL
+  always_ff @(posedge clk)
+    if (!rst && ce) begin
+      if (flush_now) $display("FL t=%0t now pc=%h npc=%h of=%b:%h ag=%b:%h", $time, ex_u.pc, ex_npc, of_v, of_u.pc, ag_v, ag_u.pc);
+      if (FLUSH_REG && fl_q) $display("FL t=%0t q  ex=%b:%h(st %b) of=%b:%h wb=%b:%h", $time, ex_v, ex_u.pc, ex_u.store, of_v, of_u.pc, wb_v, wb_u.pc);
+      if (mmu_act && mmu_stall && mmu_idle && !mmu_bact) $display("WALK t=%0t hold=%b sb=%b ex=%b:%h st%b wb=%b:%h st%b of=%b:%h", $time, walk_hold, sb_v[0], ex_v, ex_u.pc, ex_u.store, wb_v, wb_u.pc, wb_u.store, of_v, of_u.pc);
+    end
+`endif
+
 `ifndef SYNTHESIS
   // performance counters of the simulation, printed at the end
   longint unsigned pc_cycles, pc_retire, pc_starve, pc_sys, pc_agi, pc_ldwait, pc_ldst, pc_ldbr,
-                   pc_stwait, pc_div, pc_flush, pc_dredir;
+                   pc_stwait, pc_div, pc_flush, pc_dredir, pc_ldspec, pc_lddrop;
   always_ff @(posedge clk)
     if (rst) begin
       pc_cycles <= 0; pc_retire <= 0; pc_starve <= 0; pc_sys <= 0; pc_agi <= 0; pc_ldwait <= 0;
       pc_ldst <= 0; pc_ldbr <= 0; pc_stwait <= 0; pc_div <= 0; pc_flush <= 0; pc_dredir <= 0;
+      pc_ldspec <= 0; pc_lddrop <= 0;
     end else if (running && ce) begin
       pc_cycles <= pc_cycles + 1;
       if (retire) pc_retire <= pc_retire + 1;
@@ -2279,13 +2617,16 @@ module m68k_core
       if (ex_wait) pc_div <= pc_div + 1;
       if (flush) pc_flush <= pc_flush + 1;
       if (dec_fire && !inj_active && dec_up.last && dec_up.br_pred) pc_dredir <= pc_dredir + 1;
+      if (of_v && !ag_fire && ld_req && cd_gnt && of_spec && !of_need_ind) pc_ldspec <= pc_ldspec + 1;
+      if (of_v && !ag_fire && of_ld_issued && d_done_of && ld_bad) pc_lddrop <= pc_lddrop + 1;
     end
   final
     $display("perf: cycles %0d uops %0d | decode starved %0d, behind sys %0d, AG interlock %0d | ",
              pc_cycles, pc_retire, pc_starve, pc_sys, pc_agi,
              "OF load %0d (blocked by a store %0d, by a branch %0d) | WB store %0d | divide %0d | ",
              pc_ldwait, pc_ldst, pc_ldbr, pc_stwait, pc_div,
-             "EX redirects %0d, decode redirects %0d", pc_flush, pc_dredir);
+             "EX redirects %0d, decode redirects %0d", pc_flush, pc_dredir,
+             LD_SPEC ? $sformatf(" | loads unchecked %0d, dropped %0d", pc_ldspec, pc_lddrop) : "");
 
   always_ff @(posedge clk)
     if (!rst && ex_v) begin

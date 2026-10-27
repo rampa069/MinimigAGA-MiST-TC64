@@ -43,7 +43,10 @@ module m68k_dcache
   parameter logic [31:0] NC1_LO = 32'h00000000,
   parameter logic [31:0] NC1_HI = 32'h00000000,
   parameter bit          COPYBACK = 1'b0,
-  parameter int          LINES_LOG2 = 8      // 256 lines of 16 bytes: 4 Kbytes
+  parameter int          LINES_LOG2 = 8,     // 256 lines of 16 bytes: 4 Kbytes
+  // a new access is taken only once the lookup of the last one is over
+  // (the grant off the tags' compare: an access every other edge)
+  parameter bit          GNT_REG = 1'b0
 )
 (
   input  logic        clk,
@@ -205,7 +208,7 @@ module m68k_dcache
   // free for a new access, also in the cycle the last one is answered
   logic bus_resp;
   assign bus_resp = st == ST_BUS && f_wait && b_rvalid;
-  assign c_free = (st == ST_IDLE && !s1_miss && !s1_wmiss && !(s1_v && s1_direct) &&
+  assign c_free = (st == ST_IDLE && !(GNT_REG && s1_v) && !(!GNT_REG && (s1_miss || s1_wmiss)) && !(s1_v && s1_direct) &&
                    !(COPYBACK && (fl_pend || isn_hit))) || bus_resp;
   assign c_gnt = c_req && c_free && !wq_v[WBN - 1];   // (acted on at enabled edges only)
   // the long asked for of a fill, answered as it comes

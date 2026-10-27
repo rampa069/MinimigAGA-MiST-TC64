@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 // Line port unit: between the caches' bus requests and the bus interface,
-// it sends those to a window of memory (LP_LO to LP_HI, while lp_en is set)
+// it sends those to a window of memory (LP_LO to LP_HI, while lp_en is set,
+// but for a hole of 8 Mbytes while lp_hole_en is: A31-A24 lp_hole_base, A23
+// set, a board's registers on the bus among the RAM's addresses)
 // through a port that moves 16-byte lines, instead of the 16-bit bus. The
 // machine around the core answers it from its memory controller's bursts
 // (MinimigAGA: the SDRAM controller's line reads and long writes).
@@ -41,6 +43,8 @@ module m68k_lpu
   input  logic         rst,
   input  logic         ce,
   input  logic         lp_en,          // the window is served (e.g. its board is configured)
+  input  logic         lp_hole_en,     // the hole is not
+  input  logic [7:0]   lp_hole_base,
 
   // the instruction cache's requests (aligned longs)
   input  logic         ci_req,
@@ -98,7 +102,8 @@ module m68k_lpu
 
   /* verilator lint_off UNSIGNED */      // (a window from 0)
   function automatic logic in_win(input logic [31:0] a);
-    return LINE_PORT && lp_en && a >= LP_LO && a < LP_HI;
+    return LINE_PORT && lp_en && a >= LP_LO && a < LP_HI &&
+           !(lp_hole_en && a[31:24] == lp_hole_base && a[23]);
   endfunction
   /* verilator lint_on UNSIGNED */
 

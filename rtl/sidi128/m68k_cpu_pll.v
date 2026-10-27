@@ -1,9 +1,9 @@
 // The m68k core's own clocks (MINIMIG_M68K_ACCEL), a CPU card's: fixed, not
 // switched between PAL and NTSC as the chipset's (amiga_clk) are. From the
-// 27 MHz input, VCO 688.5 MHz:
-//   c0  114.75 MHz, -1600 ps: the second SDRAM's clock (as amiga_clk's c0)
-//   c1  114.75 MHz: its controller (m68k_sdram_minimig)
-//   c2  38.25 MHz (VCO / 18): the core (m68k_cpu's clk_cpu), related to c1
+// 27 MHz input, VCO 918 MHz:
+//   c0  102 MHz, -1600 ps: the second SDRAM's clock (as amiga_clk's c0)
+//   c1  102 MHz: its controller (m68k_sdram_minimig), so c2 is half of it
+//   c2  51 MHz (VCO / 18): the core (m68k_cpu's clk_cpu), related to c1
 
 module m68k_cpu_pll (
   input  wire areset,
@@ -60,15 +60,15 @@ altpll altpll_component (
 );
 defparam
   altpll_component.bandwidth_type = "AUTO",
-  altpll_component.clk0_divide_by = 4,
+  altpll_component.clk0_divide_by = 9,
   altpll_component.clk0_duty_cycle = 50,
-  altpll_component.clk0_multiply_by = 17,
+  altpll_component.clk0_multiply_by = 34,
   altpll_component.clk0_phase_shift = "-1600",
-  altpll_component.clk1_divide_by = 4,
+  altpll_component.clk1_divide_by = 9,
   altpll_component.clk1_duty_cycle = 50,
-  altpll_component.clk1_multiply_by = 17,
+  altpll_component.clk1_multiply_by = 34,
   altpll_component.clk1_phase_shift = "0",
-  altpll_component.clk2_divide_by = 12,
+  altpll_component.clk2_divide_by = 9,
   altpll_component.clk2_duty_cycle = 50,
   altpll_component.clk2_multiply_by = 17,
   altpll_component.clk2_phase_shift = "0",

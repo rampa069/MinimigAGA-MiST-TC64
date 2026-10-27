@@ -393,9 +393,9 @@ wire           clk_sd2;
 m68k_cpu_pll m68k_cpu_pll (
   .areset       (pll_rst          ),
   .inclk0       (clk_27mhz        ),
-  .c0           (SDRAM2_CLK       ), // 114.75 MHz, -1600 ps
-  .c1           (clk_sd2          ), // 114.75 MHz
-  .c2           (clk_cpu          ), // 32.786 MHz
+  .c0           (SDRAM2_CLK       ), // the second SDRAM's clock (m68k_cpu_pll.v has them)
+  .c1           (clk_sd2          ), // its controller's
+  .c2           (clk_cpu          ), // the core's
   .locked       (                 )
 );
 `else
