@@ -1387,12 +1387,17 @@ module m68k_decode
         ftrapcc = cond && m == 3'b111 && r[2:1] != 2'b00;
         fsr = op[11:9] == 3'b001 && op[8:7] == 2'b10;          // FSAVE, FRESTORE
         memea = (m == 3'b101 || m == 3'b110 || (m == 3'b111 && !r[2])) && !ftrapcc;
-        // the modes the instruction does not allow, FMOVECR: Line-F (as TG68K.C)
+        // the modes the instruction does not allow: Line-F (as TG68K.C); FMOVECR
+        // is an unimplemented instruction (vector 11, format $2, from the FPU)
+        // when its <ea> field is 0, else Line-F, which the M68040FPSP and the
+        // M68060SP take for an FMOVECR too
         src = c[15:13] == 3'b010 || c[15:13] == 3'b100 || c[15:13] == 3'b110;
         single = c[12:10] == 3'b100 || c[12:10] == 3'b010 || c[12:10] == 3'b001;
         unimpl = 1'b0;
         if (gen && !cond) begin
-          if (c[15:13] != 3'b000) begin
+          if (c[15:10] == 6'b010111) begin
+            if (op[5:0] != 6'd0) unimpl = 1'b1;
+          end else if (c[15:13] != 3'b000) begin
             if (m == 3'b001 && !((c[15:13] == 3'b100 || c[15:13] == 3'b101) && c[12:10] == 3'b001)) unimpl = 1'b1;
             else if (m == 3'b000 && (c[15:13] == 3'b110 || c[15:13] == 3'b111 ||
                      ((c[15:13] == 3'b100 || c[15:13] == 3'b101) && !single) ||
@@ -1404,14 +1409,10 @@ module m68k_decode
             else if (c[15:13] == 3'b111 && m == 3'b011) unimpl = 1'b1;
             else if (c[15:13] == 3'b110 && m == 3'b100) unimpl = 1'b1;
           end
-          if ((c[15:13] == 3'b000 || c[15:13] == 3'b010) && c[14] && c[12:10] == 3'b111) unimpl = 1'b1;
           if (c[15:13] == 3'b001) unimpl = 1'b1;
         end
         if (cond && c[15:5] != 11'd0) unimpl = 1'b1;
         if (MC68060 && gen && !cond) begin
-          // FMOVECR with no <ea> goes to the FPU, which leaves it to the
-          // M68060SP (vector 11, format $2); with one it stays Line-F
-          if (c[15:10] == 6'b010111 && m == 3'b000 && r == 3'b000) unimpl = 1'b0;
           // the unimplemented effective addresses (UM 6.5.3): an extended
           // or packed immediate, FMOVEM.L #imm of more than one control
           // register, FMOVEM.X with a dynamic list
@@ -1476,11 +1477,11 @@ module m68k_decode
           // FSAVE, FRESTORE: privileged in any mode (TG68K.C's decode, 68040
           // mode); in supervisor mode the FPU runs every memory mode, as
           // TG68K.C, and a register or a mode 7 without an address is
-          // Line-F, where TG68K.C uses an undefined address. The 68060 takes
-          // that Line-F in user mode too: it comes before the privilege
-          // violation (UM 8.3, exception priorities 2.1 and 2.3)
+          // Line-F, in user mode too: it comes before the privilege
+          // violation (MC68040 UM 8.3, table 8-4; MC68060 UM exception
+          // priorities 2.1 and 2.3)
           priv = fsr;
-          ill = fsr && (sup || MC68060) && (m == 3'b000 || m == 3'b001 || (m == 3'b111 && r >= 3'd5));
+          ill = fsr && (m == 3'b000 || m == 3'b001 || (m == 3'b111 && r >= 3'd5));
           u.fpu = 1'b1;
           u.sys = 1'b1;
           u.imm = {16'd0, c};             // the command or condition word

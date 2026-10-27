@@ -19,7 +19,9 @@
 // core takes it as an access error (format $7 frame).
 //
 // PTEST searches the tables for ptest_addr with the function code in
-// ptest_fc, loads the cache and returns the MMU status register value;
+// ptest_fc, loads the cache and returns the MMU status register value; its
+// search sets U, and for PTESTW M, as an access's does (UM 3.7.3 "performs
+// a table search operation", 3.2.5);
 // PFLUSH variants flush the cache (UM 3.7.2): pflush_all keeps no global
 // entry (PFLUSHA, PFLUSH (An)), else the global ones stay (PFLUSHAN,
 // PFLUSHN (An)); pflush_page limits it to the entries of the page of
@@ -376,7 +378,7 @@ module m68k_mmu #(
               else if (tc_p)    next_addr <= {d[31:7], w_la[17:13], 2'b00};
               else              next_addr <= {d[31:8], w_la[17:12], 2'b00};
               lvl <= lvl + 2'd1;
-              if (!d[3] && !w_test) begin
+              if (!d[3]) begin
                 // set U in this descriptor, then read the next level
                 upd_data <= {d[15:4], 1'b1, d[2:0]};
                 upd_table <= 1'b1;
@@ -409,7 +411,7 @@ module m68k_mmu #(
               nu = d[15:0];
               nu[3] = 1'b1;
               if (w_wr && !wrp && !(d[7] && !w_super)) nu[4] = 1'b1;
-              if (nu != d[15:0] && !w_test) begin
+              if (nu != d[15:0]) begin
                 upd_data <= nu;
                 upd_table <= 1'b0;
                 desc[15:0] <= nu;

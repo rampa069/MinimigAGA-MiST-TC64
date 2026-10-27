@@ -25,8 +25,10 @@
 // floating-point instruction exception (vector 11, format $2); the FSAVE
 // of the FPSP then gets the 26-word unimplemented instruction frame with
 // the command word, the source (ETEMP), the destination register (FPTEMP)
-// and their tags. FMOVECR is recognized by the core, which takes Line-F
-// with a format $0 frame (the FPSP emulates FMOVECR from that). Packed
+// and their tags. FMOVECR is one of them (UM table 9-10): nothing to fetch,
+// the frame holds its command word for the FPSP's smovcr; with a nonzero
+// <ea> field the core takes Line-F (format $0) instead, which the FPSP
+// emulates FMOVECR from too (x_fline.sa). Packed
 // decimal is an unsupported data type, as on the 68040 (UM 9.6.2): a packed
 // source is read as it is (bits 95-64 to FPTEMP, 63-0 to ETEMP) and
 // unsupp is set with done, and the core takes vector 55 with a format $0
@@ -626,6 +628,7 @@ module m68k_fpu #(
     logic [2:0]  fpn;
     int          idx;
     logic        isop;
+    logic        movecr;
     logic        hit;
     logic [5:0]  xm;
     byte_t       f [100];
@@ -922,11 +925,10 @@ module m68k_fpu #(
               endcase
               // an operation the 68040 leaves to the FPSP: the source is
               // fetched and converted all the same (ST_UNIMP)
-              uop <= !ok;
-              isop = ok;
+              movecr = cls == 3'b010 && fmt == 3'b111;
+              uop <= !ok || movecr;
+              isop = ok && !movecr;
               ok = 1'b1;
-              if (cls == 3'b010 && fmt == 3'b111)
-                ok = 1'b0;                  // FMOVECR: the core took Line-F
               if (cls == 3'b010 && fmt == 3'b011)
                 pk <= 1'b1;                 // packed decimal: an unsupported data type
               if (!ok) begin
@@ -944,7 +946,11 @@ module m68k_fpu #(
                 if (opm != 7'b0111000 && opm != 7'b0111010) wr_fp <= 1'b1;
                 set_cc <= 1'b1;
                 fpiar <= iaddr;
-                if (cls == 3'b000) begin
+                if (movecr) begin
+                  // FMOVECR: no operand; ETEMP 0
+                  alu_src <= 80'd0;
+                  state <= ST_UNIMP;
+                end else if (cls == 3'b000) begin
                   alu_src <= fpr_cs;
                   if (isop && FPSP == 0) begin
                     alu_start <= 1'b1;      // the unit starts now (no ST_ALU)
@@ -968,7 +974,9 @@ module m68k_fpu #(
                 end
               end
             end else if (cls == 3'b011) begin
-              // FMOVE FPn,<ea>
+              // FMOVE FPn,<ea> (through ST_ALU: not an unimplemented one,
+              // whatever the instruction before was)
+              uop <= 1'b0;
               fpn = cw[9:7];
               alu_src <= fpr_cd;
               alu_dst <= fpr_cd;

@@ -77,7 +77,7 @@ module TG68KdotC_Kernel #(
   /* verilator lint_off PINCONNECTEMPTY */   // (the testbench's outputs, not used here)
   m68k_cpu #(.MC68060(MC68060 != 0), .LINE_PORT(LINE_PORT != 0), .LP_LO(LP_LO), .LP_HI(LP_HI),
              .ASYNC(ASYNC != 0), .LP_SYNC(1'b0),
-             // with ASYNC, the core's clock at 51 MHz: m68k_core's registered paths
+             // with ASYNC, the core's clock at 54 MHz: m68k_core's registered paths
              .PRELEN(ASYNC != 0), .LD_SPEC(ASYNC != 0), .SH_SLOW(ASYNC != 0),
              .EX_PRESEL(ASYNC != 0), .DP_REG(ASYNC != 0), .EARLY_REG(ASYNC != 0),
              .IND_REG(ASYNC != 0), .FLUSH_REG(ASYNC != 0), .EX_FASTCC(ASYNC != 0),

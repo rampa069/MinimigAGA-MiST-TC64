@@ -2195,6 +2195,10 @@ module m68k_core
         walk_fetch <= sel_fi;
         walk_pc <= sel_wbx ? wb_u.pc : ws_req ? wb_u.pc : fpu_req ? ex_u.pc : ld_req ? of_u.pc : ag_u.pc;
       end
+      if (mmu_ptest_i) begin            // PTEST's search sets U and M too
+        walk_fetch <= 1'b0;
+        walk_pc <= ex_u.pc;
+      end
 
       // the MMU's table search cycle, and the translation of the store in WB
       if (mmu_walk_req && d_gnt) mmu_acc_issued <= 1'b1;
