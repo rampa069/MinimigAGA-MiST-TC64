@@ -418,10 +418,17 @@ ide_fifo SECBUF1
 assign nrdy = pio_in & sel_fifo & fifo_empty;
 
 assign data_oe = (!dev[1] && hdd0_ena[dev[0]]) || (dev[1] && hdd1_ena[dev[0]]);
+// the selected drive missing, as WinUAE's ide_read_reg: with the other drive
+// of the channel there the status reads $01 and the task file $00; with
+// neither, the status $7F and the task file $FF (WinUAE's "ide killer"), so
+// scsi.device sees no drive instead of one that never gets ready (a boot
+// delayed by its 31 s timeout)
+wire   pair_oe = (!dev[1] && hdd0_ena[~dev[0]]) || (dev[1] && hdd1_ena[~dev[0]]);
 //data_out multiplexer
 assign data_out = sel_fifo && rd ? fifo_data_out  :
-                  sel_status ? data_oe ? {status,8'h00} : 16'h00_00 :
-                  sel_tfr && rd ? {tfr_out,8'h00} : 16'h00_00;
+                  sel_status ? data_oe ? {status,8'h00} : pair_oe ? 16'h01_00 : 16'h7F_00 :
+                  sel_tfr && rd ? data_oe ? {tfr_out,8'h00} : pair_oe ? 16'h00_00 : 16'hFF_00 :
+                  16'h00_00;
 
 // Monitor changes to cylinder number for drive sounds
 reg [7:0] cyllow;
