@@ -278,6 +278,59 @@ module m68k_decode
   logic [15:0] op;
   assign op = w[0];
 
+  // An instruction whose EA (op[5:0], MOVE's destination op[11:6]) must be
+  // alterable, given a PC-relative one: illegal (MC68000 PRM, each
+  // instruction's table of modes). BTST, CMPI, TST, CHK2/CMP2, the BF
+  // tests, the sources and the control forms (JMP, LEA, PEA) take them.
+  // FPU opmodes (the command word's bits 6-0): the ones the 68040 and
+  // 68060 have (the others take the Line-F at once, before any operand),
+  // and the ones the 68060 runs (the others are its unimplemented
+  // instructions), as WinUAE's fpp.cpp lists them
+  function automatic logic fp_exists(input logic [6:0] v);
+    case (v)
+      7'h05, 7'h07, 7'h0b, 7'h13, 7'h17, 7'h1b, 7'h29, 7'h2a, 7'h2b, 7'h2c, 7'h2d, 7'h2e,
+      7'h2f, 7'h39, 7'h3b, 7'h3c, 7'h3d, 7'h3e, 7'h3f, 7'h42, 7'h43, 7'h59, 7'h5b, 7'h5d,
+      7'h5f, 7'h61, 7'h65, 7'h69, 7'h6a, 7'h6b, 7'h6d, 7'h6e, 7'h6f: return 1'b0;
+      default: return !(v >= 7'h46 && v <= 7'h57) && !(v >= 7'h70);
+    endcase
+  endfunction
+  function automatic logic fp060_impl(input logic [6:0] v);
+    case (v)
+      7'h00, 7'h01, 7'h03, 7'h04, 7'h18, 7'h1a, 7'h20, 7'h22, 7'h23, 7'h24, 7'h27, 7'h28,
+      7'h38, 7'h3a, 7'h40, 7'h41, 7'h44, 7'h45, 7'h58, 7'h5a, 7'h5c, 7'h5e, 7'h60, 7'h62,
+      7'h63, 7'h64, 7'h66, 7'h67, 7'h68, 7'h6c: return 1'b1;
+      default: return 1'b0;
+    endcase
+  endfunction
+
+  function automatic logic alt_pc(input logic [15:0] o);
+    logic pc6, pcd;
+    pc6 = o[5:3] == 3'b111 && o[2:1] == 2'b01;
+    pcd = o[8:6] == 3'b111 && o[11:10] == 2'b01;
+    case (o[15:12])
+      4'h0: alt_pc = pc6 && (
+                (o[8] && o[7:6] != 2'b00) ||                            // BCHG, BCLR, BSET Dn
+                (o[11:8] == 4'h8 && o[7:6] != 2'b00) ||                 // BCHG, BCLR, BSET #
+                (!o[8] && o[7:6] != 2'b11 &&                            // ORI ANDI SUBI ADDI EORI
+                 (o[11:9] == 3'd0 || o[11:9] == 3'd1 || o[11:9] == 3'd2 || o[11:9] == 3'd3 ||
+                  o[11:9] == 3'd5)) ||
+                (o[11] && !o[8] && o[7:6] == 2'b11 && o[10:9] != 2'b00)); // CAS
+      4'h1, 4'h2, 4'h3: alt_pc = pcd;                                     // MOVE
+      4'h4: alt_pc = pc6 && (
+                (!o[8] && !o[11] && o[7:6] != 2'b11) ||                // NEGX CLR NEG NOT
+                o[11:6] == 6'b000011 || o[11:6] == 6'b001011 ||         // MOVE from SR, CCR
+                o[11:6] == 6'b100000 || o[11:6] == 6'b101011 ||         // NBCD, TAS
+                o[11:7] == 5'b10001);                                    // MOVEM to memory
+      4'h5: alt_pc = pc6 && o[7:6] != 2'b11;                             // ADDQ, SUBQ (not TRAPcc)
+      4'h8, 4'h9, 4'hB, 4'hC, 4'hD:
+            alt_pc = pc6 && o[8] && o[7:6] != 2'b11;                    // OR SUB EOR AND ADD to <ea>
+      4'hE: alt_pc = pc6 && o[7:6] == 2'b11 &&
+                (!o[11] ||                                               // shifts in memory
+                 o[11:8] == 4'hA || o[11:8] == 4'hC || o[11:8] == 4'hE || o[11:8] == 4'hF);
+      default: alt_pc = 1'b0;
+    endcase
+  endfunction
+
   always_comb begin
     ea_t   s, d;
     size_e sz;
@@ -286,6 +339,9 @@ module m68k_decode
     logic  priv;              // privileged: violation in user mode
     logic  unimp;             // 68060: unimplemented integer instruction (vector 61)
     logic  uea;               // 68060: unimplemented effective address (vector 60)
+    logic  lpv;               // 68060 LPSTOP to an SR without S: privilege violation
+    logic  fiar;              // 68060: an FPU arithmetic operation (its trap loads FPIAR)
+    logic  fxu, fxp;          // 68060: an EA its size does not allow, taken as unimplemented / packed
     logic [4:0] nsteps;       // uops of the instruction
     logic [3:0] nv;           // extension words that must be in the queue
     logic [3:0] n;            // extension words
@@ -299,6 +355,8 @@ module m68k_decode
     priv = 1'b0;
     unimp = 1'b0;
     uea = 1'b0;
+    fiar = 1'b0;
+    fxu = 1'b0; fxp = 1'b0;
     nsteps = 5'd1;
     n = 4'd0;
     sz = sz2(op[7:6]);
@@ -317,7 +375,7 @@ module m68k_decode
         s = ea_dec(op[5:3], op[2:0], sz, 4'd1, w, q_pc);
         d = ea_dec(op[8:6], op[11:9], sz, 4'd1 + (pre_en ? pre_snw : s.nw), w, q_pc);
         n = s.nw + d.nw;
-        bad = s.bad || d.bad || d.kind == K_IMM;
+        bad = s.bad || d.bad || d.kind == K_IMM || (s.kind == K_AREG && sz == SZ_B);
         if (d.kind == K_AREG) begin                  // MOVEA
           bad = bad || sz == SZ_B;
           u = src_a(u, s, sz);
@@ -681,6 +739,7 @@ module m68k_decode
             end
             5'd4: begin                                          // SR, and the stack of its mode
               u.a_sel = OP_REG; u.a_reg = R_T1;
+              u.b_sel = OP_REG; u.b_reg = R_T0;                  // (the 68060's odd PC check)
               u.size = SZ_W;
               u.setsr = 1'b1;
               u.sys = 1'b1;
@@ -832,6 +891,15 @@ module m68k_decode
           u.cc = CC_LOGIC;
           u.exc = EXC_CHK; u.exc_vec = 8'd6;
           u.exc_post = 1'b1; u.exc_fmt2 = 1'b1;
+        end else if (MC68060 && op == 16'h4AC8) begin             // HALT (68060)
+          // privileged; the core has no debug halt: in supervisor mode it
+          // does nothing
+          n = 4'd0;
+          bad = 1'b0;
+          priv = 1'b1;
+        end else if (MC68060 && op == 16'h4ACC) begin             // PULSE (68060): a PST code only
+          n = 4'd0;
+          bad = 1'b0;
         end else if (op[11:6] == 6'b101011) begin                 // TAS
           s = ea_dec(op[5:3], op[2:0], SZ_B, 4'd1, w, q_pc);
           n = s.nw;
@@ -982,8 +1050,12 @@ module m68k_decode
               u.ea_en = 1'b1; u.ea_mode = EAM_PREDEC;
               u.base_en = 1'b1; u.base = R_A7; u.step = 3'd4;
               u.store = 1'b1; u.msize = SZ_L;
-              if (an == R_A7) begin                              // the decremented SP
-                u.a_sel = OP_IMM; u.imm = 32'd4;
+              // LINK A7: the 68040 pushes the decremented SP, the 68060 the
+              // SP as it was (WinUAE's gencpu, cputest on the FPGA)
+              if (an == R_A7 && !MC68060) begin                  // the decremented SP
+                // (a register operand that is the -(An) base reads it
+                // decremented: b - 0)
+                u.a_sel = OP_IMM; u.imm = 32'd0;
                 u.b_sel = OP_REG; u.b_reg = R_A7;
                 u.alu = ALU_SUB;
               end else begin
@@ -1326,7 +1398,10 @@ module m68k_decode
         s = ea_dec(op[5:3], op[2:0], SZ_L, 4'd2, w, q_pc);
         n = 4'd1 + s.nw;
         inreg = s.kind == K_DREG;
-        bad = s.bad || x[15] || s.kind == K_AREG || s.kind == K_IMM ||
+        // (bit 15 of the extension word: the 68060 ignores it in BFTST,
+        // BFCHG, BFCLR and BFSET, which have no register there, as WinUAE
+        // does; cputest BASIC on the FPGA)
+        bad = s.bad || (x[15] && (kind[0] || !MC68060)) || s.kind == K_AREG || s.kind == K_IMM ||
               (s.kind == K_MEM && s.mode != EAM_PLAIN);
         nsteps = inreg ? 5'd2 : modify ? 5'd10 : 5'd5;
         u.cond = {inreg, kind};
@@ -1412,6 +1487,18 @@ module m68k_decode
           if (c[15:13] == 3'b001) unimpl = 1'b1;
         end
         if (cond && c[15:5] != 11'd0) unimpl = 1'b1;
+        fiar = MC68060 && gen && !cond && (c[15:13] == 3'b000 || c[15:13] == 3'b010) && fp_exists(c[6:0]);
+        // (68060) an operation with its source in a register its size does
+        // not allow (An; Dn with .X, .P, .D): WinUAE's order, which its
+        // cputest FILLG has on the FPGA, takes an unimplemented operation as
+        // such (vector 11) and a packed Dn as packed (vector 55) before the
+        // Line-F: format $2, the next PC, no operand address
+        if (MC68060 && gen && !cond && c[15:13] == 3'b010 && c[15:10] != 6'b010111 && fp_exists(c[6:0]) &&
+            (m == 3'b001 || (m == 3'b000 && (c[12:10] == 3'b010 || c[12:10] == 3'b011 ||
+                                             c[12:10] == 3'b101 || c[12:10] == 3'b111)))) begin
+          if (!fp060_impl(c[6:0])) fxu = 1'b1;
+          else if (m == 3'b000 && c[12:10] == 3'b011) fxp = 1'b1;
+        end
         if (MC68060 && gen && !cond) begin
           // the unimplemented effective addresses (UM 6.5.3): an extended
           // or packed immediate, FMOVEM.L #imm of more than one control
@@ -1518,7 +1605,9 @@ module m68k_decode
           u.mmuop = op[6] ? 2'd1 : 2'd2;
           u.a_sel = OP_REG; u.a_reg = {2'b01, op[2:0]};
           u.sys = 1'b1;
-        end else if (op[11:6] == 6'b011000 && (!op[5] || (op[4:3] == 2'b00 && w[1][15] && w[1][11:0] == 12'd0))) begin
+        end else if (op[11:6] == 6'b011000 && (!op[5] || (op[4:3] == 2'b00 && (w[1][15] || MC68060) && w[1][11:0] == 12'd0))) begin
+          // ((Ax)+,(Ay)+: the 68060 ignores bit 15 of the second word, as
+          // WinUAE does; cputest BASIC on the FPGA)
           // MOVE16: the 16-byte line at the source to the one at the
           // destination (low four address bits ignored), (An)+ by 16 (once
           // if Ax = Ay): T2 the source line, T1 the destination's, four longs
@@ -1577,6 +1666,26 @@ module m68k_decode
       default: bad = 1'b1;
     endcase
 
+    // LPSTOP #imm (68060: $F800 $01C0 #imm): privileged, and a new SR
+    // without S is a privilege violation too; another second word is a
+    // Line-F (WinUAE's gencpu). It stops as STOP does.
+    lpv = 1'b0;
+    if (MC68060 && op == 16'hF800) begin
+      u = '0;
+      u.alu = ALU_MOVE; u.cc = CC_NONE; u.br = BR_NONE;
+      nsteps = 5'd1;
+      bad = 1'b0; unimp = 1'b0; uea = 1'b0;
+      ill = w[1] != 16'h01C0;
+      n = 4'd2;
+      priv = 1'b1;
+      lpv = !w[2][13];
+      u.a_sel = OP_IMM; u.imm = {16'd0, w[2]};
+      u.size = SZ_W;
+      u.setsr = 1'b1;
+      u.sys = 1'b1;
+      u.stop = 1'b1;
+    end
+
     // exceptions found here: no operands, the length of one word (a
     // pre-instruction exception stacks this PC, TRAP #n has no extension).
     // The whole instruction must be in the queue all the same: what it
@@ -1590,23 +1699,30 @@ module m68k_decode
       nv = 4'd1;
     // (an opcode or addressing mode no 68040 or 68060 has is illegal:
     // vector 4, an F-line's 11)
+    if (alt_pc(op)) ill = 1'b1;
     if (op[15:12] == 4'hA) begin
       u = exc_u(8'd10, 1'b0, 1'b0);
       n = 4'd0;
       nsteps = 5'd1;
+    end else if (fxu || fxp) begin
+      u = exc_u(fxu ? 8'd11 : 8'd55, 1'b1, 1'b1);      // (n: the command word)
+      u.fiar = 1'b1;
+      nsteps = 5'd1;
     end else if (ill || bad) begin
       u = exc_u(op[15:12] == 4'hF ? 8'd11 : 8'd4, 1'b0, 1'b0);
+      u.fiar = fiar;
       n = 4'd0;
       nsteps = 5'd1;
     end else if (uea) begin
       u = exc_u(8'd60, 1'b0, 1'b0);
+      u.fiar = fiar;
       n = 4'd0;
       nsteps = 5'd1;
     end else if (unimp) begin
       u = exc_u(8'd61, 1'b0, 1'b0);
       n = 4'd0;
       nsteps = 5'd1;
-    end else if (priv && !sup && step == 5'd0) begin   // (the later uops of RTE run in the new mode)
+    end else if ((priv && !sup && step == 5'd0) || lpv) begin   // (the later uops of RTE run in the new mode)
       u = exc_u(8'd8, 1'b0, 1'b0);
       n = 4'd0;
       nsteps = 5'd1;

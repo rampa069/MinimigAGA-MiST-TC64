@@ -214,6 +214,8 @@ module m68k_ilen
           n = (gen ? 4'd1 : 4'd0) + 4'(ext >> 1);
         else if (op[11:6] == 6'b011000)
           n = op[5] ? 4'd1 : 4'd2;                             // MOVE16
+        else if (MC68060 && op == 16'hF800)
+          n = 4'd2;                                            // LPSTOP
         else
           n = 4'd0;
         // (decode waits for the word that tells what it is: as there)

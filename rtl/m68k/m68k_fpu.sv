@@ -135,6 +135,8 @@ module m68k_fpu #(
   input  logic [5:0]  pred,
   output logic        pred_true,
   input  logic        pred_bsun,      // FBcc evaluated pred: set BSUN on a NaN
+  input  logic [31:0] pred_pc,        // with pred_bsun or set_bsun: the FBcc's address
+  input  logic        iar_set,        // (MC68060) FPIAR <= pred_pc: an FPU operation's encoding trapped
   // arithmetic exceptions: xexc with done takes vector 48 + xvec (0 BSUN,
   // 1 INEX, 2 DZ, 3 UNFL, 4 OPERR, 5 OVFL, 6 SNAN), post-instruction with
   // a format $3 frame when xpost is set; xpend says one is pending (FBcc
@@ -677,6 +679,14 @@ module m68k_fpu #(
           fpsr[15] <= 1'b1;                 // BSUN, and AEXC IOP
           fpsr[7] <= 1'b1;
         end
+        // (MC68060) FBcc loads FPIAR, as the MC68881 does: the 68060 takes
+        // its BSUN in hardware, with no M68060SP handler to load it (UM
+        // 6.6.1); the 68040 leaves it to its M68040FPSP (68040 UM 9.7.1)
+        if (MC68060 && (pred_bsun || set_bsun)) fpiar <= pred_pc;
+        // (MC68060) an arithmetic operation (opclass 000, 010) that traps on
+        // its encoding, its EA or its operand's format before it runs loads
+        // FPIAR as well (WinUAE: FPIAR is set before the operand is taken)
+        if (MC68060 && iar_set) fpiar <= pred_pc;
         if (set_bsun) begin
           // FBcc takes BSUN (the core traps): the exceptional state
           for (int i = 0; i < 100; i++) xf[i] <= 8'h00;

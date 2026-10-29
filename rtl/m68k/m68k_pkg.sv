@@ -189,6 +189,7 @@ package m68k_pkg;
     logic        mfirst;    // MOVEM's first transfer
     logic        m16;       // MOVE16: a line (SIZE 11, TT 01)
     logic        noaf;      // exception processing: faults are not reported
+    logic        fiar;      // (68060) its exception loads FPIAR: an FPU operation's encoding
     logic        ifault;    // the fetch of the instruction faulted: imm the address,
                             // cond[0] by the MMU (else a bus error)
     logic        al16;      // the EA base aligned to 16 bytes (MOVE16's lines)

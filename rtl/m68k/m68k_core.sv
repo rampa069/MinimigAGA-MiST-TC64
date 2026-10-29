@@ -232,7 +232,9 @@ module m68k_core
   logic        wb_exc;                  // the uop takes its exception
   logic        wb_cont;                 // RTE of a format $1 frame: it runs again
   logic        wb_aerr;                 // a jump to an odd address: address error
-  logic        ex_aerr;
+  logic        wb_rteodd;               // RTE's odd PC (68060): the CCR it leaves in wb_res
+  logic        ex_aerr, ex_rteodd;
+  logic [31:0] ex_aodd;          // the odd target of an address error
   // the exception a uop takes: vector, frame format ($0, $2, $3), stacked
   // PC and the address field of formats $2 and $3
   logic [7:0]  ex_xvec, wb_xvec;
@@ -368,7 +370,8 @@ module m68k_core
     .wr_data(fpu_wr_data), .wr_size(fpu_wr_size),
     .bus_act(fpu_bus_act), .bus_addr(fpu_bus_addr), .bus_wr(fpu_bus_wr), .bus_uds_n(fpu_uds_n),
     .bus_lds_n(fpu_lds_n), .bus_wdata(fpu_bus_wdata), .data_in(fpu_data_in),
-    .pred(wb_u.opcode[5:0]), .pred_true(fpu_pred_true), .pred_bsun(fpu_pred_bsun),
+    .pred(wb_u.opcode[5:0]), .pred_true(fpu_pred_true), .pred_bsun(fpu_pred_bsun), .pred_pc(wb_u.pc),
+    .iar_set(take_exc && wb_u.fiar),
     .xexc(fpu_xexc), .xvec(fpu_xvec), .xpost(fpu_xpost), .xhere_o(fpu_xhere), .xpend_o(fpu_xpend),
     .xpend_vec(fpu_xpvec), .fpcc_nan(fpu_nan), .fp_bsun_en(fpu_bsun_en), .set_bsun(fpu_set_bsun),
     .fpcc_o(fpu_fpcc), .busy_o(fpu_busy), .bg_o(fpu_bg)
@@ -744,6 +747,9 @@ module m68k_core
       EAM_PREDEC:  begin ag_ea = bv - {29'd0, ag_u.step}; ag_anv = ag_ea; end
       default:     begin ag_ea = bv + xv + ag_u.disp; ag_anv = 32'd0; end
     endcase
+    // a register operand that is the base of the EA's (An)+ or -(An): the
+    // value after the update (ADDA (A0)+,A0 adds the incremented A0)
+    if (ag_an && ag_u.b_sel == OP_REG && ag_u.b_reg == ag_u.base) ag_b.v = ag_anv;
   end
 
   // -------------------------------------------------------------------- EX
@@ -1341,13 +1347,37 @@ module m68k_core
       default: ex_npc = (ex_u.fpu && fx_br) ? fx_brt : ex_u.next_pc;   // FDBcc
     endcase
     // the 68040 takes the address error only for an odd instruction fetch
-    // (UM 8.2.2): a jump to an odd address
-    ex_aerr = ex_u.br != BR_NONE && ex_npc[0];
+    // (UM 8.2.2): a jump to an odd address. Where the UM is silent the
+    // frame of the 68060 follows WinUAE's gencpu, as its cputest (AE,
+    // ODDSTK) has it on the FPGA: Bcc and DBcc check their target taken or
+    // not (DBcc before its condition: Dn untouched), FBcc only taken
+    ex_aodd = ex_npc;
+    if (MC68060 && ((ex_u.br == BR_BCC && !ex_u.fbcc) || ex_u.br == BR_DBCC)) ex_aodd = ex_u.br_target;
+    ex_aerr = ex_u.br != BR_NONE && ex_aodd[0];
+    // RTE (68060) checks the frame's PC before its SR is taken: the SR
+    // keeps its upper byte, the CCR is N and Z of the frame's SR (gencpu)
+    ex_rteodd = MC68060 && ex_u.setsr && ex_u.opcode == 16'h4E73 && ex_bv[0];
+    if (ex_rteodd) begin
+      ex_aerr = 1'b1; ex_aodd = ex_bv;
+      ex_res = {27'd0, 1'b0, ex_av[15], ex_av[15:0] == 16'd0, 2'b00};
+    end
     if (ex_aerr) ex_exc = 1'b1;
     ex_xvec = ex_aerr ? 8'd3 : ex_u.exc_vec;
     ex_xfmt = (ex_aerr || ex_u.exc_fmt2) ? 4'h2 : 4'h0;
     ex_xpc = (ex_u.exc_post && !ex_aerr) ? ex_u.next_pc : ex_u.pc;
-    ex_xaddr = ex_aerr ? {ex_npc[31:1], 1'b0} : ex_u.pc;
+    // an odd vector (the injector's fetch of it): no instruction to restart,
+    // the PC stacked is the vector's offset, without VBR, as WinUAE's
+    // cputest has it (the FPGA's ODDEXC/ODDIRQ, the runner's VBR nonzero)
+    if (ex_aerr && ex_u.noaf) ex_xpc = ex_ea - vbr;
+    // JMP stacks its PC + 2 (+ 6 for the indexed modes), JSR the target
+    // (the 68040 mode: the instruction's, UM 8.2.2)
+    if (MC68060 && ex_aerr && ex_u.opcode[15:6] == 10'b0100111011)
+      ex_xpc = ex_u.pc + ((ex_u.opcode[5:3] == 3'd6 || ex_u.opcode[5:0] == 6'o73) ? 32'd6 : 32'd2);
+    if (MC68060 && ex_aerr && ex_u.opcode[15:6] == 10'b0100111010 && ex_u.br != BR_NONE) ex_xpc = ex_aodd;
+    ex_xaddr = ex_aerr ? {ex_aodd[31:1], 1'b0} : ex_u.pc;
+    // (68060) an FPU operation with a register source its size does not
+    // allow, taken as unimplemented or packed: no operand address
+    if (ex_u.fiar && ex_u.exc_fmt2) ex_xaddr = 32'd0;
     // the FPU's: as TG68K.C stacks them (its kernel's trap0/trap00)
     if (ex_u.fpu && fx_done) begin
       if (fx_unimp) begin                       // unimplemented: vector 11, $2
@@ -1858,7 +1888,7 @@ module m68k_core
       smc_pend <= 1'b0;
       fx_smc <= 1'b0;
       wb_fsmc <= 1'b0;
-      wb_aerr <= 1'b0;
+      wb_aerr <= 1'b0; wb_rteodd <= 1'b0;
       wb_af <= 1'b0; ex_af <= 1'b0; of_af <= 1'b0;
       wb_sfault <= 1'b0; ws_iss <= 1'b0; ws_done <= 1'b0; ws_err <= 1'b0;
       acc_pend <= 1'b0; inj_rec <= 1'b0;
@@ -1944,10 +1974,13 @@ module m68k_core
       end
 
       // WB: an exception after the instruction (CHK, a division by zero)
-      // keeps its (An)+ or -(An); an access error restarts it
-      if (retire && wb_an && !wb_restart) rf[wb_u.base] <= wb_anv;
+      // keeps its (An)+ or -(An); an access error restarts it, and so does
+      // the address error of BSR or JSR to an odd address: its push is not
+      // made; on the 68060 (gencpu, cputest on the FPGA) RTS and RTR pop
+      // nothing either (RTR's CCR is taken)
+      if (retire && wb_an && !wb_restart && !(wb_aerr && (wb_u.store || MC68060))) rf[wb_u.base] <= wb_anv;
       if (MC68060) begin
-        if (take_exc && wb_restart) begin
+        if (take_exc && (wb_restart || (wb_aerr && !wb_u.noaf))) begin
           if (ul_v[1]) rf[ul_r[1]] <= ul_d[1];
           if (ul_v[0]) rf[ul_r[0]] <= ul_d[0];
         end
@@ -1964,6 +1997,9 @@ module m68k_core
         if (wb_bk_en) rf[wb_bk_idx] <= wb_bk_val;
         if (wb_u.dst_en) rf[wb_u.dst] <= wb_res;
         if (wb_u.cc != CC_NONE || wb_u.setsr) ccr_arch <= wb_ccr;
+      end
+      if (take_exc && wb_rteodd) ccr_arch <= wb_res[4:0];   // RTE to an odd PC
+      if (retire && !wb_exc_now) begin
         if (wb_u.setsr) sr_hi <= wb_sr[15:8];
         if (wb_u.ctrl_wr)
           case (wb_u.imm[11:0])
@@ -2155,7 +2191,9 @@ module m68k_core
         if (!wb_aerr && (wb_u.exc == EXC_CHK || wb_u.exc == EXC_DIVZ || wb_u.exc == EXC_CHK2)) begin
           ccr_arch <= wb_ccr;
           ccr_spec <= wb_ccr;
-        end else
+        end else if (wb_rteodd)
+          ccr_spec <= wb_res[4:0];      // RTE to an odd PC: N and Z of its SR
+        else
           ccr_spec <= ccr_arch;
         wb_v <= 1'b0;
       end else if (ex_fire) begin
@@ -2168,7 +2206,7 @@ module m68k_core
         wb_res <= ex_res; wb_ccr <= ex_ccr; wb_npc <= ex_npc;
         wb_exc <= ex_exc;
         wb_cont <= ex_u.alu == ALU_RTEJ && ex_av[15:12] == 4'h1 && !MC68060;
-        wb_aerr <= ex_aerr;
+        wb_aerr <= ex_aerr; wb_rteodd <= ex_rteodd;
         wb_fsmc <= ex_u.fpu && fx_smc;
         wb_af <= ex_af && !ex_u.noaf; wb_afatc <= ex_afatc; wb_affa <= ex_affa; wb_afsz <= ex_afsz;
         wb_afwhy <= ex_afwhy;
